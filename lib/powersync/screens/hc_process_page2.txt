@@ -1,0 +1,1254 @@
+import 'dart:convert';
+// import 'package:anderson_crm_flutter/database/work_orderDb.dart';
+import 'package:anderson_crm_flutter/database/db_handler.dart';
+// import 'package:anderson_crm_flutter/database/priceList_db.dart';
+import 'package:anderson_crm_flutter/database/sms_template.dart';
+import 'package:anderson_crm_flutter/database/com_center.dart';
+import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/services/storage_service.dart';
+import 'package:anderson_crm_flutter/services/workOrder_service.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../config/settings.dart';
+// import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../screens/add_test_dialog.dart';
+import 'package:anderson_crm_flutter/powersync/servicess/powersync_service.dart';
+
+/* ---------------  HC Process Page --------------- */
+class HCProcessPage2 extends ConsumerStatefulWidget {
+  final String workOrderId;
+
+  const HCProcessPage2({
+    Key? key,
+    required this.workOrderId,
+  }) : super(key: key);
+
+  @override
+  ConsumerState<HCProcessPage2> createState() => _HCProcessPageState();
+}
+
+class _HCProcessPageState extends ConsumerState<HCProcessPage2> {
+  int _currentStep = 0;
+  bool _isLoading = false;
+  // Work order document
+  Map<String, dynamic>? _doc;
+
+  // Step 1: Delay reason
+  final _delayTextController = TextEditingController();
+  String _delayMins = '';
+
+  // Step 2: Add tests (handled by separate component)
+  bool _cghsPrice = false;
+  String _proformaInvLoc = '';
+
+  // Step 3: Bill amount
+  final _discountController = TextEditingController(text: '0');
+  String _hccItem = '50';
+  String _disCharges = '30';
+  double _billAmount = 0;
+  double _amountAfterDiscount = 0;
+  double _amountReceived = 0;
+  bool _creditClient = false;
+  bool _trialClient = false;
+
+  // Step 4: OTP
+  final _otpController = TextEditingController();
+  String _generatedOtp = '';
+  String _clientMobile = '';
+  String _techMobile = '';
+
+  // Step 5: Prescription photos
+  final _imagePicker = ImagePicker();
+  List<String> _uploadedPhotos = [];
+  List<String> _uploadedPhotosPath = [];
+  bool _offline = false;
+
+  // Step 6: Payment
+  String _paymentMethod = 'cash';
+  final _gpayRefController = TextEditingController(text: 'Later');
+  final _remarksController = TextEditingController();
+
+  // Flags
+  bool _b2bClient = false;
+  String _b2bClientDetail = '';
+  int _sms = 0;
+  int _whatsapp = 0;
+  int _email = 0;
+
+  List<Map<String, dynamic>> _selectedTests = [];
+  double _totalAmount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkOrder();
+  }
+
+  @override
+  void dispose() {
+    _delayTextController.dispose();
+    _discountController.dispose();
+    _otpController.dispose();
+    _gpayRefController.dispose();
+    _remarksController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadWorkOrder() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // ✅ Fetch directly from PowerSync (instead of Couch)
+      final powerSync = ref.read(powerSyncServiceProvider);
+      final row = await powerSync.getWorkOrderById(widget.workOrderId);
+
+      if (row == null) {
+        _showSnackBar('Work order not found in local DB');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // ✅ Convert WorkOrder model or row into a usable map
+      setState(() {
+        _doc = row as Map<String, dynamic>;
+
+        _clientMobile = _doc?['mobile'] ?? '';
+
+        final storage = ref.read(storageServiceProvider);
+        _techMobile = storage.getFromSession('logged_in_mobile') ?? '';
+
+        // Check B2B client
+        if (_doc?['b2b_client_id'] != null && _doc?['b2b_client_id'] != 0) {
+          _b2bClient = true;
+          _b2bClientDetail = _doc?['b2b_client_name'] ?? '';
+        }
+
+        // Check credit/trial
+        int credit = _doc?['credit'] ?? 0;
+        if (credit == 1) {
+          _creditClient = true;
+          _trialClient = false;
+        } else if (credit == 2) {
+          _creditClient = false;
+          _trialClient = true;
+        }
+
+        // Load bill amount if exists
+        if (_doc?['total'] != null) {
+          _billAmount = double.tryParse(_doc?['total'].toString() ?? '0') ?? 0;
+          _calculateDiscount();
+        }
+
+        // Initialize process if not exists
+        if (_doc?['process'] == null) {
+          _doc!['process'] = {
+            'first_step': '',
+            'second_step': '',
+            'third_step': '',
+            'fourth_step': '',
+            'fifth_step': '',
+            'prescription_uploaded_at': '',
+            'proforma_uploaded_at': '',
+          };
+        }
+
+        // Load notification settings if exist
+        if (_doc?['settings'] != null) {
+          _sms = _doc?['settings']['send_sms'] ?? 0;
+          _whatsapp = _doc?['settings']['send_whatsapp'] ?? 0;
+          _email = _doc?['settings']['send_email'] ?? 0;
+        }
+      });
+
+      _beforeFirstStep();
+    } catch (e, st) {
+      debugPrint('❌ Error loading work order: $e');
+      debugPrint('📄 Stack trace: $st');
+      _showSnackBar('Error loading work order: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _checkSugarTests() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? selectedStr = prefs.getString('selected_tests');
+
+      if (selectedStr != null && selectedStr.isNotEmpty) {
+        List<dynamic> decoded = jsonDecode(selectedStr);
+
+        for (var test in decoded) {
+          int investId =
+              int.tryParse(test['invest_id']?.toString() ?? '0') ?? 0;
+          if (investId == 177) {
+            // Sugar test found - save for special handling
+            final storage = ref.read(storageServiceProvider);
+            storage.setSession('sugar_tests', widget.workOrderId);
+            debugPrint(
+                'Sugar test detected for work order: ${widget.workOrderId}');
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking sugar tests: $e');
+    }
+  }
+
+  void _beforeFirstStep() {
+    if (_doc == null) return;
+
+    // Calculate delay
+    String appDate = _doc!['appointment_date'] ?? '';
+    String appTime = _doc!['appointment_time'] ?? '';
+    String appDateTime = '$appDate $appTime';
+
+    int diff = Util.getPassedMinutes(ref, appDateTime);
+
+    if (diff > -30) {
+      _delayTextController.text = 'On Time';
+      _afterFirstStep();
+      return;
+    }
+
+    diff *= -1;
+    String delayStr = '';
+    if (diff < 60) {
+      delayStr = '$diff minutes';
+    } else {
+      delayStr = Util.timeConvert(diff);
+    }
+
+    setState(() {
+      _delayMins = delayStr;
+      _currentStep = 0;
+    });
+  }
+
+  void _afterFirstStep() {
+    if (_delayMins.isNotEmpty && _delayTextController.text.length < 5) {
+      _showSnackBar('Please give proper reason for delay');
+      return;
+    }
+
+    _doc!['process']['first_step'] = _delayTextController.text;
+    _doc!['status'] = 'First Step';
+
+    final storage = ref.read(storageServiceProvider);
+    String empName = storage.getFromSession('logged_in_emp_name') ?? '';
+    String timeline = '${Util.gettime()}-$empName- Work Order Started';
+
+    if (_doc!['time_line'] != null) {
+      (_doc!['time_line'] as List).add(timeline);
+    }
+
+    // 🔥 FIX: Save the status update
+    _updateDoc();
+
+    setState(() => _currentStep = 1);
+  }
+
+  void _afterSecondStep() {
+    _doc!['process']['second_step'] = _proformaInvLoc;
+    _doc!['status'] = 'Second Step';
+
+    // 🔥 FIX: Save the status update
+    _updateDoc();
+
+    _beforeThirdStep();
+  }
+
+  void _beforeThirdStep() {
+    if (_b2bClient) {
+      _doc!['amount_received'] = 0;
+      _doc!['discount'] = 0;
+      _doc!['process']['third_step'] =
+          'Rs. $_billAmount Not Received For B2B Client';
+      _doc!['process']['fourth_step'] = 'OTP Not Needed For B2B Client';
+      _doc!['status'] = 'Fifth Step';
+
+      // 🔥 FIX: Save before skipping
+      _updateDoc();
+
+      setState(() => _currentStep = 4); // Skip to step 5
+    } else if (_trialClient) {
+      _doc!['amount_received'] = 0;
+      _doc!['discount'] = 0;
+      _doc!['process']['third_step'] =
+          'Rs. $_billAmount Not Received For Trial Client';
+      _doc!['process']['fourth_step'] = 'OTP Not Needed For Trial Client';
+      _doc!['status'] = 'Fifth Step';
+
+      // 🔥 FIX: Save before skipping
+      _updateDoc();
+
+      setState(() => _currentStep = 4); // Skip to step 5
+    } else if (_creditClient) {
+      if (_cghsPrice) {
+        _doc!['cghs'] = 1;
+        _doc!['status'] = 'Third Step';
+
+        // 🔥 FIX: Save the status update
+        _updateDoc();
+
+        setState(() => _currentStep = 2);
+      } else {
+        _doc!['amount_received'] = 0;
+        _doc!['discount'] = 0;
+        _doc!['process']['third_step'] =
+            'Rs. $_billAmount Not Received For Credit Client';
+        _doc!['process']['fourth_step'] = 'OTP Not Needed For Credit Client';
+        _doc!['status'] = 'Fifth Step';
+
+        // 🔥 FIX: Save before skipping
+        _updateDoc();
+
+        setState(() => _currentStep = 4); // Skip to step 5
+      }
+    } else {
+      setState(() => _currentStep = 2);
+    }
+  }
+
+  Future<void> _afterThirdStep() async {
+    if (_creditClient) {
+      if (_cghsPrice) {
+        _doc!['credit'] = 1;
+        _doc!['cghs'] = 1;
+        _doc!['amount_received'] = _amountReceived;
+        _doc!['discount'] = 0;
+        _doc!['process']['third_step'] =
+            'Rs. $_billAmount Not Received For CGHS Credit Client. Only HC Charges Rs.$_amountReceived Received';
+        _doc!['process']['fourth_step'] =
+            'OTP Not Needed For CGHS Credit Client';
+        _doc!['status'] = 'Fifth Step';
+
+        // 🔥 FIX: Save before skipping
+        await _updateDoc();
+
+        setState(() => _currentStep = 4);
+        return;
+      } else {
+        _doc!['credit'] = 1;
+        _doc!['amount_received'] = 0;
+        _doc!['discount'] = 0;
+        _doc!['process']['third_step'] =
+            'Rs. $_billAmount Not Received For Credit Client';
+        _doc!['process']['fourth_step'] = 'OTP Not Needed For Credit Client';
+        _doc!['status'] = 'Fifth Step';
+
+        // 🔥 FIX: Save before skipping
+        await _updateDoc();
+
+        setState(() => _currentStep = 4);
+        return;
+      }
+    }
+
+    double discount = double.tryParse(_discountController.text) ?? 0;
+    _doc!['status'] = 'Third Step';
+    _doc!['process']['third_step'] =
+        'Rs. $_billAmount. Received Rs. $_amountReceived with $discount% discount.';
+    _doc!['amount_received'] = _amountReceived;
+    _doc!['discount'] = discount;
+    _doc!['hc_charges'] = _hccItem;
+    _doc!['disposable_charges'] = _disCharges;
+
+    // Send OTP if needed
+    if (_sms == 1 || _whatsapp == 1 || _email == 1) {
+      final newOtp = Util.generateOTP();
+      setState(() => _generatedOtp = newOtp);
+      await _sendOtpMsg();
+      setState(() => _currentStep = 3);
+    } else {
+      // 🔥 FIX: If no OTP needed, go to fifth step
+      setState(() => _currentStep = 4);
+    }
+
+    // 🔥 FIX: Always save after third step
+    await _updateDoc();
+  }
+
+  void _afterFourthStep() {
+    if (_otpController.text.length != 6) {
+      _showSnackBar('OTP must be 6 digits');
+      return;
+    }
+
+    if (_otpController.text == _generatedOtp) {
+      _showSnackBar('OTP matched');
+      _doc!['process']['fourth_step'] = '$_generatedOtp OTP matched';
+      _doc!['status'] = 'Fourth Step';
+
+      // 🔥 FIX: Save the status update
+      _updateDoc();
+
+      setState(() => _currentStep = 4);
+      return;
+    }
+
+    // Check technician mobile (last 6 digits)
+    String techLast6 = _techMobile.substring(_techMobile.length - 6);
+    if (_otpController.text == techLast6) {
+      _showSnackBar('Number matched');
+      _doc!['process']['fourth_step'] = '$_generatedOtp Number matched';
+      _doc!['status'] = 'Fourth Step';
+
+      // 🔥 FIX: Save the status update
+      _updateDoc();
+
+      setState(() => _currentStep = 4);
+      return;
+    }
+
+    _showSnackBar('OTP Not Matching');
+  }
+
+  void _validatePhoto() {
+    if (_uploadedPhotosPath.isEmpty) {
+      _showSnackBar('Please upload a photo to continue');
+      return;
+    }
+    _afterFifthStep();
+  }
+
+  void _afterFifthStep() {
+    // Update status when photos are uploaded
+    _doc!['status'] = 'Fifth Step';
+    _doc!['process']['fifth_step'] = _uploadedPhotosPath.join(',');
+    _doc!['process']['prescription_uploaded_at'] = Util.getTodayWithTime();
+
+    // 🔥 FIX: Save the status update
+    _updateDoc();
+
+    if (_creditClient && !_cghsPrice) {
+      _finishSteps('credit');
+      return;
+    } else if (_trialClient) {
+      _finishSteps('trial');
+      return;
+    } else if (_b2bClient) {
+      _finishSteps('b2b');
+      return;
+    }
+
+    setState(() => _currentStep = 5);
+  }
+
+  void _validatePayment() {
+    if (_paymentMethod == 'gpay' && _gpayRefController.text.isEmpty) {
+      _showSnackBar('Please give GPay Ref. Number');
+      return;
+    }
+    _finishSteps('normal');
+  }
+
+  Future<void> _finishSteps(String mode) async {
+    setState(() => _isLoading = true);
+
+    try {
+      debugPrint('=== FINISH STEPS START ===');
+      debugPrint('Mode: $mode');
+
+      // Get latest _rev
+      final workOrderService = ref.read(workOrderDBServiceProvider);
+      Map<String, dynamic>? latestDoc =
+          await workOrderService.getWithIdRemote(widget.workOrderId);
+
+      if (latestDoc != null && latestDoc.containsKey('_rev')) {
+        _doc!['_rev'] = latestDoc['_rev'];
+        debugPrint('Got latest _rev for final update: ${_doc!['_rev']}');
+      }
+
+      _doc!['status'] = 'Finished';
+      _doc!['server_status'] = 'Not Received';
+      _doc!['process']['fifth_step'] = _uploadedPhotosPath.join(',');
+
+      if (mode == 'credit') {
+        _doc!['payment_method'] = 'credit';
+        _doc!['gpay_ref'] = '';
+      } else if (mode == 'trial') {
+        _doc!['payment_method'] = 'trial';
+        _doc!['gpay_ref'] = '';
+      } else if (mode == 'b2b') {
+        _doc!['payment_method'] = 'b2b';
+        _doc!['gpay_ref'] = '';
+      } else {
+        _doc!['payment_method'] = _paymentMethod;
+        _doc!['gpay_ref'] =
+            _paymentMethod == 'gpay' ? _gpayRefController.text : '';
+      }
+
+      _doc!['remarks'] = _remarksController.text;
+
+      final storage = ref.read(storageServiceProvider);
+      String empName = storage.getFromSession('logged_in_emp_name') ?? '';
+      String timeline = '${Util.gettime()}-$empName- Work Order Completed';
+
+      if (_doc!['time_line'] != null) {
+        (_doc!['time_line'] as List).add(timeline);
+      }
+
+      _doc!['updated_at'] = Util.getTimeStamp();
+
+      debugPrint('Final document status: ${_doc!['status']}');
+      debugPrint('Final document _rev: ${_doc!['_rev']}');
+      debugPrint('Document ID: ${widget.workOrderId}');
+
+      // Save using DBHandler
+      debugPrint('💾 Saving work order to local DB...');
+      await DBHandler.putDocument('work_orders', widget.workOrderId, _doc!);
+      debugPrint('✅ Work order saved to local DB');
+
+      // 🔥 VERIFY THE DOCUMENT IS IN PENDING QUEUE
+      debugPrint('🔍 Verifying document is queued for push...');
+      final syncStatus = DBHandler.getSyncStatus();
+      debugPrint('Sync status: $syncStatus');
+
+      // 🔥 CRITICAL FIX: Force immediate sync to remote
+      debugPrint('🔄 Forcing immediate sync to remote...');
+      await DBHandler.forceSync('work_orders');
+      debugPrint('✅ Forced sync completed');
+
+      // 🔥 VERIFY PUSH HAPPENED
+      final syncStatusAfter = DBHandler.getSyncStatus();
+      debugPrint('Sync status after push: $syncStatusAfter');
+
+      // Send notification (don't block on failure)
+      await _sendNotification();
+
+      // Check for sugar tests
+      await _checkSugarTests();
+
+      // Clear selected tests
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('selected_tests');
+
+      // Wait for sync to complete
+      debugPrint('⏳ Waiting for sync to propagate...');
+      await Future.delayed(const Duration(seconds: 2));
+
+      debugPrint('=== FINISH STEPS COMPLETE ===');
+
+      _showSnackBar('Completed Successfully');
+
+      // Navigate back
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e, stackTrace) {
+      debugPrint('=== FINISH STEPS ERROR ===');
+      debugPrint('Error: $e');
+      debugPrint('Stack trace: $stackTrace');
+      _showSnackBar('Error completing work order: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateDoc() async {
+    try {
+      debugPrint('=== UPDATE DOC START ===');
+      debugPrint('Work Order ID: ${widget.workOrderId}');
+
+      // 🔥 CRITICAL FIX: Get the latest document with _rev from database
+      final workOrderService = ref.read(workOrderDBServiceProvider);
+      Map<String, dynamic>? latestDoc =
+          await workOrderService.getWithIdRemote(widget.workOrderId);
+
+      if (latestDoc != null && latestDoc.containsKey('_rev')) {
+        // Update the _rev in our current document
+        _doc!['_rev'] = latestDoc['_rev'];
+        debugPrint('Got latest _rev: ${_doc!['_rev']}');
+      }
+
+      // Update timestamp
+      _doc!['updated_at'] = Util.getTimeStamp();
+
+      debugPrint('Saving document with status: ${_doc!['status']}');
+
+      // Save to database
+      await DBHandler.putDocument('work_orders', widget.workOrderId, _doc!);
+
+      debugPrint('Document updated successfully');
+      debugPrint('=== UPDATE DOC END ===');
+    } catch (e) {
+      debugPrint('Error updating doc: $e');
+      _showSnackBar('Error saving progress: $e');
+    }
+  }
+
+  Future<void> _sendOtpMsg() async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      String idPart = Util.getRandomString(5);
+      String msgUrl = '${Settings.msgUrl}$idPart';
+
+      final comCenter = ref.read(comCenterProvider);
+
+      int otpInt = int.tryParse(_generatedOtp) ?? 0;
+
+      // SMS
+      if (_sms == 1) {
+        final smsMsg = SmsTemplate.workOrderPatientOtp(_generatedOtp, msgUrl);
+        final smsMessage = {
+          '_id': 'sms_center:$idPart:${Util.uuidv4()}',
+          'center_id': storage.getFromSession('logged_in_tenant_id') ?? '',
+          'center_name': storage.getFromSession('logged_in_tenant_name') ?? '',
+          // 🔥 FIX: Keep as STRING to match Vue
+          'department_id':
+              int.tryParse(storage.getFromSession('department_id') ?? '0') ?? 0,
+          'department_name': storage.getFromSession('department_name') ?? '',
+          'role_id': storage.getFromSession('role_id') ?? '',
+          'role_name': storage.getFromSession('role_name') ?? '',
+          'emp_id': storage.getFromSession('logged_in_emp_id') ?? '',
+          'emp_name': storage.getFromSession('logged_in_emp_name') ?? '',
+          'recipient_mobile': _doc!['mobile'],
+          'recipient_name': _doc!['name'],
+          'status': '0',
+          's3_loc': _proformaInvLoc,
+          // 🔥 FIX: Add timezone to timestamp
+          'msg_time': Util.getTodayWithTime(),
+          'updated_at': Util.getTimeStampWithTimezone(), // Change this method
+          'message': smsMsg,
+        };
+        debugPrint(">>> SMS PAYLOAD: ${jsonEncode(smsMessage)}");
+        await comCenter.sendMsg(smsMessage);
+      }
+
+      // WhatsApp
+      if (_whatsapp == 1) {
+        final whatsappMessage = {
+          '_id': 'whatsapp_center:$idPart:${Util.uuidv4()}',
+          'center_id': storage.getFromSession('logged_in_tenant_id') ?? '',
+          'center_name': storage.getFromSession('logged_in_tenant_name') ?? '',
+          'department_id':
+              int.tryParse(storage.getFromSession('department_id') ?? '0') ??
+                  0, // String
+          'department_name': storage.getFromSession('department_name') ?? '',
+          'role_id': storage.getFromSession('role_id') ?? '',
+          'role_name': storage.getFromSession('role_name') ?? '',
+          'emp_id': storage.getFromSession('logged_in_emp_id') ?? '',
+          'emp_name': storage.getFromSession('logged_in_emp_name') ?? '',
+          'recipient_mobile': _doc!['mobile'],
+          'recipient_name': _doc!['name'],
+          'status': '0',
+          's3_loc': _proformaInvLoc,
+          'msg_time': Util.getTodayWithTime(),
+          'updated_at': Util.getTimeStampWithTimezone(),
+          // 🔥 FIX: Use integer OTP like Vue does
+          'message': [msgUrl, otpInt], // Integer, not string
+          'template': 'hc_proforma_invoice',
+        };
+        debugPrint(">>> WHATSAPP PAYLOAD: ${jsonEncode(whatsappMessage)}");
+        await comCenter.sendMsg(whatsappMessage);
+      }
+
+      // Email
+      if (_email == 1) {
+        final emailMessage = {
+          '_id': 'email_center:$idPart:${Util.uuidv4()}',
+          'center_id': storage.getFromSession('logged_in_tenant_id') ?? '',
+          'center_name': storage.getFromSession('logged_in_tenant_name') ?? '',
+          'department_id':
+              int.tryParse(storage.getFromSession('department_id') ?? '0') ??
+                  0, // String
+          'department_name': storage.getFromSession('department_name') ?? '',
+          'role_id': storage.getFromSession('role_id') ?? '',
+          'role_name': storage.getFromSession('role_name') ?? '',
+          'emp_id': storage.getFromSession('logged_in_emp_id') ?? '',
+          'emp_name': storage.getFromSession('logged_in_emp_name') ?? '',
+          'recipient_mobile': _doc!['mobile'],
+          'recipient_name': _doc!['name'],
+          'status': '0',
+          's3_loc': _proformaInvLoc,
+          'msg_time': Util.getTodayWithTime(),
+          'updated_at': Util.getTimeStampWithTimezone(),
+          // 🔥 FIX: Add message array like Vue
+          'message': [msgUrl, otpInt],
+          'template': 'hc_proforma_invoice',
+        };
+        debugPrint(">>> EMAIL PAYLOAD: ${jsonEncode(emailMessage)}");
+        await comCenter.sendMsg(emailMessage);
+      }
+    } catch (e) {
+      debugPrint('Error sending OTP: $e');
+    }
+  }
+
+  Future<void> _sendNotification() async {
+    try {
+      debugPrint('=== SEND NOTIFICATION START ===');
+
+      final storage = ref.read(storageServiceProvider);
+
+      String msgHeader =
+          'Completed Collection ${_doc!['appointment_date']} ${_doc!['appointment_time']}.';
+      String msgBody = 'Completed home collection for ${_doc!['name']} '
+          '(${_doc!['age']}/${_doc!['gender']}) address:${_doc!['address']} '
+          'mobile:${_doc!['mobile']} pincode:${_doc!['pincode']} ${_doc!['free_text']}';
+
+      Map<String, dynamic> notification = {
+        '_id': 'notifications:${Util.getDateForId()}:${Util.uuidv4()}',
+        'from_id': storage.getFromSession('logged_in_emp_id') ?? '',
+        'from_name': storage.getFromSession('logged_in_emp_name') ?? '',
+        'to_id': _doc!['manager_id']?.toString() ?? '',
+        'to_name': _doc!['manager_name'] ?? '',
+        'msg_header': msgHeader,
+        'msg_body': msgBody,
+        'msg_attachment': {},
+        'status': 'New',
+        'msg_time': Util.getTodayWithTime(),
+        'updated_at': Util.getTimeStamp(),
+      };
+
+      debugPrint('Notification document: ${jsonEncode(notification)}');
+
+      await DBHandler.putDocument(
+          'notifications', notification['_id'], notification);
+
+      debugPrint('Notification sent successfully');
+      debugPrint('=== SEND NOTIFICATION END ===');
+    } catch (e, stackTrace) {
+      debugPrint('=== SEND NOTIFICATION ERROR ===');
+      debugPrint('Error sending notification: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // Don't throw - notification failure shouldn't break the process
+    }
+  }
+
+  void _calculateDiscount() {
+    double discount = double.tryParse(_discountController.text) ?? 0;
+    double hcc = double.tryParse(_hccItem) ?? 0;
+    double disp = double.tryParse(_disCharges) ?? 0;
+
+    double afterDiscount = _billAmount;
+    if (discount > 0) {
+      afterDiscount = _billAmount - (_billAmount * discount / 100);
+    }
+
+    if (_creditClient && _cghsPrice) {
+      _amountAfterDiscount = 0;
+      _amountReceived = hcc + disp;
+    } else {
+      _amountAfterDiscount = afterDiscount;
+      _amountReceived = afterDiscount + hcc + disp;
+    }
+
+    setState(() {});
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      // Show dialog to choose between camera or gallery
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Select Image Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return; // User cancelled
+
+      final XFile? image = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        if (_offline) {
+          await _uploadPhotoOffline(image);
+        } else {
+          await _uploadPhotoOnline(image);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      _showSnackBar('Error picking image: $e');
+    }
+  }
+
+  Future<void> _uploadPhotoOnline(XFile image) async {
+    final storage = ref.read(storageServiceProvider);
+    String fileName = image.name;
+    String fileLocation =
+        'homecollection/prescriptions/${Util.getTodayStringForFolderCreation()}/$fileName';
+    String jwtToken = storage.getFromSession('pg_admin') ?? '';
+
+    FormData formData = FormData.fromMap({
+      'upload_file': await MultipartFile.fromFile(image.path),
+      'key': fileLocation,
+      'bucket_name': 'homecollection',
+      'jwt_token': jwtToken,
+    });
+
+    Dio dio = Dio();
+    Response response = await dio.post(
+      '${Settings.nodeUrl}/s3/upload_file_v3',
+      data: formData,
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _uploadedPhotos.add(fileName);
+        _uploadedPhotosPath.add(fileLocation);
+      });
+    }
+  }
+
+  Future<void> _uploadPhotoOffline(XFile image) async {
+    try {
+      debugPrint('Starting offline storage for: ${image.path}');
+
+      String tempDocId = 'temp_db:${Util.uuidv4()}';
+      String fileName = image.name;
+      String fileLocation =
+          'homecollection/prescriptions/${Util.getTodayStringForFolderCreation()}/$fileName';
+
+      // Read file bytes
+      final bytes = await image.readAsBytes();
+      debugPrint('File size: ${bytes.length} bytes');
+
+      Map<String, dynamic> tempDoc = {
+        '_id': tempDocId,
+        'for_doc': widget.workOrderId,
+        'file_name': fileName,
+        'msg_time': Util.getTodayWithTime(),
+        'file_location': fileLocation,
+        'file_data': base64Encode(bytes), // Store as base64
+        'file_size': bytes.length,
+      };
+
+      await DBHandler.putDocument('temp_db', tempDocId, tempDoc);
+
+      // 🔥 CRITICAL FIX: Update the UI state with the uploaded photo
+      setState(() {
+        _uploadedPhotos.add(fileName);
+        _uploadedPhotosPath
+            .add(fileLocation); // This is what _validatePhoto checks!
+      });
+
+      debugPrint('Photo stored offline successfully: $fileName');
+      debugPrint('Uploaded photos list: $_uploadedPhotos');
+      debugPrint('Uploaded paths list: $_uploadedPhotosPath');
+
+      _showSnackBar('Photo uploaded offline successfully');
+    } catch (e) {
+      debugPrint('Offline storage error: $e');
+      _showSnackBar('Offline storage failed: $e');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_doc == null || _isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('HC Process')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('HC Process'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            color: Colors.grey.shade200,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_doc!['name']} | (${_doc!['age']}/${_doc!['gender']}) | '
+                  'Mob:${_doc!['mobile']} | ${_doc!['appointment_date']} ${_doc!['appointment_time']}',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                if (_b2bClient)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Chip(
+                      label: Text('B2B: $_b2bClientDetail'),
+                      backgroundColor: Colors.red.shade100,
+                      labelStyle: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: Stepper(
+        currentStep: _currentStep,
+        onStepContinue: _onStepContinue,
+        onStepCancel: () => Navigator.of(context).pop(),
+        controlsBuilder: (context, details) {
+          return Row(
+            children: [
+              ElevatedButton(
+                onPressed: details.onStepContinue,
+                child: Text(_currentStep == 5 ? 'Finish' : 'Continue'),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: details.onStepCancel,
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
+        steps: [
+          _buildStep1(),
+          _buildStep2(),
+          _buildStep3(),
+          _buildStep4(),
+          _buildStep5(),
+          _buildStep6(),
+        ],
+      ),
+    );
+  }
+
+  void _onStepContinue() {
+    switch (_currentStep) {
+      case 0:
+        _afterFirstStep();
+        break;
+      case 1:
+        // Add tests - navigate to add test page
+        _navigateToAddTest();
+        break;
+      case 2:
+        _afterThirdStep();
+        break;
+      case 3:
+        _afterFourthStep();
+        break;
+      case 4:
+        _validatePhoto();
+        break;
+      case 5:
+        _validatePayment();
+        break;
+    }
+  }
+
+  Future<void> _navigateToAddTest() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddTestDialog(
+          workOrder: _doc!,
+          useCghsPrice: _cghsPrice,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _selectedTests = List<Map<String, dynamic>>.from(result['test_items']);
+        _totalAmount = result['total'] as double;
+        _billAmount = _totalAmount;
+        _proformaInvLoc = result['proforma_location'] as String;
+      });
+
+      // Update document
+      _doc!['test_items'] = _selectedTests;
+      _doc!['total'] = _totalAmount;
+      _doc!['process']['proforma_uploaded_at'] = 'NOT_CREATED';
+
+      final storage = ref.read(storageServiceProvider);
+      _doc!['doc_dbs'] = storage.getFromSession('doc_dbs');
+
+      _showSnackBar(
+          'Tests added successfully. Total: ${Util.formatMoney(_totalAmount)}');
+
+      // Move to next step
+      _afterSecondStep();
+    }
+  }
+
+  Step _buildStep1() {
+    return Step(
+      title: const Text('Reason For Delay'),
+      content: Column(
+        children: [
+          if (_delayMins.isNotEmpty)
+            Text(
+                'You are late by $_delayMins. Please give reason for the delay.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _delayTextController,
+            decoration: const InputDecoration(
+              labelText: 'Delay Reason',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      isActive: _currentStep >= 0,
+      state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+    );
+  }
+
+  Step _buildStep2() {
+    return Step(
+      title: const Text('Add Tests'),
+      content: Column(
+        children: [
+          if (!_trialClient)
+            SwitchListTile(
+              title: const Text('Use CGHS Rate Card'),
+              value: _cghsPrice,
+              onChanged: (v) => setState(() => _cghsPrice = v),
+            ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _navigateToAddTest,
+            child: const Text('Add Tests'),
+          ),
+        ],
+      ),
+      isActive: _currentStep >= 1,
+      state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+    );
+  }
+
+  Step _buildStep3() {
+    return Step(
+      title: const Text('Total Amount'),
+      content: Column(
+        children: [
+          Text('Bill Amount: ${Util.formatMoney(_billAmount)}'),
+          const SizedBox(height: 16),
+          if (_creditClient) const Chip(label: Text('Credit Client')),
+          SwitchListTile(
+            title: const Text('Credit Client'),
+            value: _creditClient,
+            onChanged: (v) {
+              setState(() {
+                _creditClient = v;
+                _calculateDiscount();
+              });
+            },
+          ),
+          TextField(
+            controller: _discountController,
+            decoration: const InputDecoration(
+              labelText: 'Discount Percentage',
+              suffixText: '%',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            enabled: !_creditClient,
+            onChanged: (_) => _calculateDiscount(),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            decoration: const InputDecoration(
+              labelText: 'Amount After Discount',
+              prefixText: '₹',
+              border: OutlineInputBorder(),
+            ),
+            controller: TextEditingController(
+              text: _amountAfterDiscount.toStringAsFixed(0),
+            ),
+            readOnly: true,
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: _hccItem,
+            decoration: const InputDecoration(
+              labelText: 'Home Collection Charges',
+              prefixText: '₹',
+              border: OutlineInputBorder(),
+            ),
+            items: ['0', '25', '50', '100', '150', '200', '250']
+                .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                .toList(),
+            onChanged: _creditClient && !_cghsPrice
+                ? null
+                : (v) {
+                    setState(() {
+                      _hccItem = v!;
+                      _calculateDiscount();
+                    });
+                  },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: _disCharges,
+            decoration: const InputDecoration(
+              labelText: 'Disposable Charges',
+              prefixText: '₹',
+              border: OutlineInputBorder(),
+            ),
+            items: ['0', '10', '20', '30', '40', '50', '100']
+                .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                .toList(),
+            onChanged: _creditClient && !_cghsPrice
+                ? null
+                : (v) {
+                    setState(() {
+                      _disCharges = v!;
+                      _calculateDiscount();
+                    });
+                  },
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            decoration: const InputDecoration(
+              labelText: 'Total',
+              prefixText: '₹',
+              border: OutlineInputBorder(),
+            ),
+            controller: TextEditingController(
+              text: _amountReceived.toStringAsFixed(0),
+            ),
+            readOnly: true,
+          ),
+        ],
+      ),
+      isActive: _currentStep >= 2,
+      state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+    );
+  }
+
+  Step _buildStep4() {
+    return Step(
+      title: const Text('Enter OTP'),
+      content: Column(
+        children: [
+          Text(
+              'OTP sent to client (Mob:$_clientMobile). Please ask client to share'),
+          const SizedBox(height: 8),
+          const Text(
+            'If OTP not received in one min, please enter last 6 digits of your mobile.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _otpController,
+            decoration: const InputDecoration(
+              labelText: 'Enter OTP',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+          ),
+        ],
+      ),
+      isActive: _currentStep >= 3,
+      state: _currentStep > 3 ? StepState.complete : StepState.indexed,
+    );
+  }
+
+  Step _buildStep5() {
+    return Step(
+      title: const Text('Prescription Photo'),
+      content: Column(
+        children: [
+          SwitchListTile(
+            title: const Text('Upload Offline'),
+            value: _offline,
+            onChanged: (v) => setState(() {
+              _offline = v;
+              _uploadedPhotos.clear();
+              _uploadedPhotosPath.clear();
+            }),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Take/Upload Photo'),
+            onPressed: _pickImage,
+          ),
+          const SizedBox(height: 16),
+          if (_uploadedPhotos.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              children: _uploadedPhotos
+                  .map((photo) => Chip(
+                        label: Text(photo),
+                        backgroundColor: Colors.orange.shade100,
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
+      isActive: _currentStep >= 4,
+      state: _currentStep > 4 ? StepState.complete : StepState.indexed,
+    );
+  }
+
+  Step _buildStep6() {
+    return Step(
+      title: const Text('Payment Method'),
+      content: Column(
+        children: [
+          const Text('Please Choose Cash or GPay'),
+          const SizedBox(height: 16),
+          RadioListTile<String>(
+            title: const Text('Cash'),
+            value: 'cash',
+            groupValue: _paymentMethod,
+            onChanged: (v) => setState(() => _paymentMethod = v!),
+          ),
+          RadioListTile<String>(
+            title: const Text('GPay'),
+            value: 'gpay',
+            groupValue: _paymentMethod,
+            onChanged: (v) => setState(() => _paymentMethod = v!),
+          ),
+          if (_paymentMethod == 'gpay') ...[
+            const SizedBox(height: 16),
+            TextField(
+              controller: _gpayRefController,
+              decoration: const InputDecoration(
+                labelText: 'GPay Ref Number',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          TextField(
+            controller: _remarksController,
+            decoration: const InputDecoration(
+              labelText: 'Remarks',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      isActive: _currentStep >= 5,
+      state: _currentStep > 5 ? StepState.complete : StepState.indexed,
+    );
+  }
+}

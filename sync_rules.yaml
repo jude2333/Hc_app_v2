@@ -1,0 +1,58 @@
+# bucket_definitions:
+#   work_orders:
+#     parameters: SELECT token_parameters.emp_id AS emp_id  # Wrong!
+#     data:
+#       - SELECT * FROM hc_patient_visit_detail 
+#         WHERE manager_id = bucket.emp_id  # This would show nothing if they're not a manager in the table
+
+# bucket_definitions:
+#   technician_work_orders:
+#     parameters: SELECT request.jwt() ->> 'emp_id' AS emp_id
+#     data:
+#       - SELECT 
+#           id, tenant_id, hcpm_id, doc_id, patient_name, visit_date,
+#           visit_time, doctor_name, pro_id, manager_id, manager_name,
+#           assigned_id, assigned_to, b2b_client_id, b2b_client_name,
+#           status, server_status, bill_amount, received_amount, discount_amount,
+#           doc, bill_number, lab_number, visible, created_by, created_at,
+#           last_updated_by, last_updated_at
+#         FROM data.hc_patient_visit_detail
+#         WHERE assigned_id = bucket.emp_id
+#           AND visible = true
+#           AND visit_date >= '2022-12-10'
+#           AND visit_date <= '2022-12-17'
+          
+#   manager_work_orders:
+#     parameters: SELECT request.jwt() ->> 'tenant_id' AS tenant_id
+#     data:
+#       - SELECT 
+#           id, tenant_id, hcpm_id, doc_id, patient_name, visit_date,
+#           visit_time, doctor_name, pro_id, manager_id, manager_name,
+#           assigned_id, assigned_to, b2b_client_id, b2b_client_name,
+#           status, server_status, bill_amount, received_amount, discount_amount,
+#           doc, bill_number, lab_number, visible, created_by, created_at,
+#           last_updated_by, last_updated_at
+#         FROM data.hc_patient_visit_detail
+#         WHERE tenant_id = bucket.tenant_id
+#           AND visible = true
+#           AND visit_date >= '2022-12-10'
+#           AND visit_date <= '2022-12-17'
+          
+#   billing_work_orders:
+#     parameters: SELECT request.jwt() ->> 'tenant_id' AS tenant_id
+#     data:
+#       - SELECT 
+#           id, tenant_id, hcpm_id, doc_id, patient_name, visit_date,
+#           visit_time, doctor_name, pro_id, manager_id, manager_name,
+#           assigned_id, assigned_to, b2b_client_id, b2b_client_name,
+#           status, server_status, bill_amount, received_amount, discount_amount,
+#           doc, bill_number, lab_number, visible, created_by, created_at,
+#           last_updated_by, last_updated_at
+#         FROM data.hc_patient_visit_detail
+#         WHERE tenant_id = bucket.tenant_id
+#           AND visible = true
+#           AND visit_date >= '2022-12-10'
+#           AND visit_date <= '2022-12-17'
+  # ============================================================
+  # TECHNICIANS: Sync only their assigned work orders
+  # ============================================================
