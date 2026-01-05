@@ -1,8 +1,8 @@
-# Flutter / Dart
-.dart_tool/
-.packages
-.pub/
-build/
+# # Flutter / Dart
+# .dart_tool/
+# .packages
+# .pub/
+# build/
 
 # Platform builds
 android/.gradle/
@@ -14,8 +14,6 @@ ios/.symlinks/
 .vscode/
 .idea/
 
-# OS
-.DS_Store
 
-# Secrets (IMPORTANT)
 lib/config/settings.dart
+.agent/
