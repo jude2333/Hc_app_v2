@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';

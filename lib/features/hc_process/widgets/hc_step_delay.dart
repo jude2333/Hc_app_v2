@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/hc_process_provider.dart';
 import '../providers/hc_process_controller.dart';
 
-/// Step 1: Delay Reason Widget
 class HCStepDelay extends ConsumerStatefulWidget {
   final String workOrderId;
 
@@ -33,7 +32,6 @@ class _HCStepDelayState extends ConsumerState<HCStepDelay> {
     final state = ref.watch(hcProcessProvider(widget.workOrderId));
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
 
-    // Sync controller with state
     if (_delayController.text != state.delayReason) {
       _delayController.text = state.delayReason;
     }
@@ -41,7 +39,6 @@ class _HCStepDelayState extends ConsumerState<HCStepDelay> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Delay warning
         if (state.delayMins.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
@@ -53,8 +50,6 @@ class _HCStepDelayState extends ConsumerState<HCStepDelay> {
               ),
             ),
           ),
-
-        // Delay reason input
         TextField(
           controller: _delayController,
           onChanged: (value) => notifier.setDelayReason(value),
@@ -66,8 +61,6 @@ class _HCStepDelayState extends ConsumerState<HCStepDelay> {
           maxLines: 3,
         ),
         const SizedBox(height: 16),
-
-        // Patient info
         if (state.workOrder != null) ...[
           Text(
             'Patient: ${state.workOrder!.patientName}',

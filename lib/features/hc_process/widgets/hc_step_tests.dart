@@ -4,7 +4,6 @@ import '../providers/hc_process_provider.dart';
 import '../providers/hc_process_controller.dart';
 import 'package:anderson_crm_flutter/features/price_list/screens/add_test_dialog.dart';
 
-/// Step 2: Tests Selection Widget
 class HCStepTests extends ConsumerWidget {
   final String workOrderId;
 
@@ -19,7 +18,6 @@ class HCStepTests extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Action row
         Row(
           children: [
             ElevatedButton.icon(
@@ -50,7 +48,6 @@ class HCStepTests extends ConsumerWidget {
                         result['proformalocation'].toString());
                   }
 
-                  // Auto-proceed if tests were selected
                   if (state.selectedTests.isNotEmpty) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       controller.afterSecondStep();
@@ -62,8 +59,6 @@ class HCStepTests extends ConsumerWidget {
               label: const Text('Add Tests'),
             ),
             const SizedBox(width: 8),
-
-            // CGHS checkbox
             if (!state.trialClient) ...[
               Checkbox(
                 value: state.cghsPrice,
@@ -74,8 +69,6 @@ class HCStepTests extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-
-        // Selected tests list
         if (state.selectedTests.isNotEmpty) ...[
           const Text(
             'Selected Tests:',

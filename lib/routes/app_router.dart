@@ -9,9 +9,10 @@ import 'package:anderson_crm_flutter/screens/Notifications.dart';
 import 'package:anderson_crm_flutter/features/dashboard/screens/dashboardScreen.dart';
 // import 'package:anderson_crm_flutter/screens/billingWorkOrder.dart';
 // import '../powersync/servicess/screens/work_order_page2.dart';
-import 'package:anderson_crm_flutter/powersync/screens/manager/manager_work_order.dart';
+// import 'package:anderson_crm_flutter/powersync/screens/manager/manager_work_order.dart';
 import 'package:anderson_crm_flutter/powersync/screens/technicians/technician_work_order.dart';
 import 'package:anderson_crm_flutter/features/billing_work_order/screens/billing_work_order_page.dart';
+import 'package:anderson_crm_flutter/features/manager_work_order/screens/manager_work_order_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -46,7 +47,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/work_orders',
           name: 'work_orders',
-          builder: (context, state) => const WorkOrderPage2(),
+          builder: (context, state) => const ManagerWorkOrderPage(),
         ),
         GoRoute(
           path: '/my_work_orders',

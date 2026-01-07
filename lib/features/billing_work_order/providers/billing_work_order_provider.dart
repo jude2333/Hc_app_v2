@@ -6,14 +6,13 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import '../data/billing_work_order_repository.dart';
 
-/// State for billing work orders
 @immutable
 class BillingWorkOrderState {
   final bool isLoading;
   final bool isInitializing;
   final List<WorkOrder> orders;
   final String? errorMessage;
-  final String selectedTab; // 'unbilled' | 'billed'
+  final String selectedTab;
   final String searchQuery;
 
   const BillingWorkOrderState({
@@ -43,7 +42,6 @@ class BillingWorkOrderState {
     );
   }
 
-  /// Filtered orders based on search query
   List<WorkOrder> get filteredOrders {
     if (searchQuery.isEmpty) return orders;
     final term = searchQuery.toLowerCase();
@@ -51,7 +49,6 @@ class BillingWorkOrderState {
   }
 }
 
-/// Provider for billing work orders
 class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
   final Ref _ref;
   BillingWorkOrderRepository? _repository;
@@ -59,12 +56,10 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
 
   BillingWorkOrderNotifier(this._ref) : super(const BillingWorkOrderState());
 
-  /// Lazily get or create the repository (only when PowerSync is ready)
   BillingWorkOrderRepository? _getRepository() {
     if (_repository != null) return _repository;
 
     try {
-      // Only access db when actually needed (not at build time)
       if (!PowerSyncService.instance.isInitialized) {
         debugPrint('[BillingProvider] PowerSync not initialized yet');
         return null;
@@ -80,10 +75,9 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     }
   }
 
-  /// Initialize PowerSync if not already initialized
   Future<void> _initializePowerSync() async {
     if (PowerSyncService.instance.isInitialized) return;
-    if (_powerSyncInitStarted) return; // Prevent multiple init attempts
+    if (_powerSyncInitStarted) return;
 
     _powerSyncInitStarted = true;
     debugPrint('[BillingProvider] Initializing PowerSync...');
@@ -94,16 +88,14 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       debugPrint('[BillingProvider] PowerSync initialized successfully');
     } catch (e) {
       debugPrint('[BillingProvider] PowerSync init error: $e');
-      _powerSyncInitStarted = false; // Allow retry
+      _powerSyncInitStarted = false;
       rethrow;
     }
   }
 
-  /// Initialize and load unbilled orders
   Future<void> initialize() async {
     state = state.copyWith(isInitializing: true);
     try {
-      // Initialize PowerSync directly (like WorkOrderProvider does)
       await _initializePowerSync();
 
       await loadUnbilled();
@@ -118,14 +110,12 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     }
   }
 
-  /// Load unbilled orders (Finished + Received)
   Future<void> loadUnbilled() async {
     final repo = _getRepository();
     if (repo == null) {
-      // PowerSync not ready - try initializing first
       try {
         await _initializePowerSync();
-        return loadUnbilled(); // Retry after init
+        return loadUnbilled();
       } catch (e) {
         state = state.copyWith(
           isLoading: false,
@@ -154,7 +144,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     }
   }
 
-  /// Load billed orders (Finished + Billed)
   Future<void> loadBilled() async {
     final repo = _getRepository();
     if (repo == null) {
@@ -183,7 +172,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     }
   }
 
-  /// Register billing for a work order
   Future<String> registerBill({
     required WorkOrder workOrder,
     required String billNumber,
@@ -199,7 +187,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
         labNumber: labNumber,
       );
 
-      // Reload current tab
       if (state.selectedTab == 'unbilled') {
         await loadUnbilled();
       } else {
@@ -213,17 +200,14 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     }
   }
 
-  /// Update search query
   void search(String query) {
     state = state.copyWith(searchQuery: query);
   }
 
-  /// Clear search
   void clearSearch() {
     state = state.copyWith(searchQuery: '');
   }
 
-  /// Refresh current tab
   Future<void> refresh() async {
     if (state.selectedTab == 'unbilled') {
       await loadUnbilled();
@@ -233,7 +217,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
   }
 }
 
-/// Provider instance - doesn't access db at build time
 final billingWorkOrderProvider =
     StateNotifierProvider<BillingWorkOrderNotifier, BillingWorkOrderState>(
         (ref) {

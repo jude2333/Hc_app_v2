@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/features/users/providers/users_providers.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'addEditUser.dart';
-
-// Import extracted widgets
 import '../widgets/users_widgets.dart';
 
 class UsersPage extends ConsumerStatefulWidget {
@@ -50,10 +49,10 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppSpacing.md),
           child: Column(
             children: [
               UsersHeader(
@@ -61,7 +60,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                 onSearchChanged: _onSearchChanged,
                 onAddUser: _addUser,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: AppSpacing.md),
               Expanded(
                 child: isMobile
                     ? const UsersMobileList()

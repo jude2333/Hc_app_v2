@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 import 'package:anderson_crm_flutter/features/price_list/price_list.dart';
 

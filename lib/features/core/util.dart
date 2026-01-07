@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-// import 'package:encrypt/encrypt.dart' as encrypt;
+
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -112,16 +112,6 @@ class Util {
     return formatDateForStorage(newDt);
   }
 
-  // static void updateTime(Ref ref) async {
-  //   final sTime = getFromSession(ref, "server_time");
-  //   debugPrint("step 1: $sTime");
-  //   final mTime = parseDate(sTime);
-  //   debugPrint("step 2: $mTime");
-  //   final newTime = addMinutes(mTime, 1);
-  //   debugPrint("New Time: $newTime");
-  //   setSession(ref, "server_time", newTime);
-  // }
-
   static bool isPassedDate(WidgetRef ref, String dt) {
     if (dt.isEmpty) return false;
 
@@ -143,16 +133,6 @@ class Util {
       return false;
     }
   }
-
-  // static int getPassedMinutes(WidgetRef ref, String dt) {
-  //   final orderDate = parseAppTime(dt);
-
-  //   // final todayStr = ref.read(sessionProvider)["server_time"] ?? "";
-  //   final today = parseDate(todayStr);
-  //   final diff = orderDate.difference(today).inMinutes;
-  //   debugPrint("$diff $dt $todayStr");
-  //   return diff;
-  // }
 
   static String getWeekDay([int days = 0]) {
     final calendar = DateTime.now().add(Duration(days: days));
@@ -304,49 +284,6 @@ class Util {
   }
 
   static String toLowerCase(String str) => str.trim().toLowerCase();
-
-  // static String getFromSession<T extends Object?>(Ref<T> ref, String item) {
-  //   return ref.read(storageProvider.notifier).getSession(item);
-  // }
-
-  // static Future<void> setSession<T extends Object?>(
-  //     Ref<T> ref, String item, dynamic value) async {
-  //   await ref.read(storageProvider.notifier).setSession(item, value);
-  // }
-
-  // static String getFromLocalStorage<T extends Object?>(
-  //     Ref<T> ref, String item) {
-  //   return ref.read(storageProvider.notifier).getLocalStorage(item);
-  // }
-
-  // static Future<void> setLocalStorage<T extends Object?>(
-  //     Ref<T> ref, String item, dynamic value) async {
-  //   await ref.read(storageProvider.notifier).setLocalStorage(item, value);
-  // }
-
-  // static Future<void> clearSession<T extends Object?>(Ref<T> ref) async {
-  //   await ref.read(storageProvider.notifier).clearSession();
-  // }
-
-  // static Future<void> clearLocalStorage<T extends Object?>(Ref<T> ref) async {
-  //   await ref.read(storageProvider.notifier).clearLocalStorage();
-  // }
-
-  // static Future<void> removeFromSession<T extends Object?>(
-  //     Ref<T> ref, String key) async {
-  //   await ref.read(storageProvider.notifier).removeSession(key);
-  // }
-
-  // static Future<void> removeFromLocalStorage<T extends Object?>(
-  //     Ref<T> ref, String key) async {
-  //   await ref.read(storageProvider.notifier).removeLocalStorage(key);
-  // }
-
-  // static Future<bool> isLoggedIn(Ref ref) async {
-  //   final loggedIn = getFromSession(ref, "logged_in_emp_id");
-  //   debugPrint("is logged in check: $loggedIn");
-  //   return loggedIn.isNotEmpty;
-  // }
 
   static Future<bool> isMobile() async {
     if (kIsWeb) {

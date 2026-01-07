@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../../../../screens/time_line_page.dart';
 import '../../../widgets/common/common_widgets.dart';
+import '../../../../features/theme/theme.dart';
 
 /// Expanded row content for manager work order view.
 /// Shows detailed info: address, process steps, prescription, remarks, etc.
@@ -13,26 +14,26 @@ class ManagerExpandedContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppPadding.card,
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: const Border(left: BorderSide(color: Colors.orange, width: 3)),
+        color: AppColors.background,
+        border: Border(left: BorderSide(color: AppColors.primary, width: 3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInfoTable(context),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacing.md),
           if (workOrder.prescriptionPath.isNotEmpty)
             _buildPrescriptionSection(context),
           if (workOrder.status == 'cancelled') _buildCancellationSection(),
           _buildProcessSteps(),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacing.md),
           if (workOrder.parsedDoc['remarks'] != null) _buildRemarksSection(),
           if (workOrder.serverStatus == 'Billed') _buildBillInfo(),
           if (workOrder.parsedDoc['report_path'] != null)
             _buildReportSection(context),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacing.md),
           _buildTimelineButton(context),
         ],
       ),
@@ -48,10 +49,10 @@ class ManagerExpandedContent extends StatelessWidget {
         3: FlexColumnWidth(2),
         4: FlexColumnWidth(2),
       },
-      border: TableBorder.all(color: Colors.grey.shade300),
+      border: TableBorder.all(color: AppColors.tableBorder),
       children: [
         TableRow(
-          decoration: BoxDecoration(color: Colors.grey.shade100),
+          decoration: BoxDecoration(color: AppColors.surfaceAlt),
           children: const [
             WOTableHeader('Address'),
             WOTableHeader('Pincode'),
@@ -86,8 +87,8 @@ class ManagerExpandedContent extends StatelessWidget {
   Widget _buildTimelineButton(BuildContext context) {
     return ActionChip(
       label: const Text('Time Line'),
-      backgroundColor: Colors.blue.withOpacity(0.15),
-      labelStyle: const TextStyle(color: Colors.blue),
+      backgroundColor: AppColors.secondary.withOpacity(0.15),
+      labelStyle: TextStyle(color: AppColors.secondary),
       onPressed: () => Navigator.push(
         context,
         MaterialPageRoute(
@@ -99,18 +100,18 @@ class ManagerExpandedContent extends StatelessWidget {
 
   Widget _buildPrescriptionSection(BuildContext context) {
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Chip(
           label: const Text('Prescription:'),
-          backgroundColor: Colors.red.withOpacity(0.15),
-          labelStyle: const TextStyle(color: Colors.red),
+          backgroundColor: AppColors.error.withOpacity(0.15),
+          labelStyle: TextStyle(color: AppColors.error),
         ),
         ActionChip(
           label: Text(_getName(workOrder.prescriptionPath)),
-          backgroundColor: Colors.blue.withOpacity(0.15),
-          labelStyle: const TextStyle(color: Colors.blue),
+          backgroundColor: AppColors.secondary.withOpacity(0.15),
+          labelStyle: TextStyle(color: AppColors.secondary),
           onPressed: () => debugPrint('View: ${workOrder.prescriptionPath}'),
         ),
       ],
@@ -121,8 +122,8 @@ class ManagerExpandedContent extends StatelessWidget {
     final reason = workOrder.parsedDoc['cancel_reason'] ?? 'N/A';
     return Chip(
       label: Text('Cancellation Reason: $reason'),
-      backgroundColor: Colors.red.withOpacity(0.15),
-      labelStyle: const TextStyle(color: Colors.red),
+      backgroundColor: AppColors.error.withOpacity(0.15),
+      labelStyle: TextStyle(color: AppColors.error),
     );
   }
 
@@ -139,10 +140,10 @@ class ManagerExpandedContent extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: Colors.grey,
+            color: AppColors.textSecondary,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: AppSpacing.xs),
         _buildGenericStep(
           'Step-1',
           workOrder.firstStep.isNotEmpty
@@ -150,9 +151,9 @@ class ManagerExpandedContent extends StatelessWidget {
               : 'Pending / No Delay',
           isDone: workOrder.firstStep.isNotEmpty,
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: AppSpacing.sm),
         _buildProformaStep(workOrder.proformaPath),
-        const SizedBox(height: 8),
+        SizedBox(height: AppSpacing.sm),
         _buildGenericStep(
           'Step-3',
           isStepDone('third_step')
@@ -160,7 +161,7 @@ class ManagerExpandedContent extends StatelessWidget {
               : 'Pending',
           isDone: isStepDone('third_step'),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: AppSpacing.sm),
         _buildGenericStep(
           'Step-4',
           isStepDone('fourth_step')
@@ -168,7 +169,7 @@ class ManagerExpandedContent extends StatelessWidget {
               : 'Pending',
           isDone: isStepDone('fourth_step'),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: AppSpacing.sm),
         _buildPrescriptionPhotoStep(process['fifth_step']),
       ],
     );
@@ -177,20 +178,22 @@ class ManagerExpandedContent extends StatelessWidget {
   Widget _buildGenericStep(String label, String content,
       {bool isDone = false}) {
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Chip(
           label: Text(label),
           backgroundColor: isDone
-              ? Colors.orange.withOpacity(0.15)
-              : Colors.grey.withOpacity(0.1),
-          labelStyle: TextStyle(color: isDone ? Colors.orange : Colors.grey),
+              ? AppColors.primary.withOpacity(0.15)
+              : AppColors.textHint.withOpacity(0.1),
+          labelStyle:
+              TextStyle(color: isDone ? AppColors.primary : AppColors.textHint),
           padding: EdgeInsets.zero,
         ),
         Text(
           content,
-          style: TextStyle(color: isDone ? Colors.black : Colors.grey),
+          style: TextStyle(
+              color: isDone ? AppColors.textPrimary : AppColors.textHint),
         ),
       ],
     );
@@ -211,28 +214,31 @@ class ManagerExpandedContent extends StatelessWidget {
       }
     }
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Chip(
           label: const Text('Step-2'),
           backgroundColor: isDone
-              ? Colors.orange.withOpacity(0.15)
-              : Colors.grey.withOpacity(0.1),
-          labelStyle: TextStyle(color: isDone ? Colors.orange : Colors.grey),
+              ? AppColors.primary.withOpacity(0.15)
+              : AppColors.textHint.withOpacity(0.1),
+          labelStyle:
+              TextStyle(color: isDone ? AppColors.primary : AppColors.textHint),
           padding: EdgeInsets.zero,
         ),
         Text(
           'Proforma Invoice:',
-          style: TextStyle(color: isDone ? Colors.black : Colors.grey),
+          style: TextStyle(
+              color: isDone ? AppColors.textPrimary : AppColors.textHint),
         ),
         if (isDone)
           Chip(
             label: Text(statusText),
-            backgroundColor: (statusText == 'Sent' ? Colors.green : Colors.red)
-                .withOpacity(0.15),
+            backgroundColor:
+                (statusText == 'Sent' ? AppColors.success : AppColors.error)
+                    .withOpacity(0.15),
             labelStyle: TextStyle(
-              color: statusText == 'Sent' ? Colors.green : Colors.red,
+              color: statusText == 'Sent' ? AppColors.success : AppColors.error,
             ),
           ),
       ],
@@ -242,30 +248,32 @@ class ManagerExpandedContent extends StatelessWidget {
   Widget _buildPrescriptionPhotoStep(dynamic stepData) {
     final isDone = stepData != null && stepData.toString().isNotEmpty;
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Chip(
           label: const Text('Step-5'),
           backgroundColor: isDone
-              ? Colors.orange.withOpacity(0.15)
-              : Colors.grey.withOpacity(0.1),
-          labelStyle: TextStyle(color: isDone ? Colors.orange : Colors.grey),
+              ? AppColors.primary.withOpacity(0.15)
+              : AppColors.textHint.withOpacity(0.1),
+          labelStyle:
+              TextStyle(color: isDone ? AppColors.primary : AppColors.textHint),
           padding: EdgeInsets.zero,
         ),
         Text(
           'Prescription Photo:',
-          style: TextStyle(color: isDone ? Colors.black : Colors.grey),
+          style: TextStyle(
+              color: isDone ? AppColors.textPrimary : AppColors.textHint),
         ),
         if (isDone)
           ActionChip(
             label: Text(_getPrescriptionFileNames('$stepData')),
-            backgroundColor: Colors.blue.withOpacity(0.15),
-            labelStyle: const TextStyle(color: Colors.blue),
+            backgroundColor: AppColors.secondary.withOpacity(0.15),
+            labelStyle: TextStyle(color: AppColors.secondary),
             onPressed: () {},
           ),
         if (!isDone)
-          const Text('Pending', style: TextStyle(color: Colors.grey)),
+          Text('Pending', style: TextStyle(color: AppColors.textHint)),
       ],
     );
   }
@@ -274,21 +282,22 @@ class ManagerExpandedContent extends StatelessWidget {
     final remarks = workOrder.parsedDoc['remarks']?.toString() ?? '';
     final hasRemarks = remarks.trim().isNotEmpty;
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Chip(
           label: const Text('Remarks'),
           backgroundColor: hasRemarks
-              ? Colors.orange.withOpacity(0.15)
-              : Colors.grey.withOpacity(0.1),
-          labelStyle:
-              TextStyle(color: hasRemarks ? Colors.orange : Colors.grey),
+              ? AppColors.primary.withOpacity(0.15)
+              : AppColors.textHint.withOpacity(0.1),
+          labelStyle: TextStyle(
+              color: hasRemarks ? AppColors.primary : AppColors.textHint),
           padding: EdgeInsets.zero,
         ),
         Text(
           hasRemarks ? remarks : 'No Remarks',
-          style: TextStyle(color: hasRemarks ? Colors.black : Colors.grey),
+          style: TextStyle(
+              color: hasRemarks ? AppColors.textPrimary : AppColors.textHint),
         ),
       ],
     );
@@ -301,13 +310,13 @@ class ManagerExpandedContent extends StatelessWidget {
         _GenericSection(
           label: 'Bill No',
           value: workOrder.billNumber,
-          color: Colors.blue,
+          color: AppColors.secondary,
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: AppSpacing.xs),
         _GenericSection(
           label: 'Lab No',
           value: workOrder.labNumber,
-          color: Colors.blue,
+          color: AppColors.secondary,
         ),
       ],
     );
@@ -316,22 +325,22 @@ class ManagerExpandedContent extends StatelessWidget {
   Widget _buildReportSection(BuildContext context) {
     final status = '${workOrder.parsedDoc['report_status']}';
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       children: [
         Chip(
           label: const Text('Lab Result:'),
-          backgroundColor: Colors.orange.withOpacity(0.15),
-          labelStyle: const TextStyle(color: Colors.orange),
+          backgroundColor: AppColors.primary.withOpacity(0.15),
+          labelStyle: TextStyle(color: AppColors.primary),
         ),
         Chip(
           label: Text(status),
-          backgroundColor: Colors.orange.withOpacity(0.15),
-          labelStyle: const TextStyle(color: Colors.orange),
+          backgroundColor: AppColors.primary.withOpacity(0.15),
+          labelStyle: TextStyle(color: AppColors.primary),
         ),
         ActionChip(
           label: const Text('Report PDF'),
-          backgroundColor: Colors.blue.withOpacity(0.15),
-          labelStyle: const TextStyle(color: Colors.blue),
+          backgroundColor: AppColors.secondary.withOpacity(0.15),
+          labelStyle: TextStyle(color: AppColors.secondary),
           onPressed: () {},
         ),
       ],
@@ -361,14 +370,14 @@ class _GenericSection extends StatelessWidget {
   const _GenericSection({
     required this.label,
     required this.value,
-    this.color = Colors.orange,
+    this.color = AppColors.primary,
     this.isLink = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Chip(
@@ -379,8 +388,8 @@ class _GenericSection extends StatelessWidget {
         isLink
             ? ActionChip(
                 label: Text(value),
-                backgroundColor: Colors.blue.withOpacity(0.15),
-                labelStyle: const TextStyle(color: Colors.blue),
+                backgroundColor: AppColors.secondary.withOpacity(0.15),
+                labelStyle: TextStyle(color: AppColors.secondary),
                 onPressed: () {},
               )
             : Text(value),

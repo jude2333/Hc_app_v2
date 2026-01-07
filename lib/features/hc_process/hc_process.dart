@@ -1,14 +1,10 @@
-// Domain
 export 'domain/hc_process_state.dart';
 
-// Providers
 export 'providers/hc_process_provider.dart';
 export 'providers/hc_process_controller.dart';
 
-// Screens
 export 'screens/hc_process_page.dart';
 
-// Widgets
 export 'widgets/hc_step_delay.dart';
 export 'widgets/hc_step_tests.dart';
 export 'widgets/hc_step_billing.dart';

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/database/priceList_db.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:flutter/foundation.dart';
 

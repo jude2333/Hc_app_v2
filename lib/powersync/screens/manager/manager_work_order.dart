@@ -4,13 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../add_work_order.dart';
-import '../../../../screens/assign_technicians.dart';
+import '../assign_technicians.dart';
 import '../canceled_work_order_page.dart';
 import '../../../../screens/tech_engagement_page.dart';
 import '../../../../providers/work_order_provider.dart';
 import '../../../../models/work_order.dart';
 import '../../../features/price_list/screens/manager_price_view_page.dart';
 import '../manager_tech_engagement_page.dart';
+
+// Theme
+import '../../../features/theme/theme.dart';
 
 // Shared Widgets
 import '../../widgets/common/common_widgets.dart';
@@ -74,48 +77,43 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 4,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: AppColors.surface,
         title: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
+          padding: EdgeInsets.only(left: AppSpacing.sm),
           child: Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: AppPadding.badge,
                 decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.primary,
+                  borderRadius: AppRadius.lgAll,
                 ),
-                child: const Text(
+                child: Text(
                   'Work Orders',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.badge.copyWith(fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: AppSpacing.lg),
               if (provider.isConnected)
-                const Tooltip(
+                Tooltip(
                     message: 'Connected',
-                    child:
-                        Icon(Icons.cloud_done, color: Colors.green, size: 20))
+                    child: Icon(Icons.cloud_done,
+                        color: AppColors.success, size: AppSizes.iconSm))
               else
-                const Tooltip(
+                Tooltip(
                     message: 'Offline',
-                    child:
-                        Icon(Icons.cloud_off, color: Colors.orange, size: 20)),
+                    child: Icon(Icons.cloud_off,
+                        color: AppColors.primary, size: AppSizes.iconSm)),
               if (provider.isSyncing)
-                const Padding(
-                    padding: EdgeInsets.only(left: 8),
+                Padding(
+                    padding: EdgeInsets.only(left: AppSpacing.sm),
                     child: SizedBox(
-                        width: 16,
-                        height: 16,
+                        width: AppSizes.iconXs,
+                        height: AppSizes.iconXs,
                         child: CircularProgressIndicator(strokeWidth: 2))),
             ],
           ),
@@ -158,12 +156,12 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Container(
-            color: Colors.white,
+            color: AppColors.surface,
             height: 56,
             width: double.infinity,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
               itemCount: dateChips.length,
               itemBuilder: (_, idx) {
                 final chip = dateChips[idx];
@@ -171,12 +169,12 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
                     chip.date.month == selected.month &&
                     chip.date.day == selected.day;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                   child: ActionChip(
                     label: Text(chip.label, textAlign: TextAlign.center),
                     backgroundColor: isSel
                         ? Theme.of(context).colorScheme.primaryContainer
-                        : Colors.grey.shade100,
+                        : AppColors.surfaceAlt,
                     labelStyle: TextStyle(
                         color: isSel ? Colors.black : Colors.black87,
                         fontWeight:
@@ -193,7 +191,8 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        padding: EdgeInsets.fromLTRB(
+            AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, 0),
         child: _buildBody(provider),
       ),
     );
@@ -210,7 +209,8 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(Icons.error_outline,
+                size: AppSizes.iconLg + 16, color: AppColors.error),
             Text('Error: ${provider.errorMessage}'),
             ElevatedButton(
               onPressed: () async {
@@ -232,28 +232,26 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
       children: [
         // Search bar skeleton
         Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: AppSpacing.md),
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.tableBorder,
+            borderRadius: AppRadius.mdAll,
           ),
         ),
         // Table skeleton
         Expanded(
           child: Card(
-            elevation: 2,
-            color: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            elevation: AppSizes.cardElevation,
+            color: AppColors.surface,
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
             child: Column(
               children: [
                 // Header skeleton
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: AppPadding.tableCell,
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+                    color: AppColors.primaryLight,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(8),
                       topRight: Radius.circular(8),
@@ -264,12 +262,12 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
                         8,
                         (index) => Expanded(
                               child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
+                                margin: EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.xs),
                                 height: 14,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
+                                  color: AppColors.tableBorder,
+                                  borderRadius: AppRadius.xsAll,
                                 ),
                               ),
                             )),
@@ -281,11 +279,10 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
                     itemCount: 8,
                     itemBuilder: (context, index) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                        padding: AppPadding.tableCell,
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: Colors.grey.shade200),
+                            bottom: BorderSide(color: AppColors.divider),
                           ),
                         ),
                         child: Row(
@@ -293,12 +290,12 @@ class _WorkOrderPageState extends ConsumerState<WorkOrderPage2> {
                               8,
                               (i) => Expanded(
                                     child: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 4),
+                                      margin: EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.xs),
                                       height: 12,
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(4),
+                                        color: AppColors.tableBorder,
+                                        borderRadius: AppRadius.xsAll,
                                       ),
                                     ),
                                   )),
@@ -386,25 +383,24 @@ class VirtualManagerTable extends ConsumerWidget {
         ),
         Expanded(
           child: Card(
-            elevation: 2,
-            color: Colors.white,
+            elevation: AppSizes.cardElevation,
+            color: AppColors.surface,
             margin: EdgeInsets.zero,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
             child: Column(
               children: [
                 // Sticky Header
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+                    color: AppColors.primaryLight,
                     borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(8),
                         topRight: Radius.circular(8)),
                     border: Border(
                         bottom:
-                            BorderSide(color: Colors.grey.shade300, width: 1)),
+                            BorderSide(color: AppColors.tableBorder, width: 1)),
                   ),
                   child: Row(
                     children: [
@@ -453,7 +449,7 @@ class VirtualManagerTable extends ConsumerWidget {
                   child: ListView.separated(
                     itemCount: filtered.length,
                     separatorBuilder: (ctx, i) =>
-                        const Divider(height: 1, color: Colors.black12),
+                        Divider(height: 1, color: AppColors.divider),
                     itemBuilder: (context, index) {
                       final wo = filtered[index];
                       return RepaintBoundary(
@@ -502,13 +498,14 @@ class _ManagerExpandableRowConsumerState
       children: [
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
-          hoverColor: Colors.grey.shade100,
+          hoverColor: AppColors.surfaceAlt,
           child: Container(
             decoration: BoxDecoration(
                 border:
-                    Border(bottom: BorderSide(color: Colors.grey.shade300))),
+                    Border(bottom: BorderSide(color: AppColors.tableBorder))),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+              padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
               child: Row(
                 children: [
                   _buildCell('${widget.index}', flex: 1),
@@ -543,8 +540,8 @@ class _ManagerExpandableRowConsumerState
                           _isExpanded
                               ? Icons.keyboard_arrow_up
                               : Icons.keyboard_arrow_down,
-                          size: 18,
-                          color: Colors.grey)),
+                          size: AppSizes.iconSm - 2,
+                          color: AppColors.textHint)),
                 ],
               ),
             ),
@@ -559,7 +556,8 @@ class _ManagerExpandableRowConsumerState
     return Expanded(
         flex: flex,
         child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
             child: Text(text, overflow: TextOverflow.ellipsis)));
   }
 
@@ -599,15 +597,15 @@ class _ManagerExpandableRowConsumerState
       await provider.updateWorkOrder(updatedOrder, customDoc: customDoc);
 
       if (context.mounted) {
-        parentMessenger.showSnackBar(const SnackBar(
+        parentMessenger.showSnackBar(SnackBar(
             content: Text('Technician assigned!'),
-            backgroundColor: Colors.green));
+            backgroundColor: AppColors.success));
         _showNotificationDialog(context, workOrder, techName, parentMessenger);
       }
     } catch (e) {
       if (context.mounted) {
-        parentMessenger.showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+        parentMessenger.showSnackBar(SnackBar(
+            content: Text('Error: $e'), backgroundColor: AppColors.error));
       }
     }
   }
@@ -624,10 +622,10 @@ class _ManagerExpandableRowConsumerState
         builder: (context, setState) {
           return AlertDialog(
             title: Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.orange,
-                child: const Text('Assigned Successfully',
-                    style: TextStyle(color: Colors.white))),
+                padding: AppPadding.card,
+                color: AppColors.primary,
+                child: Text('Assigned Successfully',
+                    style: TextStyle(color: AppColors.textOnPrimary))),
             content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,9 +657,9 @@ class _ManagerExpandableRowConsumerState
               TextButton(
                 onPressed: () async {
                   Navigator.pop(dialogContext);
-                  messenger.showSnackBar(const SnackBar(
+                  messenger.showSnackBar(SnackBar(
                       content: Text('Notifications sent'),
-                      backgroundColor: Colors.green));
+                      backgroundColor: AppColors.success));
                 },
                 child: const Text('OK'),
               ),

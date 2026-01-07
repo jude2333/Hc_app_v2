@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import '../models/dashboard_report.dart';
 import '../providers/dashboard_providers.dart';
 import '../providers/dashboard_state.dart';
@@ -17,13 +17,13 @@ class DailyTab extends ConsumerStatefulWidget {
 class _DailyTabState extends ConsumerState<DailyTab>
     with AutomaticKeepAliveClientMixin {
   @override
-  bool get wantKeepAlive => true; //Tab caching
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    // Non-blocking initialization with Future.microtask
-    Future.microtask(() {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(dailyReportProvider.notifier).loadData();
     });
   }
@@ -66,10 +66,7 @@ class _DailyTabState extends ConsumerState<DailyTab>
           Expanded(
             child: state.when(
               initial: () => const DashboardSkeletonLoading(),
-              loading: (isFirst) => isFirst
-                  ? const DashboardSkeletonLoading()
-                  : const Center(
-                      child: CircularProgressIndicator(color: Colors.orange)),
+              loading: (_) => const DashboardSkeletonLoading(),
               loaded: (report) => _buildContent(report),
               error: (message) => DashboardEmptyState(
                 message: message,
@@ -100,7 +97,6 @@ class _DailyTabState extends ConsumerState<DailyTab>
           const SizedBox(height: 16),
           const DashboardSectionTitle("Overview"),
           const SizedBox(height: 12),
-
           Row(
             children: [
               _buildMetricCard(
@@ -120,10 +116,7 @@ class _DailyTabState extends ConsumerState<DailyTab>
                   "Cancelled", metrics.cancelled.toString(), Colors.red),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // Financial Cards
           _buildFinancialCard(
               "Total Collection", metrics.collection, Colors.indigo),
           const SizedBox(height: 12),
@@ -146,12 +139,10 @@ class _DailyTabState extends ConsumerState<DailyTab>
                   "Trial", Util.formatMoney(metrics.trial), Colors.grey),
             ],
           ),
-
           const SizedBox(height: 20),
           const DashboardSectionTitle("Case Status"),
           const SizedBox(height: 8),
           DailyCasesChart(data: report.chartData),
-
           const SizedBox(height: 20),
           const DashboardSectionTitle("Financial Summary"),
           const SizedBox(height: 8),

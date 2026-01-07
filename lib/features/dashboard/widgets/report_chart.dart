@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/dashboard_report.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 class AnimatedChartWrapper extends StatefulWidget {
   final Widget child;

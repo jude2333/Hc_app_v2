@@ -10,8 +10,6 @@ import '../widgets/hc_step_otp.dart';
 import '../widgets/hc_step_prescription.dart';
 import '../widgets/hc_step_payment.dart';
 
-/// HC Process Page - Refactored with clean architecture
-/// Main page is thin, delegates to widgets and controller
 class HCProcessPage extends ConsumerStatefulWidget {
   final String workOrderId;
 
@@ -28,7 +26,7 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
   @override
   void initState() {
     super.initState();
-    // Load work order after first frame
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(hcProcessControllerProvider(widget.workOrderId)).loadWorkOrder();
     });
@@ -90,7 +88,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(hcProcessProvider(widget.workOrderId));
 
-    // Loading state
     if (state.isLoading && state.workOrder == null) {
       return Scaffold(
         appBar: AppBar(
@@ -101,7 +98,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
       );
     }
 
-    // Error state
     if (state.errorMessage != null && state.workOrder == null) {
       return Scaffold(
         appBar: AppBar(
@@ -128,7 +124,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
       );
     }
 
-    // Work order not loaded
     if (state.workOrder == null) {
       return Scaffold(
         appBar: AppBar(
@@ -164,7 +159,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
         onStepCancel: _onStepCancel,
         controlsBuilder: _buildStepperControls,
         steps: [
-          // Step 1: Delay
           Step(
             title: const Text('Arrival'),
             content: HCStepDelay(workOrderId: widget.workOrderId),
@@ -172,7 +166,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
             state:
                 state.currentStep > 0 ? StepState.complete : StepState.indexed,
           ),
-          // Step 2: Tests
           Step(
             title: const Text('Tests'),
             content: HCStepTests(workOrderId: widget.workOrderId),
@@ -180,7 +173,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
             state:
                 state.currentStep > 1 ? StepState.complete : StepState.indexed,
           ),
-          // Step 3: Billing
           Step(
             title: const Text('Billing'),
             content: HCStepBilling(workOrderId: widget.workOrderId),
@@ -188,7 +180,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
             state:
                 state.currentStep > 2 ? StepState.complete : StepState.indexed,
           ),
-          // Step 4: OTP
           Step(
             title: const Text('OTP'),
             content: HCStepOtp(workOrderId: widget.workOrderId),
@@ -196,7 +187,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
             state:
                 state.currentStep > 3 ? StepState.complete : StepState.indexed,
           ),
-          // Step 5: Prescription
           Step(
             title: const Text('Prescription'),
             content: HCStepPrescription(workOrderId: widget.workOrderId),
@@ -204,7 +194,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
             state:
                 state.currentStep > 4 ? StepState.complete : StepState.indexed,
           ),
-          // Step 6: Payment
           Step(
             title: const Text('Payment'),
             content: HCStepPayment(
@@ -227,7 +216,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
       padding: const EdgeInsets.only(top: 20.0),
       child: Row(
         children: [
-          // Continue button (not shown on last step)
           if (details.stepIndex < 5)
             ElevatedButton(
               onPressed: state.isLoading ? null : details.onStepContinue,
@@ -245,7 +233,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
                   : const Text('Continue'),
             ),
           const SizedBox(width: 12),
-          // Back button
           if (details.stepIndex > 0)
             TextButton(
               onPressed: state.isLoading ? null : details.onStepCancel,

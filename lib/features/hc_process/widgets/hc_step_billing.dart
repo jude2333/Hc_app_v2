@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/hc_process_provider.dart';
 import '../providers/hc_process_controller.dart';
 
-/// Step 3: Billing Widget
 class HCStepBilling extends ConsumerStatefulWidget {
   final String workOrderId;
 
@@ -67,7 +66,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bill amount
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -89,8 +87,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Discount
         TextField(
           controller: _discountController,
           enabled: areChargesEnabled,
@@ -102,8 +98,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
-
-        // HC Charges
         TextField(
           controller: _hcChargesController,
           enabled: areChargesEnabled,
@@ -115,8 +109,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
-
-        // Disposable Charges
         TextField(
           controller: _dispChargesController,
           enabled: areChargesEnabled,
@@ -128,8 +120,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 16),
-
-        // Summary
         Card(
           color: Colors.green.shade50,
           child: Padding(

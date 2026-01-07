@@ -8,7 +8,7 @@ import '../providers/app_state.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 class NotificationDBService {
   final Ref ref;

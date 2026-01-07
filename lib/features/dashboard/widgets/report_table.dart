@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import '../models/dashboard_report.dart';
 
 class ReportDataTable extends StatelessWidget {

@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:hive/hive.dart';
 import 'package:anderson_crm_flutter/database/db_handler.dart';
 import 'package:anderson_crm_flutter/database/couch_db.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import 'dart:convert';
 import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
 import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';

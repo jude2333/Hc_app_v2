@@ -4,7 +4,6 @@ import '../domain/hc_process_state.dart';
 import '../providers/hc_process_provider.dart';
 import '../providers/hc_process_controller.dart';
 
-/// Step 6: Payment Method Widget
 class HCStepPayment extends ConsumerStatefulWidget {
   final String workOrderId;
   final VoidCallback? onFinish;
@@ -36,7 +35,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
         ref.read(hcProcessControllerProvider(widget.workOrderId));
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
 
-    // Update remarks before finishing
     notifier.setRemarks(_remarksController.text);
 
     final success = await controller.finishSteps(mode);
@@ -58,7 +56,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
     final state = ref.watch(hcProcessProvider(widget.workOrderId));
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
 
-    // Determine finish mode based on client type
     String finishMode = 'normal';
     String finishLabel = 'Finish Work Order';
 
@@ -83,8 +80,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-
-        // Payment method selection
         const Text('Payment Method:',
             style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
@@ -92,8 +87,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
         _buildPaymentOption(
             state, notifier, 'gpay', 'GPay / UPI', Icons.phone_android),
         _buildPaymentOption(state, notifier, 'card', 'Card', Icons.credit_card),
-
-        // GPay reference (if GPay selected)
         if (state.paymentMethod == 'gpay') ...[
           const SizedBox(height: 16),
           TextField(
@@ -105,10 +98,7 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
             ),
           ),
         ],
-
         const SizedBox(height: 16),
-
-        // Remarks
         TextField(
           controller: _remarksController,
           onChanged: (value) => notifier.setRemarks(value),
@@ -119,12 +109,8 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           maxLines: 3,
         ),
         const SizedBox(height: 24),
-
-        // Summary card
         _buildSummaryCard(state),
         const SizedBox(height: 24),
-
-        // Finish button
         SizedBox(
           width: double.infinity,
           height: 50,
@@ -205,8 +191,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-
-        // Client type badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
@@ -225,8 +209,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Remarks
         TextField(
           controller: _remarksController,
           decoration: const InputDecoration(
@@ -236,11 +218,8 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           maxLines: 3,
         ),
         const SizedBox(height: 24),
-
         _buildSummaryCard(state),
         const SizedBox(height: 24),
-
-        // Finish button
         SizedBox(
           width: double.infinity,
           height: 50,

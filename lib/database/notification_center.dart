@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 class NotificationCenter {
   final StorageService _storage;
@@ -76,7 +76,7 @@ class NotificationCenter {
       String docId = notification['_id'];
       debugPrint('📤 Sending notification to $_resolvedDbName: $docId');
 
-      // ✅ Just ensure _id is set - no need to remove anything
+      // just ensure _id is set - no need to remove anything
       notification['_id'] = docId;
 
       Response response = await _client!.put(

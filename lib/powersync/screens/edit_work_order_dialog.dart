@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 class EditWorkOrderDialog extends ConsumerStatefulWidget {
   final WorkOrder workOrder;

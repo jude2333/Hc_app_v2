@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/database/db_handler.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import '../repositories/storage_repository.dart';
 import '../database/couch_db.dart';
 

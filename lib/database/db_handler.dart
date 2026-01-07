@@ -63,7 +63,8 @@ class DBHandler {
         "com_center",
         "temp_db",
         "login_log",
-        "dashboard"
+        "dashboard",
+        "pin_codes"
       ];
 
       String? centerBasedDB = await _storage.getSessionItem("doc_dbs");

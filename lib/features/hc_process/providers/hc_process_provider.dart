@@ -3,19 +3,14 @@ import '../domain/hc_process_state.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/models/technician_process_doc.dart';
 
-// Re-export state for convenience
 export '../domain/hc_process_state.dart';
 
-/// StateNotifier for HC Process state management
-/// Manages state only - delegates business logic to HCProcessController
 class HCProcessNotifier extends StateNotifier<HCProcessState> {
   final Ref _ref;
   final String workOrderId;
 
   HCProcessNotifier(this._ref, this.workOrderId)
       : super(const HCProcessState());
-
-  // ==================== Core State Updates ====================
 
   void setLoading(bool loading) {
     state = state.copyWith(isLoading: loading);
@@ -65,8 +60,6 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
     state = state.copyWith(workOrder: workOrder);
   }
 
-  // ==================== Step 1: Delay ====================
-
   void setDelayReason(String reason) {
     state = state.copyWith(delayReason: reason);
   }
@@ -74,8 +67,6 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
   void setDelayMins(String mins) {
     state = state.copyWith(delayMins: mins);
   }
-
-  // ==================== Step 2: Tests ====================
 
   void setSelectedTests(List<Map<String, dynamic>> tests) {
     state = state.copyWith(selectedTests: tests);
@@ -103,8 +94,6 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
   void setProformaInvLoc(String loc) {
     state = state.copyWith(proformaInvLoc: loc);
   }
-
-  // ==================== Step 3: Billing ====================
 
   void setBillAmount(double amount) {
     state = state.copyWith(billAmount: amount);
@@ -144,8 +133,6 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
     );
   }
 
-  // ==================== Step 4: OTP ====================
-
   void setGeneratedOtp(String otp) {
     state = state.copyWith(generatedOtp: otp);
   }
@@ -154,10 +141,7 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
     state = state.copyWith(enteredOtp: otp);
   }
 
-  // ==================== Step 5: Photos ====================
-
   void setOfflineMode(bool offline) {
-    // Clear photos when switching modes
     state = state.copyWith(
       offlineMode: offline,
       uploadedPhotos: [],
@@ -183,8 +167,6 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
     );
   }
 
-  // ==================== Step 6: Payment ====================
-
   void setPaymentMethod(String method) {
     state = state.copyWith(paymentMethod: method);
   }
@@ -198,8 +180,6 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
   }
 }
 
-/// Provider for HC Process state
-/// Uses .family to create separate instances per workOrderId
 final hcProcessProvider = StateNotifierProvider.autoDispose
     .family<HCProcessNotifier, HCProcessState, String>((ref, workOrderId) {
   return HCProcessNotifier(ref, workOrderId);

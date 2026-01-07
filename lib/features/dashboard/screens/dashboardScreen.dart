@@ -24,8 +24,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    // Non-blocking initialization
-    Future.microtask(() => _loadUserData());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserData());
   }
 
   Future<void> _loadUserData() async {
@@ -49,35 +49,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Colors.grey.shade50,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: const CircularProgressIndicator(
-                  color: Colors.orange,
-                  strokeWidth: 3,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading Dashboard...',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const _SkeletonDashboard();
     }
 
     if (!_checkTenant(_tenantId)) {
@@ -98,11 +70,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       backgroundColor: Colors.grey.shade50,
       body: Column(
         children: [
-          // Modern Header
           _buildHeader(),
-          // Modern TabBar
           _buildTabBar(),
-          // Tab Content
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -140,7 +109,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       ),
       child: Row(
         children: [
-          // Logo/Icon
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -154,7 +122,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ),
           ),
           const SizedBox(width: 16),
-          // Title
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +145,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             ],
           ),
           const Spacer(),
-          // Refresh button
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -292,10 +258,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CUSTOM TAB ITEM WITH ICON
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _TabItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -315,6 +277,179 @@ class _TabItem extends StatelessWidget {
           const SizedBox(width: 6),
           Text(label),
         ],
+      ),
+    );
+  }
+}
+
+// Skeleton Loading Widgets
+class _SkeletonDashboard extends StatefulWidget {
+  const _SkeletonDashboard();
+
+  @override
+  State<_SkeletonDashboard> createState() => _SkeletonDashboardState();
+}
+
+class _SkeletonDashboardState extends State<_SkeletonDashboard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500))
+      ..repeat();
+    _animation = Tween<double>(begin: 0.3, end: 1.0)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      body: Column(
+        children: [
+          _buildSkeletonHeader(),
+          _buildSkeletonTabBar(),
+          Expanded(
+            child: _buildSkeletonContent(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonHeader() {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 20,
+        right: 20,
+        bottom: 16,
+      ),
+      width: double.infinity,
+      height: 120, // Approximate height of header
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: FadeTransition(
+        opacity: _animation,
+        child: Row(
+          children: [
+            _SkeletonBox(width: 48, height: 48, borderRadius: 12),
+            const SizedBox(width: 16),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _SkeletonBox(width: 120, height: 24),
+                SizedBox(height: 8),
+                _SkeletonBox(width: 80, height: 16),
+              ],
+            ),
+            const Spacer(),
+            _SkeletonBox(width: 36, height: 36, borderRadius: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 0),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey, width: 0.2)),
+      ),
+      child: FadeTransition(
+        opacity: _animation,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children:
+              List.generate(4, (index) => _SkeletonBox(width: 60, height: 20)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonContent() {
+    return FadeTransition(
+      opacity: _animation,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          // Stat Cards Row
+          Row(
+            children: [
+              Expanded(
+                  child: _SkeletonBox(
+                      width: double.infinity, height: 100, borderRadius: 12)),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: _SkeletonBox(
+                      width: double.infinity, height: 100, borderRadius: 12)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Another Stat Cards Row
+          Row(
+            children: [
+              Expanded(
+                  child: _SkeletonBox(
+                      width: double.infinity, height: 100, borderRadius: 12)),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: _SkeletonBox(
+                      width: double.infinity, height: 100, borderRadius: 12)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Chart Placeholder
+          _SkeletonBox(width: double.infinity, height: 250, borderRadius: 16),
+          const SizedBox(height: 24),
+          // List Placeholder
+          _SkeletonBox(width: double.infinity, height: 60, borderRadius: 8),
+          const SizedBox(height: 12),
+          _SkeletonBox(width: double.infinity, height: 60, borderRadius: 8),
+          const SizedBox(height: 12),
+          _SkeletonBox(width: double.infinity, height: 60, borderRadius: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const _SkeletonBox({
+    required this.width,
+    required this.height,
+    this.borderRadius = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
   }

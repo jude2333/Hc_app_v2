@@ -24,7 +24,7 @@ class _WeeklyTabState extends ConsumerState<WeeklyTab>
   void initState() {
     super.initState();
 
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(weeklyReportProvider.notifier).loadData();
     });
   }
@@ -70,10 +70,7 @@ class _WeeklyTabState extends ConsumerState<WeeklyTab>
           Expanded(
             child: state.when(
               initial: () => const DashboardSkeletonLoading(),
-              loading: (isFirst) => isFirst
-                  ? const DashboardSkeletonLoading()
-                  : const Center(
-                      child: CircularProgressIndicator(color: Colors.orange)),
+              loading: (_) => const DashboardSkeletonLoading(),
               loaded: (report) => _buildContent(report),
               error: (message) => DashboardEmptyState(
                 message: message,

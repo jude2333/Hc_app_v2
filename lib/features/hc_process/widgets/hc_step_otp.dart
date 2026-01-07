@@ -5,7 +5,6 @@ import '../providers/hc_process_provider.dart';
 import '../providers/hc_process_controller.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 
-/// Step 4: OTP Verification Widget
 class HCStepOtp extends ConsumerStatefulWidget {
   final String workOrderId;
   final VoidCallback? onVerified;
@@ -69,8 +68,6 @@ class _HCStepOtpState extends ConsumerState<HCStepOtp> {
         const SizedBox(height: 8),
         Text('OTP sent to: ${state.clientMobile}'),
         const SizedBox(height: 16),
-
-        // Dev mode OTP display
         if (Settings.development && state.generatedOtp.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(12),
@@ -91,8 +88,6 @@ class _HCStepOtpState extends ConsumerState<HCStepOtp> {
               ],
             ),
           ),
-
-        // OTP Input
         TextField(
           controller: _otpController,
           decoration: const InputDecoration(
@@ -104,8 +99,6 @@ class _HCStepOtpState extends ConsumerState<HCStepOtp> {
           maxLength: 6,
         ),
         const SizedBox(height: 16),
-
-        // Action buttons
         Row(
           children: [
             Expanded(
@@ -128,8 +121,6 @@ class _HCStepOtpState extends ConsumerState<HCStepOtp> {
           ],
         ),
         const SizedBox(height: 16),
-
-        // Communication methods enabled
         _buildEnabledMethods(state),
       ],
     );

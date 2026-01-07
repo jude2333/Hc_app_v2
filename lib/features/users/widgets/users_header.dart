@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/theme.dart';
 
 /// Header widget for the Users page with search and add button.
 class UsersHeader extends StatelessWidget {
@@ -16,55 +17,49 @@ class UsersHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-      color: Colors.white,
+      elevation: AppSizes.cardElevation,
+      color: AppColors.surface,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppPadding.card,
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: AppPadding.badge,
               decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.primary,
+                borderRadius: AppRadius.lgAll,
               ),
-              child: const Text(
+              child: Text(
                 'Users',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.badge,
               ),
             ),
             const Spacer(),
             SizedBox(
-              width: 300,
+              width: AppSizes.searchFieldWidth,
               child: TextField(
                 controller: searchController,
                 decoration: InputDecoration(
                   hintText: 'Search',
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: AppRadius.mdAll,
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: AppPadding.input,
                 ),
                 onChanged: onSearchChanged,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.lg),
             ElevatedButton.icon(
               icon: const Icon(Icons.person_add_outlined),
               label: const Text('Add User'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
+                padding: AppPadding.button,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: AppRadius.mdAll,
                 ),
               ),
               onPressed: onAddUser,

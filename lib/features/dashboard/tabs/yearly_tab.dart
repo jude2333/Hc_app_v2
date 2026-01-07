@@ -23,7 +23,7 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
   void initState() {
     super.initState();
 
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(yearlyReportProvider.notifier).loadAvailableYears();
     });
   }
@@ -43,10 +43,7 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
           Expanded(
             child: state.when(
               initial: () => const DashboardSkeletonLoading(),
-              loading: (isFirst) => isFirst
-                  ? const DashboardSkeletonLoading()
-                  : const Center(
-                      child: CircularProgressIndicator(color: Colors.orange)),
+              loading: (_) => const DashboardSkeletonLoading(),
               loaded: (report) => _buildContent(report, notifier),
               error: (message) => DashboardEmptyState(
                 message: message,

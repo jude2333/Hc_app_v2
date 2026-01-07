@@ -1,60 +1,114 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'db_handler.dart';
+import 'couch_db.dart';
 
-class PostgresRepository {
-  static const String _baseUrl = 'https://api.andrsn.in';
-  late Dio _dio;
+class PincodeDB {
+  final DBHandler _dbHandler;
+  final CouchDBClient _couchDB;
 
-  PostgresRepository() {
-    _dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      headers: {'Content-Type': 'application/json'},
-    ));
+  PincodeDB(this._dbHandler, this._couchDB);
+
+  Future<List<Map<String, dynamic>>> fetchData(String searchStr) async {
+    debugPrint('PincodeDB.fetchData() > $searchStr');
+
+    String? name = _dbHandler.resolveName('pin_codes');
+    if (name == null) {
+      debugPrint('Could not resolve pin_codes database name');
+      return _emptyResult();
+    }
+
+    Dio remoteDb = await _couchDB.getDB(name);
+
+    List<Map<String, dynamic>> items = [];
+    String str = searchStr.trim();
+
+    try {
+      int? numericSearch = int.tryParse(str);
+
+      Map<String, dynamic> queryParams = {
+        'include_docs': true,
+      };
+
+      if (numericSearch != null && str.isNotEmpty) {
+        queryParams['startkey'] = jsonEncode('pin:code_$numericSearch');
+        queryParams['endkey'] = jsonEncode('pin:code_$numericSearch\ufff0');
+      } else if (str.isNotEmpty) {
+        queryParams['startkey'] = jsonEncode('pin:code_');
+        queryParams['endkey'] = jsonEncode('pin:code_\ufff0');
+      } else {
+        queryParams['startkey'] = jsonEncode('pin:code_');
+        queryParams['endkey'] = jsonEncode('pin:code_\ufff0');
+        queryParams['limit'] = 10;
+      }
+
+      Response response = await remoteDb.get(
+        '/_all_docs',
+        queryParameters: queryParams,
+      );
+
+      if (response.data['rows'] != null && response.data['rows'] is List) {
+        for (var row in response.data['rows']) {
+          if (row['doc'] != null) {
+            Map<String, dynamic> item = Map<String, dynamic>.from(row['doc']);
+
+            if (_matchesCriteria(item, str)) {
+              items.add(item);
+            }
+
+            if (items.length > 9) {
+              break;
+            }
+          }
+        }
+      }
+
+      if (items.isEmpty) {
+        return _emptyResult();
+      }
+
+      debugPrint('Found ${items.length} pincode results');
+      return items;
+    } catch (e) {
+      debugPrint('Error fetching pincode data: $e');
+      return _emptyResult();
+    }
   }
 
-  Future<Map<String, dynamic>> login(String mobile, String password) async {
-    final res = await _dio.post('/rpc/login_v4', data: {
-      'mobile': mobile,
-      'password': password,
-      'department_id': 64,
-    });
-    return res.data;
+  Future<List<Map<String, dynamic>>> fetchInitialData() async {
+    debugPrint('PincodeDB.fetchInitialData()');
+    return fetchData('');
   }
 
-  Future<void> refreshToken() async {
-    await _dio.post('/rpc/refresh_token_v2');
+  bool _matchesCriteria(Map<String, dynamic> item, String searchStr) {
+    if (searchStr.isEmpty) return true;
+
+    String lowerSearch = searchStr.toLowerCase();
+
+    String pincode = (item['pincode'] ?? '').toString().toLowerCase();
+    if (pincode.contains(lowerSearch)) return true;
+
+    String area = (item['area'] ?? '').toString().toLowerCase();
+    if (area.contains(lowerSearch)) return true;
+
+    String district = (item['district'] ?? '').toString().toLowerCase();
+    if (district.contains(lowerSearch)) return true;
+
+    String city = (item['city'] ?? '').toString().toLowerCase();
+    if (city.contains(lowerSearch)) return true;
+
+    return false;
   }
 
-  Future<List<dynamic>> getAllUsers({int limit = 20, int offset = 0, String? search}) async {
-    final query = search != null
-        ? '/employees?or=(first_name.ilike.*$search*,last_name.ilike.*$search*)&limit=$limit&offset=$offset'
-        : '/employees?limit=$limit&offset=$offset';
-    final res = await _dio.get(query);
-    return res.data as List;
+  List<Map<String, dynamic>> _emptyResult() {
+    return [
+      {
+        'pincode': 'No Pincode Found.',
+        'area': 'NA',
+        'district': 'NA',
+        'city': 'NA',
+      }
+    ];
   }
-
-  Future<Map<String, dynamic>> getUserDetails(int empId) async {
-    final res = await _dio.get('/employees?emp_id=eq.$empId');
-    return res.data.first;
-  }
-
-  Future<List<dynamic>> getAssignedTenantList(String search) async {
-    final empId = await _loggedInEmpId();
-    final query = search.isNotEmpty
-        ? '/emp_tenant_mapping?select=*,tenant_master(*)&emp_id=eq.$empId&tenant_master.tenant_name=ilike.*$search*'
-        : '/emp_tenant_mapping?select=*,tenant_master(*)&emp_id=eq.$empId';
-    final res = await _dio.get(query);
-    return res.data as List;
-  }
-
-  Future<List<dynamic>> getRoleList([String search = '']) async =>
-      (await _dio.get('/role_master?select=role_id,role_name&role_name=ilike.*$search*')).data;
-
-  Future<List<dynamic>> getDeptList([String search = '']) async =>
-      (await _dio.get('/department_list?select=department_id,department_name&department_name=ilike.*$search*')).data;
-
-  /* ---------- INTERNAL ---------- */
-  static Future<String> _loggedInEmpId() async =>
-      (await SharedPreferences.getInstance()).getString('logged_in_emp_id') ?? '0';
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 class DashboardDateHeader extends StatelessWidget {
   final DateTime selectedDate;
@@ -147,6 +147,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +184,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        // Removed border and shadow for performance
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,17 +198,18 @@ class DashboardSkeletonLoading extends StatelessWidget {
   }
 
   Widget _buildTableSkeleton() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.blue,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: List.generate(
@@ -231,7 +233,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                         vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
                       border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade200)),
+                          bottom: BorderSide(color: Colors.grey.shade100)),
                     ),
                     child: Row(
                       children: List.generate(
@@ -242,7 +244,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   height: 12,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[200],
+                                    color: Colors.grey[100],
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -260,7 +262,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 8)],
+        // Removed shadow
       ),
       child: Center(
         child: Row(
@@ -271,7 +273,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                     width: 24,
                     height: 80 + (index * 15).toDouble(),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: Colors.grey[100],
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(4)),
                     ),

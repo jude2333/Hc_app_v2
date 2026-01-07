@@ -6,7 +6,6 @@ import 'package:file_picker/file_picker.dart';
 import '../providers/hc_process_provider.dart';
 import '../providers/hc_process_controller.dart';
 
-/// Step 5: Prescription Photo Upload Widget
 class HCStepPrescription extends ConsumerStatefulWidget {
   final String workOrderId;
 
@@ -29,7 +28,6 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
     XFile? pickedFile;
     Uint8List? fileBytes;
 
-    // Source selection for mobile
     if (!kIsWeb) {
       source = await showDialog<ImageSource>(
         context: context,
@@ -57,7 +55,6 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
       pickedFile =
           await _imagePicker.pickImage(source: source, imageQuality: 85);
     } else {
-      // Web file picker
       final result = await FilePicker.platform.pickFiles(type: FileType.image);
       if (result == null) return;
       fileBytes = result.files.single.bytes;
@@ -104,8 +101,6 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-
-        // Offline mode toggle
         SwitchListTile(
           title: const Text('Offline Mode'),
           subtitle: Text(
@@ -118,8 +113,6 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
           onChanged: (value) => notifier.setOfflineMode(value),
         ),
         const SizedBox(height: 12),
-
-        // Offline mode indicator
         if (state.offlineMode)
           Container(
             padding: const EdgeInsets.all(12),
@@ -143,8 +136,6 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
               ],
             ),
           ),
-
-        // Upload button
         ElevatedButton.icon(
           onPressed: state.isLoading ? null : _pickAndUpload,
           style: ElevatedButton.styleFrom(
@@ -158,8 +149,6 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Uploaded photos list
         if (state.uploadedPhotoPaths.isNotEmpty) ...[
           Text(
             '${state.offlineMode ? "Saved" : "Uploaded"} Photos:',

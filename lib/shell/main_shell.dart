@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../util.dart';
+import '../features/core/util.dart';
 import '../providers/app_state.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../database/authorize.dart';

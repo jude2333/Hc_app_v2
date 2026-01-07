@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:anderson_crm_flutter/services/dashboard_service.dart';
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import 'widgets/dashboard_widgets.dart';
 
 class WeeklyReportTab extends ConsumerStatefulWidget {

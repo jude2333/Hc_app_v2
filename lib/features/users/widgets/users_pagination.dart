@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/users_providers.dart';
+import '../../theme/theme.dart';
 
-/// Pagination widget for Users list.
 class UsersPagination extends ConsumerWidget {
   const UsersPagination({super.key});
 
@@ -19,82 +19,148 @@ class UsersPagination extends ConsumerWidget {
     final endItem = startItem + currentCount - 1;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[300]!, width: 1)),
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Text('Rows per page:', style: TextStyle(fontSize: 14)),
-              const SizedBox(width: 8),
-              DropdownButton<int>(
-                value: pagination.rowsPerPage,
-                underline: Container(),
-                items: [50, 70, 100, -1].map((value) {
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(
-                      value == -1 ? 'All' : value.toString(),
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(usersPaginationProvider.notifier)
-                        .setRowsPerPage(value);
-                  }
-                },
+              Text('Rows:', style: AppTextStyles.caption),
+              SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceAlt,
+                  borderRadius: AppRadius.smAll,
+                ),
+                child: DropdownButton<int>(
+                  value: pagination.rowsPerPage,
+                  underline: const SizedBox.shrink(),
+                  isDense: true,
+                  style: AppTextStyles.body,
+                  items: [50, 70, 100, -1].map((value) {
+                    return DropdownMenuItem(
+                      value: value,
+                      child: Text(
+                        value == -1 ? 'All' : value.toString(),
+                        style: AppTextStyles.body,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref
+                          .read(usersPaginationProvider.notifier)
+                          .setRowsPerPage(value);
+                    }
+                  },
+                ),
               ),
             ],
           ),
-          Text(
-            pagination.rowsPerPage == -1
-                ? '$currentCount users'
-                : '$startItem-$endItem of many',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: AppRadius.smAll,
+            ),
+            child: Text(
+              pagination.rowsPerPage == -1
+                  ? '$currentCount users'
+                  : '$startItem-$endItem',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: pagination.page > 1
-                    ? () {
-                        ref
-                            .read(usersPaginationProvider.notifier)
-                            .setPage(pagination.page - 1);
-                      }
-                    : null,
-                tooltip: 'Previous page',
-              ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(4),
+                  color: pagination.page > 1
+                      ? AppColors.primary.withOpacity(0.1)
+                      : AppColors.surfaceAlt,
+                  borderRadius: AppRadius.smAll,
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.chevron_left,
+                    color: pagination.page > 1
+                        ? AppColors.primary
+                        : AppColors.textHint,
+                  ),
+                  onPressed: pagination.page > 1
+                      ? () {
+                          ref
+                              .read(usersPaginationProvider.notifier)
+                              .setPage(pagination.page - 1);
+                        }
+                      : null,
+                  tooltip: 'Previous page',
+                  iconSize: 20,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceAlt,
+                  borderRadius: AppRadius.smAll,
                 ),
                 child: Text(
                   'Page ${pagination.page}',
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
+                  style:
+                      AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: isFullPage
-                    ? () {
-                        ref
-                            .read(usersPaginationProvider.notifier)
-                            .setPage(pagination.page + 1);
-                      }
-                    : null,
-                tooltip: 'Next page',
+              SizedBox(width: AppSpacing.sm),
+              Container(
+                decoration: BoxDecoration(
+                  color: isFullPage
+                      ? AppColors.primary.withOpacity(0.1)
+                      : AppColors.surfaceAlt,
+                  borderRadius: AppRadius.smAll,
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.chevron_right,
+                    color: isFullPage ? AppColors.primary : AppColors.textHint,
+                  ),
+                  onPressed: isFullPage
+                      ? () {
+                          ref
+                              .read(usersPaginationProvider.notifier)
+                              .setPage(pagination.page + 1);
+                        }
+                      : null,
+                  tooltip: 'Next page',
+                  iconSize: 20,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
               ),
             ],
           ),

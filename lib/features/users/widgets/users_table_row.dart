@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../theme/theme.dart';
 import '../data/user_model.dart';
 import 'allocated_areas_table.dart';
 import 'user_actions.dart';
@@ -20,15 +21,13 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
 
   @override
   Widget build(BuildContext context) {
-    final isEven = widget.index % 2 == 0;
-
     return Column(
       children: [
         Container(
           decoration: BoxDecoration(
-            color: isEven ? Colors.white : Colors.grey[50],
+            color: AppColors.surface,
             border: Border(
-              bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+              bottom: BorderSide(color: AppColors.tableBorder, width: 1),
             ),
           ),
           child: IntrinsicHeight(
@@ -48,8 +47,8 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
         ),
         if (_isExpanded)
           Container(
-            color: Colors.blue[50],
-            padding: const EdgeInsets.all(16),
+            color: AppColors.tableRowExpanded,
+            padding: AppPadding.card,
             child: AllocatedAreasTable(areas: widget.user.allocatedAreas),
           ),
       ],
@@ -60,10 +59,10 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
     return Expanded(
       flex: flex,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: AppPadding.tableCell,
         child: Text(
           text,
-          style: const TextStyle(fontSize: 14),
+          style: AppTextStyles.tableCell,
         ),
       ),
     );
@@ -75,7 +74,7 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
     return Expanded(
       flex: flex,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: AppPadding.tableCell,
         child: hasIdCard
             ? OutlinedButton(
                 onPressed: () => downloadIdCard(
@@ -85,20 +84,19 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
                   user.photoIdCard,
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                  side: const BorderSide(color: Colors.blue),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  foregroundColor: AppColors.secondary,
+                  side: BorderSide(color: AppColors.secondary),
+                  padding: AppPadding.buttonCompact,
                 ),
                 child: Text(
                   user.photoIdCard,
-                  style: const TextStyle(fontSize: 12),
+                  style: AppTextStyles.bodySmall,
                   overflow: TextOverflow.ellipsis,
                 ),
               )
-            : const Text(
+            : Text(
                 'No ID Card',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: AppTextStyles.caption,
               ),
       ),
     );
@@ -108,20 +106,20 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
     return Expanded(
       flex: flex,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: AppPadding.tableCell,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit, size: 20),
-              color: Colors.blue,
+              icon: Icon(Icons.edit, size: AppSizes.iconSm),
+              color: AppColors.secondary,
               onPressed: () => editUser(context, ref, user),
               tooltip: 'Edit',
             ),
             if (isManager(ref))
               IconButton(
-                icon: const Icon(Icons.delete, size: 20),
-                color: Colors.red,
+                icon: Icon(Icons.delete, size: AppSizes.iconSm),
+                color: AppColors.error,
                 onPressed: () => deleteUser(context, ref, user),
                 tooltip: 'Delete',
               ),
@@ -137,12 +135,12 @@ class _UserTableRowState extends ConsumerState<UserTableRow> {
     return Expanded(
       flex: flex,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: AppPadding.tableCellCompact,
         child: Center(
           child: IconButton(
             icon: Icon(
               _isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: hasAreas ? Colors.orange : Colors.grey[400],
+              color: hasAreas ? AppColors.primary : AppColors.textHint,
             ),
             onPressed: hasAreas
                 ? () {

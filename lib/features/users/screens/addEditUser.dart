@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'dart:async';
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
-// import 'dart:html' as html;
 import 'package:file_picker/file_picker.dart';
 
-// Import your services
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 import 'package:anderson_crm_flutter/features/users/providers/users_providers.dart';
 import '../../../config/settings.dart';
+import '../../theme/theme.dart';
 
 class AddEditUserPage extends ConsumerStatefulWidget {
   final Map<String, dynamic>? userData;
@@ -32,7 +30,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
   final _formKey = GlobalKey<FormState>();
   Timer? _debounceTimer;
 
-  // Form controllers
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
@@ -41,7 +38,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _roleSearchController = TextEditingController();
 
-  // State variables
   bool _loading = false;
   bool _overlay = false;
   String _empId = '';
@@ -58,7 +54,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
   String _uploadedFileName = '';
   bool _rolesModified = false;
 
-  // Bottom sheets
   bool _showRoleSheet = false;
   List<Map<String, dynamic>> _roles = [];
 
@@ -99,7 +94,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
       _departmentName = item['department_name'] ?? 'HOME COLLECTION';
       _uploadedFileName = item['photo_id_card'] ?? '';
 
-      // Handle roles
       if (item['employee_activities'] != null &&
           item['employee_activities']['role_list'] != null &&
           item['employee_activities']['role_list'] is List &&
@@ -116,7 +110,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
         }
       }
 
-      // Handle allocated areas
       if (item['allocated_areas'] != null && item['allocated_areas'] is List) {
         _allocatedAreas = List<Map<String, dynamic>>.from(
             item['allocated_areas'].map((e) => Map<String, dynamic>.from(e)));
@@ -131,9 +124,7 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
   }
 
   Future<void> _validate() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
@@ -166,49 +157,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
     }
   }
 
-  // Future<void> _uploadAndSave() async {
-  //   String key = '';
-
-  //   if (_selectedFile != null) {
-  //     try {
-  //       final storage = ref.read(storageServiceProvider);
-  //       final jwtToken = storage.getFromSession("pg_admin") ?? "";
-  //       key = "homecollection/id_card/${_selectedFile!.name}";
-
-  //       final formData = FormData.fromMap({
-  //         'upload_file': kIsWeb
-  //             ? MultipartFile.fromBytes(_selectedFile!.bytes!,
-  //                 filename: _selectedFile!.name)
-  //             : await MultipartFile.fromFile(_selectedFile!.path!,
-  //                 filename: _selectedFile!.name),
-  //         'key': key,
-  //         'bucket_name': 'andersonemployees',
-  //         'jwt_token': jwtToken,
-  //       });
-
-  //       final dio = Dio();
-  //       final response = await dio.post(
-  //         '${Settings.nodeUrl}/s3/upload_file_v3',
-  //         data: formData,
-  //       );
-
-  //       if (response.statusCode != 200) {
-  //         throw Exception('Upload failed: ${response.statusMessage}');
-  //       }
-  //     } catch (e) {
-  //       _showMessageDialog('Error', 'Error uploading file: $e');
-  //       setState(() => _loading = false);
-  //       return;
-  //     }
-  //   } else if (widget.isEdit) {
-  //     key = '';
-  //   } else {
-  //     key = 'No ID Card';
-  //   }
-
-  //   await _save(key);
-  // }
-
   Future<void> _uploadAndSave() async {
     String key = '';
 
@@ -218,11 +166,9 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
         final jwtToken = storage.getFromSession("pg_admin") ?? "";
         key = "homecollection/id_card/${_selectedFile!.name}";
 
-        // Create FormData - different approach for web vs mobile
         late MultipartFile multipartFile;
 
         if (kIsWeb) {
-          // Web platform - use bytes directly
           if (_selectedFile!.bytes != null) {
             multipartFile = MultipartFile.fromBytes(
               _selectedFile!.bytes!,
@@ -232,7 +178,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
             throw Exception('File bytes are null');
           }
         } else {
-          // Mobile platform - use file path
           if (_selectedFile!.path != null) {
             multipartFile = await MultipartFile.fromFile(
               _selectedFile!.path!,
@@ -267,7 +212,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
         return;
       }
     } else if (widget.isEdit && _uploadedFileName.isNotEmpty) {
-      // Keep existing file if editing and no new file selected
       key = _uploadedFileName;
     } else {
       key = 'No ID Card';
@@ -294,14 +238,12 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
     };
 
     if (_rolesModified && _selectedRoles.isNotEmpty) {
-      // Find technician role
       final technicianRole = _selectedRoles.firstWhere(
           (role) => role['role_id'] == 240,
           orElse: () => _selectedRoles.first);
       doc['role_id'] = technicianRole['role_id'].toString();
       final roleList =
           _selectedRoles.map((r) => r['role_id'].toString()).toList();
-      // Store employee_activities as a JSON string to match expected String type
       doc['employee_activities'] = jsonEncode({'role_list': roleList});
     }
 
@@ -346,11 +288,8 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
       );
-
       if (result != null) {
-        setState(() {
-          _selectedFile = result.files.first;
-        });
+        setState(() => _selectedFile = result.files.first);
       }
     } catch (e) {
       _showMessageDialog('Error', 'Error picking file: $e');
@@ -396,7 +335,6 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
         _selectedRoles.removeWhere((r) => r['role_id'] == role['role_id']);
       }
 
-      // Update role ID and name
       final technicianRole = _selectedRoles.firstWhere(
           (r) => r['role_id'] == 240,
           orElse: () => _selectedRoles.isNotEmpty
@@ -429,419 +367,712 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
 
   void _showMessageDialog(String title, String message,
       {VoidCallback? onClose}) {
+    final isSuccess = title == 'Success';
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Container(
-          color: Colors.orange,
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            title,
-            style: const TextStyle(color: Colors.white),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: (isSuccess ? AppColors.success : AppColors.error)
+                      .withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isSuccess ? Icons.check_circle : Icons.error,
+                  color: isSuccess ? AppColors.success : AppColors.error,
+                  size: 48,
+                ),
+              ),
+              SizedBox(height: AppSpacing.md),
+              Text(title, style: AppTextStyles.h2),
+              SizedBox(height: AppSpacing.sm),
+              Text(message,
+                  textAlign: TextAlign.center, style: AppTextStyles.body),
+              SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onClose?.call();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isSuccess ? AppColors.success : AppColors.primary,
+                    foregroundColor: AppColors.textOnPrimary,
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: AppRadius.smAll),
+                  ),
+                  child: const Text('OK'),
+                ),
+              ),
+            ],
           ),
         ),
-        content: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(message, style: const TextStyle(fontSize: 18)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onClose?.call();
-            },
-            child: const Text('Close'),
-          ),
-        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label,
+      {IconData? icon, String? prefix, bool required = false}) {
+    return InputDecoration(
+      labelText: required ? '$label *' : label,
+      prefixText: prefix,
+      prefixIcon: icon != null ? Icon(icon, size: 20) : null,
+      filled: true,
+      fillColor: AppColors.surfaceAlt,
+      border: OutlineInputBorder(
+        borderRadius: AppRadius.smAll,
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppRadius.smAll,
+        borderSide: BorderSide(color: AppColors.divider),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppRadius.smAll,
+        borderSide: BorderSide(color: AppColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: AppRadius.smAll,
+        borderSide: BorderSide(color: AppColors.error),
+      ),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isWideScreen = MediaQuery.of(context).size.width > 800;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.orange,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            widget.isEdit ? 'Edit User' : 'Add User',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: AppColors.background,
+      appBar: _buildAppBar(),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildBasicInfoSection(),
-                  const SizedBox(height: 24),
-                  _buildContactSection(),
-                  const SizedBox(height: 24),
-                  _buildRoleSection(),
-                  const SizedBox(height: 24),
-                  if (_isTechnicianRole()) ...[
-                    _buildAllocatedAreasSection(),
-                    const SizedBox(height: 24),
-                  ],
-                  _buildIdCardSection(),
-                  const SizedBox(height: 32),
-                  _buildActionButtons(),
-                ],
-              ),
-            ),
+          Form(
+            key: _formKey,
+            child: isWideScreen ? _buildDesktopLayout() : _buildMobileLayout(),
           ),
-          if (_overlay)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
+          if (_overlay) _buildLoadingOverlay(),
           if (_showRoleSheet) _buildRoleBottomSheet(),
         ],
       ),
     );
   }
 
-  Widget _buildBasicInfoSection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Basic Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _firstNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'First Name *',
-                      hintText: 'Enter first name',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'First name is required';
-                      }
-                      if (value.length > 20) {
-                        return 'Name must be less than 20 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _lastNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Last Name',
-                      hintText: 'Enter last name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      surfaceTintColor: AppColors.surface,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Row(
+        children: [
+          Container(
+            padding: AppPadding.badge,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
+              borderRadius: AppRadius.lgAll,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-          ],
-        ),
+            child: Text(
+              widget.isEdit ? 'Edit User' : 'Add User',
+              style: AppTextStyles.badge.copyWith(fontSize: 16),
+            ),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildContactSection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Contact Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _mobileController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Mobile *',
-                hintText: 'Enter mobile number',
-                prefixText: '+91 ',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Mobile is required';
-                }
-                if (value.length != 10) {
-                  return 'Mobile number must be 10 digits';
-                }
-                if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                  return 'Mobile number must be greater than 0';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                hintText: 'Enter email address',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _addressController,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Address',
-                hintText: 'Enter address',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _pincodeController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Pincode',
-                hintText: 'Enter pincode',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRoleSection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Role & Department',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'Role Name *',
-                hintText: 'Choose role name',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    setState(() => _showRoleSheet = true);
-                    _searchRoles();
-                  },
-                ),
-              ),
-              controller: TextEditingController(text: _roleName),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Role is required. Click search icon to choose.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Department Name *',
-                hintText: 'Department name',
-                border: OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: _departmentName),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Department is required';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Tenant Name *',
-                hintText: 'Tenant name',
-                border: OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: _centerName),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Tenant is required';
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAllocatedAreasSection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Allocated Collection Areas',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.search, color: Colors.orange),
-                  onPressed: () {
-                    _showMessageDialog('Info',
-                        'Pincode search not implemented yet. Will be added later.');
-                  },
-                ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                AppColors.primary.withOpacity(0.2),
+                Colors.transparent,
               ],
             ),
-            const SizedBox(height: 8),
-            if (_allocatedAreas.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.primary),
+                SizedBox(height: AppSpacing.md),
+                Text('Processing...', style: AppTextStyles.body),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(AppSpacing.xl),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildSectionCard(
+                          icon: Icons.person_rounded,
+                          title: 'Basic Information',
+                          color: AppColors.primary,
+                          child: _buildBasicInfoFields(),
+                        ),
+                        SizedBox(height: AppSpacing.lg),
+                        _buildSectionCard(
+                          icon: Icons.contact_phone_rounded,
+                          title: 'Contact Information',
+                          color: AppColors.success,
+                          child: _buildContactFields(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildSectionCard(
+                          icon: Icons.admin_panel_settings_rounded,
+                          title: 'Role & Department',
+                          color: AppColors.secondary,
+                          child: _buildRoleFields(),
+                        ),
+                        if (_isTechnicianRole()) ...[
+                          SizedBox(height: AppSpacing.lg),
+                          _buildSectionCard(
+                            icon: Icons.location_on_rounded,
+                            title: 'Allocated Areas',
+                            color: AppColors.warning,
+                            child: _buildAllocatedAreasContent(),
+                          ),
+                        ],
+                        SizedBox(height: AppSpacing.lg),
+                        _buildSectionCard(
+                          icon: Icons.badge_rounded,
+                          title: 'ID Card',
+                          color: AppColors.error,
+                          child: _buildIdCardContent(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.xl),
+              _buildActionButtons(),
+              SizedBox(height: AppSpacing.xl),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        children: [
+          _buildSectionCard(
+            icon: Icons.person_rounded,
+            title: 'Basic Information',
+            color: AppColors.primary,
+            child: _buildBasicInfoFields(),
+          ),
+          SizedBox(height: AppSpacing.md),
+          _buildSectionCard(
+            icon: Icons.contact_phone_rounded,
+            title: 'Contact Information',
+            color: AppColors.success,
+            child: _buildContactFields(),
+          ),
+          SizedBox(height: AppSpacing.md),
+          _buildSectionCard(
+            icon: Icons.admin_panel_settings_rounded,
+            title: 'Role & Department',
+            color: AppColors.secondary,
+            child: _buildRoleFields(),
+          ),
+          if (_isTechnicianRole()) ...[
+            SizedBox(height: AppSpacing.md),
+            _buildSectionCard(
+              icon: Icons.location_on_rounded,
+              title: 'Allocated Areas',
+              color: AppColors.warning,
+              child: _buildAllocatedAreasContent(),
+            ),
+          ],
+          SizedBox(height: AppSpacing.md),
+          _buildSectionCard(
+            icon: Icons.badge_rounded,
+            title: 'ID Card',
+            color: AppColors.error,
+            child: _buildIdCardContent(),
+          ),
+          SizedBox(height: AppSpacing.xl),
+          _buildActionButtons(),
+          SizedBox(height: AppSpacing.xl),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.lgAll,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.08), color.withOpacity(0.02)],
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              border: Border(
+                bottom: BorderSide(color: color.withOpacity(0.1)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: AppRadius.smAll,
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Text(title,
+                    style:
+                        AppTextStyles.h3.copyWith(color: color, fontSize: 16)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicInfoFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _firstNameController,
+                decoration: _inputDecoration('First Name',
+                    icon: Icons.person_outline, required: true),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'First name is required';
+                  }
+                  if (value.length > 20) {
+                    return 'Name must be less than 20 characters';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: TextFormField(
+                controller: _lastNameController,
+                decoration:
+                    _inputDecoration('Last Name', icon: Icons.person_outline),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _mobileController,
+          keyboardType: TextInputType.phone,
+          decoration: _inputDecoration('Mobile',
+              icon: Icons.phone_outlined, prefix: '+91 ', required: true),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Mobile is required';
+            }
+            if (value.length != 10) {
+              return 'Mobile number must be 10 digits';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: AppSpacing.md),
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: _inputDecoration('Email', icon: Icons.email_outlined),
+        ),
+        SizedBox(height: AppSpacing.md),
+        TextFormField(
+          controller: _addressController,
+          maxLines: 2,
+          decoration:
+              _inputDecoration('Address', icon: Icons.location_on_outlined),
+        ),
+        SizedBox(height: AppSpacing.md),
+        TextFormField(
+          controller: _pincodeController,
+          keyboardType: TextInputType.number,
+          decoration:
+              _inputDecoration('Pincode', icon: Icons.pin_drop_outlined),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleFields() {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() => _showRoleSheet = true);
+            _searchRoles();
+          },
+          borderRadius: AppRadius.smAll,
+          child: Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceAlt,
+              border: Border.all(color: AppColors.divider),
+              borderRadius: AppRadius.smAll,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.security, color: AppColors.textHint, size: 20),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    _roleName.isEmpty ? 'Select Role *' : _roleName,
+                    style: TextStyle(
+                      color: _roleName.isEmpty
+                          ? AppColors.textHint
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(Icons.search, color: AppColors.primary),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: AppSpacing.md),
+        Container(
+          padding: EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            border: Border.all(color: AppColors.divider),
+            borderRadius: AppRadius.smAll,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.business, color: AppColors.textHint, size: 20),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
                 child: Text(
-                  'No allocated areas',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              )
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _allocatedAreas.map((item) {
-                  return Chip(
-                    label: Text('${item['pincode']} ${item['area']}'),
-                    deleteIcon: const Icon(Icons.close, size: 18),
-                    onDeleted: () => _removeAllocatedArea(item['_id']),
-                    backgroundColor: Colors.orange.shade50,
-                    side: const BorderSide(color: Colors.orange),
-                  );
-                }).toList(),
+                    _departmentName.isEmpty ? 'Department' : _departmentName),
               ),
-          ],
+            ],
+          ),
         ),
-      ),
+        SizedBox(height: AppSpacing.md),
+        Container(
+          padding: EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            border: Border.all(color: AppColors.divider),
+            borderRadius: AppRadius.smAll,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.store, color: AppColors.textHint, size: 20),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(_centerName.isEmpty ? 'Tenant' : _centerName),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildIdCardSection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  Widget _buildAllocatedAreasContent() {
+    if (_allocatedAreas.isEmpty) {
+      return Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'ID Card',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            if (_uploadedFileName.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Chip(
-                  label: Text('Uploaded: $_uploadedFileName'),
-                  backgroundColor: Colors.blue.shade50,
-                ),
-              ),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.attach_file),
-              label: Text(_selectedFile != null
-                  ? _selectedFile!.name
-                  : 'Attach ID Card Copy'),
-              onPressed: _pickFile,
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
-              ),
-            ),
+            Icon(Icons.location_off, color: AppColors.textHint, size: 32),
+            SizedBox(height: AppSpacing.sm),
+            Text('No allocated areas', style: AppTextStyles.caption),
           ],
         ),
-      ),
+      );
+    }
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: _allocatedAreas.map((item) {
+        return Container(
+          padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withOpacity(0.1),
+            borderRadius: AppRadius.lgAll,
+            border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${item['pincode']} ${item['area']}',
+                  style: TextStyle(color: AppColors.warning)),
+              SizedBox(width: AppSpacing.xs),
+              InkWell(
+                onTap: () => _removeAllocatedArea(item['_id']),
+                child: Icon(Icons.close, size: 16, color: AppColors.warning),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildIdCardContent() {
+    return Column(
+      children: [
+        if (_uploadedFileName.isNotEmpty)
+          Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            margin: EdgeInsets.only(bottom: AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              borderRadius: AppRadius.smAll,
+              border: Border.all(color: AppColors.success.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Uploaded: ${_uploadedFileName.split('/').last}',
+                    style: TextStyle(color: AppColors.success),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        OutlinedButton.icon(
+          icon: Icon(_selectedFile != null ? Icons.check : Icons.attach_file,
+              color: _selectedFile != null
+                  ? AppColors.success
+                  : AppColors.secondary),
+          label: Text(
+            _selectedFile != null ? _selectedFile!.name : 'Attach ID Card',
+            style: TextStyle(
+                color: _selectedFile != null
+                    ? AppColors.success
+                    : AppColors.secondary),
+          ),
+          onPressed: _pickFile,
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(
+                color: _selectedFile != null
+                    ? AppColors.success
+                    : AppColors.secondary),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-          onPressed: _loading ? null : _validate,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          ),
-          child: _loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+    final isWide = MediaQuery.of(context).size.width > 600;
+
+    return isWide
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 200,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.textHint),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
                   ),
-                )
-              : Text(widget.isEdit ? 'Update' : 'Save'),
-        ),
-        const SizedBox(width: 16),
-        OutlinedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          ),
-          child: const Text('Close'),
-        ),
-      ],
-    );
+                  child: Text('Cancel',
+                      style: TextStyle(
+                          fontSize: 16, color: AppColors.textSecondary)),
+                ),
+              ),
+              SizedBox(width: AppSpacing.lg),
+              SizedBox(
+                width: 200,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _validate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textOnPrimary,
+                    elevation: 3,
+                    shadowColor: AppColors.primary.withOpacity(0.4),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+                  ),
+                  child: _loading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.textOnPrimary,
+                          ),
+                        )
+                      : Text(widget.isEdit ? 'Update' : 'Save',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          )
+        : Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _validate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textOnPrimary,
+                    elevation: 3,
+                    shadowColor: AppColors.primary.withOpacity(0.4),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+                  ),
+                  child: _loading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.textOnPrimary,
+                          ),
+                        )
+                      : Text(widget.isEdit ? 'Update' : 'Save',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              SizedBox(height: AppSpacing.md),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.textHint),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+                  ),
+                  child: Text('Cancel',
+                      style: TextStyle(
+                          fontSize: 16, color: AppColors.textSecondary)),
+                ),
+              ),
+            ],
+          );
   }
 
   Widget _buildRoleBottomSheet() {
@@ -851,48 +1082,52 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
         alignment: Alignment.bottomCenter,
         child: Container(
           height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: Column(
             children: [
-              // header bar (already written)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade300),
+                    bottom: BorderSide(color: AppColors.divider),
                   ),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                      padding: AppPadding.badge,
                       decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(4),
+                        color: AppColors.primary,
+                        borderRadius: AppRadius.smAll,
                       ),
-                      child: const Text(
-                        'Search Role',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text('Search Role',
+                          style: TextStyle(
+                              color: AppColors.textOnPrimary,
+                              fontWeight: FontWeight.bold)),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: TextField(
                         controller: _roleSearchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
-                          contentPadding:
-                              EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: InputDecoration(
+                          hintText: 'Search roles...',
+                          prefixIcon:
+                              Icon(Icons.search, color: AppColors.textHint),
+                          filled: true,
+                          fillColor: AppColors.surfaceAlt,
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.smAll,
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm),
                         ),
                         onChanged: (_) {
                           _debounceTimer?.cancel();
@@ -902,18 +1137,30 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close, color: AppColors.textHint),
                       onPressed: () => setState(() => _showRoleSheet = false),
                     ),
                   ],
                 ),
               ),
-              // role list (CONTINUE FROM HERE)
               Expanded(
                 child: _roles.isEmpty
-                    ? const Center(child: Text('No roles found'))
-                    : ListView.builder(
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.search_off,
+                                color: AppColors.textHint, size: 48),
+                            SizedBox(height: AppSpacing.sm),
+                            Text('No roles found',
+                                style: AppTextStyles.caption),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
                         itemCount: _roles.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: AppColors.divider),
                         itemBuilder: (context, index) {
                           final role = _roles[index];
                           final isSelected = _selectedRoles
@@ -921,11 +1168,18 @@ class _AddEditUserPageState extends ConsumerState<AddEditUserPage> {
                           return ListTile(
                             leading: Checkbox(
                               value: isSelected,
+                              activeColor: AppColors.primary,
                               onChanged: (selected) =>
                                   _handleRoleSelect(role, selected),
                             ),
-                            title: Text(role['role_name'] ?? ''),
-                            subtitle: Text('ID: ${role['role_id']}'),
+                            title: Text(role['role_name'] ?? '',
+                                style: AppTextStyles.body),
+                            subtitle: Text('ID: ${role['role_id']}',
+                                style: AppTextStyles.caption),
+                            trailing: isSelected
+                                ? Icon(Icons.check_circle,
+                                    color: AppColors.success)
+                                : null,
                             onTap: () => _handleRoleSelect(role, !isSelected),
                           );
                         },

@@ -24,7 +24,7 @@ class _MonthlyTabState extends ConsumerState<MonthlyTab>
   void initState() {
     super.initState();
 
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(monthlyReportProvider.notifier).loadData();
     });
   }
@@ -68,10 +68,7 @@ class _MonthlyTabState extends ConsumerState<MonthlyTab>
           Expanded(
             child: state.when(
               initial: () => const DashboardSkeletonLoading(),
-              loading: (isFirst) => isFirst
-                  ? const DashboardSkeletonLoading()
-                  : const Center(
-                      child: CircularProgressIndicator(color: Colors.orange)),
+              loading: (_) => const DashboardSkeletonLoading(),
               loaded: (report) => _buildContent(report),
               error: (message) => DashboardEmptyState(
                 message: message,

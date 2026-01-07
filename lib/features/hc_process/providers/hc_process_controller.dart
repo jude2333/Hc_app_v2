@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart' show XFile, ImageSource;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-import 'package:anderson_crm_flutter/util.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/models/technician_process_doc.dart';
@@ -21,24 +21,17 @@ import 'package:anderson_crm_flutter/database/sms_template.dart';
 
 import './hc_process_provider.dart';
 
-/// Controller containing all business logic for HC Process
-/// Separated from UI layer for testability and cleaner architecture
 class HCProcessController {
   final Ref _ref;
   final String workOrderId;
 
   HCProcessController(this._ref, this.workOrderId);
 
-  /// Get notifier for state updates
   HCProcessNotifier get _notifier =>
       _ref.read(hcProcessProvider(workOrderId).notifier);
 
-  /// Get current state
   HCProcessState get _state => _ref.read(hcProcessProvider(workOrderId));
 
-  // ==================== Data Loading ====================
-
-  /// Load work order from PowerSync
   Future<void> loadWorkOrder() async {
     _notifier.setLoading(true);
 
@@ -71,18 +64,15 @@ class HCProcessController {
         email: workOrder.sendEmail ? 1 : 0,
       );
 
-      // Set delay reason from existing data
       if (processDoc.process.firstStep?.isNotEmpty == true) {
         _notifier.setDelayReason(processDoc.process.firstStep!);
       }
 
-      // Set bill amount if exists
       if (processDoc.total != null) {
         _notifier.setBillAmount(processDoc.total!);
         calculateDiscount();
       }
 
-      // Determine resume step
       _beforeFirstStep();
     } catch (e) {
       debugPrint('Error loading work order: $e');
@@ -92,7 +82,6 @@ class HCProcessController {
     }
   }
 
-  /// Update work order via PowerSync
   Future<void> _updateWorkOrderViaPowerSync(
       TechnicianProcessDoc updatedProcessDoc) async {
     final powerSync = _ref.read(powerSyncServiceProvider);
@@ -135,8 +124,6 @@ class HCProcessController {
     _notifier.updateProcessDoc(updatedProcessDoc);
     _notifier.updateWorkOrder(updatedOrder);
   }
-
-  // ==================== Step Navigation ====================
 
   void _beforeFirstStep() {
     final resumeStep = _determineCurrentStep();
@@ -222,12 +209,9 @@ class HCProcessController {
     return 0;
   }
 
-  // ==================== Step Actions ====================
-
-  /// Step 1: Complete delay step
   Future<bool> afterFirstStep() async {
     if (_state.delayMins.isNotEmpty && _state.delayReason.length < 5) {
-      return false; // Show validation error
+      return false;
     }
 
     final storage = _ref.read(storageServiceProvider);
@@ -244,10 +228,9 @@ class HCProcessController {
     return true;
   }
 
-  /// Step 2: Complete tests selection
   Future<int> afterSecondStep() async {
     if (_state.selectedTests.isEmpty) {
-      return -1; // Validation error
+      return -1;
     }
 
     _notifier.setLoading(true);
@@ -280,7 +263,6 @@ class HCProcessController {
 
       await _updateWorkOrderViaPowerSync(processDoc);
 
-      // Determine next step based on client type
       if (_state.b2bClient) {
         await _skipToFifthStep(
             'Not Received For B2B Client', 'OTP Not Needed For B2B Client');
@@ -316,7 +298,6 @@ class HCProcessController {
     _notifier.setCurrentStep(4);
   }
 
-  /// Step 3: Complete billing
   Future<void> afterThirdStep() async {
     if (_state.creditClient && _state.cghsPrice) {
       var processDoc = _state.processDoc!.copyWith(
@@ -369,7 +350,6 @@ class HCProcessController {
 
     await _updateWorkOrderViaPowerSync(processDoc);
 
-    // Check if OTP is needed
     if (_state.sms == 1 || _state.whatsapp == 1 || _state.email == 1) {
       await generateOtp();
       _notifier.setCurrentStep(3);
@@ -377,8 +357,6 @@ class HCProcessController {
       _notifier.setCurrentStep(4);
     }
   }
-
-  // ==================== Discount Calculation ====================
 
   void calculateDiscount() {
     try {
@@ -415,8 +393,6 @@ class HCProcessController {
     }
   }
 
-  // ==================== OTP ====================
-
   Future<void> generateOtp() async {
     _notifier.setLoading(true);
 
@@ -439,7 +415,6 @@ class HCProcessController {
     }
   }
 
-  /// Verify OTP - returns true if verified
   bool verifyOtp(String enteredOtp) {
     if (enteredOtp.isEmpty) return false;
 
@@ -454,7 +429,6 @@ class HCProcessController {
       return true;
     }
 
-    // Check tech mobile fallback
     if (_state.techMobile.length >= 6) {
       String last6 = _state.techMobile.substring(_state.techMobile.length - 6);
       if (enteredOtp == last6) {
@@ -536,9 +510,6 @@ class HCProcessController {
     }
   }
 
-  // ==================== Photo Upload ====================
-
-  /// Pick and upload prescription photo
   Future<String?> uploadPrescription({
     required ImageSource source,
     Uint8List? webBytes,
@@ -559,16 +530,13 @@ class HCProcessController {
           'homecollection/prescriptions/${Util.getTodayStringForFolderCreation()}/$fileName';
 
       if (_state.offlineMode) {
-        // Offline upload via PowerSync
         await _uploadOffline(pickedFile.name, fileLocation, bytes);
       } else {
-        // Direct S3 upload
         await _uploadToS3(fileLocation, bytes, fileName);
       }
 
       _notifier.addUploadedPhoto(pickedFile.name, fileLocation);
 
-      // Update process doc
       var processDoc = _state.processDoc!
           .copyWith(status: 'Fifth Step')
           .updateProcessStep('fifth_step', _state.uploadedPhotoPaths.join(','))
@@ -632,9 +600,6 @@ class HCProcessController {
     }
   }
 
-  // ==================== Finish ====================
-
-  /// Complete the work order
   Future<bool> finishSteps(String mode) async {
     _notifier.setLoading(true);
 
@@ -739,7 +704,6 @@ class HCProcessController {
   }
 }
 
-/// Provider for HCProcessController
 final hcProcessControllerProvider = Provider.autoDispose
     .family<HCProcessController, String>((ref, workOrderId) {
   return HCProcessController(ref, workOrderId);
