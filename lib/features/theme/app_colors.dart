@@ -16,6 +16,7 @@ class AppColors {
 
   // Background colors
   static const Color background = Color(0xFFF5F5F5);
+  static const Color backgroundSmoke = Color(0xFFF5F5F5);
   static const Color surface = Colors.white;
   static const Color surfaceAlt = Color(0xFFFAFAFA);
 

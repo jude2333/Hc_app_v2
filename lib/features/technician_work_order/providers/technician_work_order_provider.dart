@@ -104,6 +104,99 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return _repo.searchWorkOrders(_workOrders, query);
   }
 
+  /// Update remittance status for a work order
+  Future<bool> updateRemittance(
+      WorkOrder order, bool remittance, String user) async {
+    final timeline = List<dynamic>.from(order.timeLine);
+    final timestamp = DateTime.now().toString().substring(0, 16);
+    final logEntry = remittance
+        ? '$timestamp - $user - Remittance Made.'
+        : '$timestamp - $user - Remittance Cancelled.';
+    timeline.add(logEntry);
+
+    final customDoc = order.buildDoc();
+    customDoc['remittance'] = remittance;
+    customDoc['accept_remittance'] = false;
+    customDoc['time_line'] = timeline;
+
+    final updatedOrder = order.copyWith(
+      lastUpdatedBy: user,
+      lastUpdatedAt: DateTime.now(),
+    );
+
+    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+  }
+
+  /// Update GPay reference
+  Future<bool> updateGPayRef(
+      WorkOrder order, String gpayRef, String user) async {
+    final timeline = List<dynamic>.from(order.timeLine);
+    final timestamp = DateTime.now().toString().substring(0, 16);
+    timeline.add('$timestamp - $user - GPay Ref Updated: $gpayRef');
+
+    final customDoc = order.buildDoc();
+    customDoc['gpay_ref'] = gpayRef;
+    customDoc['time_line'] = timeline;
+
+    final updatedOrder = order.copyWith(
+      lastUpdatedBy: user,
+      lastUpdatedAt: DateTime.now(),
+    );
+
+    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+  }
+
+  /// Update technician remarks
+  Future<bool> updateRemarks(
+      WorkOrder order, String remarks, String user) async {
+    final timeline = List<dynamic>.from(order.timeLine);
+    final timestamp = DateTime.now().toString().substring(0, 16);
+    timeline.add('$timestamp - $user - Remarks Updated');
+
+    final customDoc = order.buildDoc();
+    customDoc['remarks'] = remarks;
+    customDoc['time_line'] = timeline;
+
+    final updatedOrder = order.copyWith(
+      lastUpdatedBy: user,
+      lastUpdatedAt: DateTime.now(),
+    );
+
+    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+  }
+
+  /// Add lab sample photo path
+  Future<bool> addLabSamplePhoto(
+      WorkOrder order, String photoPath, String user) async {
+    final timeline = List<dynamic>.from(order.timeLine);
+    final timestamp = DateTime.now().toString().substring(0, 16);
+    timeline.add('$timestamp - $user - Lab Sample Pic Uploaded');
+
+    final existingPics = order.parsedDoc['lab_sample_pics']?.toString() ?? '';
+    final newPics =
+        existingPics.isEmpty ? photoPath : '$existingPics,$photoPath';
+
+    final customDoc = order.buildDoc();
+    customDoc['lab_sample_pics'] = newPics;
+    customDoc['time_line'] = timeline;
+
+    final updatedOrder = order.copyWith(
+      lastUpdatedBy: user,
+      lastUpdatedAt: DateTime.now(),
+    );
+
+    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+  }
+
+  /// Get work order by ID from current list
+  WorkOrder? getWorkOrderById(String docId) {
+    try {
+      return _workOrders.firstWhere((wo) => wo.docId == docId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   void dispose() {
     _ordersSubscription?.cancel();

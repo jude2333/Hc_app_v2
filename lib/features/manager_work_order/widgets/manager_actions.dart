@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
-import 'package:anderson_crm_flutter/powersync/screens/add_work_order.dart';
+import 'package:anderson_crm_flutter/components/add_work_order.dart';
 import '../screens/manager_work_order_page.dart';
 import '../../theme/theme.dart';
 

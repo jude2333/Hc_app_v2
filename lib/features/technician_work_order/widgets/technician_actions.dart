@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import 'package:anderson_crm_flutter/powersync/screens/add_work_order.dart';
-import 'package:anderson_crm_flutter/powersync/screens/edit_work_order_dialog.dart';
-import 'package:anderson_crm_flutter/powersync/screens/cancel_work_order_dialog.dart';
-import 'package:anderson_crm_flutter/powersync/screens/hc_process_page.dart';
+import 'package:anderson_crm_flutter/components/add_work_order.dart';
+import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
+import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
+import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 
+/// Technician-specific action buttons for work order rows.
+/// Includes: Copy, Start HC Process, Edit, Cancel actions.
 class TechnicianActions extends ConsumerWidget {
   final WorkOrder workOrder;
 
@@ -41,7 +43,7 @@ class TechnicianActions extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      HCProcessPage3(workOrderId: workOrder.docId),
+                      HCProcessPage(workOrderId: workOrder.docId),
                 ),
               );
             },

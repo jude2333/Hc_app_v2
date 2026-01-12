@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/powersync/screens/tech_engagement_page.dart';
-import 'package:anderson_crm_flutter/powersync/screens/price_view_page.dart';
+import 'package:anderson_crm_flutter/components/tech_engagement_page.dart';
+import 'package:anderson_crm_flutter/components/price_view_page.dart';
 
 import '../../theme/theme.dart';
 
-import 'package:anderson_crm_flutter/powersync/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 
 import '../providers/technician_work_order_provider.dart';
 import '../widgets/technician_actions.dart';
+import '../widgets/technician_mobile_view.dart';
+import '../widgets/technician_expanded_content.dart';
 
 final _searchPod = StateProvider<String>((_) => '');
 final _sortColumnPod = StateProvider<String>((_) => 'date');
@@ -123,7 +125,23 @@ class _TechnicianWorkOrderPageState
       );
     }
 
-    return VirtualTechnicianTable(rows: provider.workOrders);
+    // Responsive layout: Mobile cards for < 800px, Desktop table for >= 800px
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+        final searchQuery = ref.watch(_searchPod);
+
+        if (isMobile) {
+          return TechnicianMobileView(
+            workOrders: provider.workOrders,
+            searchQuery: searchQuery,
+            onSearchChanged: (v) => ref.read(_searchPod.notifier).state = v,
+          );
+        }
+
+        return VirtualTechnicianTable(rows: provider.workOrders);
+      },
+    );
   }
 
   Widget _buildSkeletonLoading() {
@@ -411,50 +429,8 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
           ),
         ),
         if (_isExpanded)
-          Container(
-            padding: AppPadding.card,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              border:
-                  Border(left: BorderSide(color: AppColors.primary, width: 3)),
-            ),
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(2),
-                    1: FlexColumnWidth(1),
-                    2: FlexColumnWidth(3),
-                    3: FlexColumnWidth(2),
-                    4: FlexColumnWidth(2),
-                  },
-                  border: TableBorder.all(color: AppColors.tableBorder),
-                  children: [
-                    TableRow(
-                      decoration: BoxDecoration(color: AppColors.surfaceAlt),
-                      children: const [
-                        WOTableHeader('Address'),
-                        WOTableHeader('Pincode'),
-                        WOTableHeader('Additional Info'),
-                        WOTableHeader('Status'),
-                        WOTableHeader('Assigned To'),
-                      ],
-                    ),
-                    TableRow(
-                      children: [
-                        WOTableCell(wo.address),
-                        WOTableCell(wo.pincode),
-                        WOTableCell(wo.freeText.isEmpty ? 'N/A' : wo.freeText),
-                        WOTableCell(wo.status),
-                        WOTableCell(wo.assignedTo),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          RepaintBoundary(
+            child: TechnicianExpandedContent(workOrder: wo),
           ),
       ],
     );

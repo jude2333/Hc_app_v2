@@ -911,15 +911,19 @@ class PostgresDB {
     String query;
     switch (mode) {
       case 'Mobile':
+        // Uses idx_visit_detail_mobile_json - queries mobile from JSON doc
         query =
-            '/hc_patient_master?select=*,hc_patient_visit_detail(doc)&mobile_number=eq.$str';
+            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&doc->>mobile=eq.$str&visible=is.true&order=visit_date.desc,visit_time.desc';
         break;
       case 'Date':
-        query = '/hc_patient_visit_detail?select=doc&visit_date=eq.$str';
+        // Uses idx_visit_detail_date_visible - queries top-level visit_date
+        query =
+            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&visit_date=eq.$str&visible=is.true&order=visit_time.asc';
         break;
       case 'Name':
+        // Uses idx_visit_detail_name_trgm - trigram index on patient_name
         query =
-            '/hc_patient_visit_detail?select=doc&patient_name=ilike.${str.toLowerCase().trim()}*&order=visit_date.desc';
+            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&patient_name=ilike.*${str.toLowerCase().trim()}*&visible=is.true&order=visit_date.desc,visit_time.desc&limit=100';
         break;
       default:
         return [];
@@ -934,40 +938,35 @@ class PostgresDB {
 
       debugPrint('Raw API response type: ${body.runtimeType}');
 
-      if (mode == 'Mobile') {
-        if (body is Map && body['data'] is List) {
-          for (var masterRecord in body['data'] as List) {
-            if (masterRecord is Map<String, dynamic>) {
-              final visitDetails = masterRecord['hc_patient_visit_detail'];
-              if (visitDetails is List) {
-                for (var visit in visitDetails) {
-                  if (visit is Map<String, dynamic>) {
-                    final doc = visit['doc'];
-                    final extractedData = _extractWorkOrderData(doc);
-                    if (extractedData.isNotEmpty) {
-                      processedResults.add(extractedData);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      } else {
-        List<dynamic> dataList = [];
-        if (body is Map && body['data'] is List) {
-          dataList = body['data'] as List;
-        } else if (body is List) {
-          dataList = body;
-        }
+      // All queries now return flat results from hc_patient_visit_detail
+      List<dynamic> dataList = [];
+      if (body is Map && body['data'] is List) {
+        dataList = body['data'] as List;
+      } else if (body is List) {
+        dataList = body;
+      }
 
-        for (var item in dataList) {
-          if (item is Map<String, dynamic>) {
-            final doc = item['doc'];
-            final extractedData = _extractWorkOrderData(doc);
-            if (extractedData.isNotEmpty) {
-              processedResults.add(extractedData);
-            }
+      for (var item in dataList) {
+        if (item is Map<String, dynamic>) {
+          final doc = item['doc'];
+          final extractedData = _extractWorkOrderData(doc);
+          if (extractedData.isNotEmpty) {
+            // Add top-level columns for quick access (already indexed)
+            extractedData['id'] = item['id'];
+            extractedData['patient_name'] =
+                item['patient_name'] ?? extractedData['name'];
+            extractedData['visit_date'] = item['visit_date'];
+            extractedData['visit_time'] = item['visit_time'];
+            extractedData['status'] = item['status'] ?? extractedData['status'];
+            extractedData['server_status'] =
+                item['server_status'] ?? extractedData['server_status'];
+            extractedData['assigned_to'] =
+                item['assigned_to'] ?? extractedData['assigned_to'];
+            extractedData['bill_number'] =
+                item['bill_number'] ?? extractedData['bill_number'];
+            extractedData['lab_number'] =
+                item['lab_number'] ?? extractedData['lab_number'];
+            processedResults.add(extractedData);
           }
         }
       }

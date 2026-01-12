@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/powersync/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 
 final _billingSearchPod = StateProvider<String>((_) => '');
 final _billingSortColumnPod = StateProvider<String>((_) => 'date');

@@ -3,21 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import 'package:anderson_crm_flutter/powersync/screens/add_work_order.dart';
-import 'package:anderson_crm_flutter/powersync/screens/assign_technicians.dart';
-import 'package:anderson_crm_flutter/powersync/screens/canceled_work_order_page.dart';
-import 'package:anderson_crm_flutter/screens/tech_engagement_page.dart';
+import 'package:anderson_crm_flutter/components/add_work_order.dart';
+import 'package:anderson_crm_flutter/components/assign_technicians.dart';
+import 'package:anderson_crm_flutter/components/canceled_work_order_page.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/price_list/screens/manager_price_view_page.dart';
-import 'package:anderson_crm_flutter/powersync/screens/manager_tech_engagement_page.dart';
+import 'package:anderson_crm_flutter/components/manager_tech_engagement_page.dart';
 
 import '../../theme/theme.dart';
 
-import 'package:anderson_crm_flutter/powersync/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 
 import '../widgets/manager_actions.dart';
 import '../widgets/manager_expanded_content.dart';
+import '../widgets/manager_mobile_view.dart';
 
 final todayPod = StateProvider<DateTime>((_) => DateTime(2022, 12, 14));
 final selectedDatePod = StateProvider<DateTime>((ref) => ref.watch(todayPod));
@@ -40,13 +40,17 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
   void initState() {
     super.initState();
 
+    // Waits for first frame then defers heavy work for navigation animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = ref.read(workOrderProvider);
-      if (provider.isInitializing) {
-        provider.initialize();
-      }
-      final today = ref.read(todayPod);
-      provider.loadWorkOrdersByDate(today);
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!mounted) return;
+        final provider = ref.read(workOrderProvider);
+        if (provider.isInitializing) {
+          provider.initialize();
+        }
+        final today = ref.read(todayPod);
+        provider.loadWorkOrdersByDate(today);
+      });
     });
   }
 
@@ -73,7 +77,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundSmoke,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 4,
@@ -150,32 +154,38 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: const Size.fromHeight(60),
           child: Container(
-            color: AppColors.surface,
-            height: 56,
+            height: 60,
             width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(
+                top: BorderSide(color: AppColors.divider, width: 0.5),
+              ),
+            ),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              padding:
+                  EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 8),
               itemCount: dateChips.length,
               itemBuilder: (_, idx) {
                 final chip = dateChips[idx];
                 final isSel = chip.date.year == selected.year &&
                     chip.date.month == selected.month &&
                     chip.date.day == selected.day;
+                final isToday = chip.date.year == today.year &&
+                    chip.date.month == today.month &&
+                    chip.date.day == today.day;
+
                 return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  child: ActionChip(
-                    label: Text(chip.label, textAlign: TextAlign.center),
-                    backgroundColor: isSel
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : AppColors.surfaceAlt,
-                    labelStyle: TextStyle(
-                        color: isSel ? Colors.black : Colors.black87,
-                        fontWeight:
-                            isSel ? FontWeight.bold : FontWeight.normal),
-                    onPressed: () async {
+                  padding: EdgeInsets.only(right: AppSpacing.sm),
+                  child: _ModernDateChip(
+                    date: chip.date,
+                    label: chip.label,
+                    isSelected: isSel,
+                    isToday: isToday,
+                    onTap: () async {
                       ref.read(selectedDatePod.notifier).state = chip.date;
                       await provider.loadWorkOrdersByDate(chip.date);
                     },
@@ -186,18 +196,23 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.fromLTRB(
-            AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, 0),
-        child: _buildBody(provider),
-      ),
+      body: _buildBody(context, provider),
     );
   }
 
-  Widget _buildBody(WorkOrderProvider provider) {
+  Widget _buildBody(BuildContext context, WorkOrderProvider provider) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
+
     if (provider.isInitializing ||
         (provider.isLoading && provider.workOrders.isEmpty)) {
-      return _buildSkeletonLoading();
+      return Padding(
+        padding: isMobile
+            ? EdgeInsets.zero
+            : EdgeInsets.fromLTRB(
+                AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, 0),
+        child: _buildSkeletonLoading(),
+      );
     }
     if (provider.errorMessage != null) {
       return Center(
@@ -218,7 +233,22 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
         ),
       );
     }
-    return VirtualManagerTable(rows: provider.workOrders);
+
+    // Mobile view with cards
+    if (isMobile) {
+      return ManagerMobileView(
+        workOrders: provider.workOrders,
+        searchQuery: ref.watch(_searchPod),
+        onSearchChanged: (value) => ref.read(_searchPod.notifier).state = value,
+      );
+    }
+
+    // Desktop view with table
+    return Padding(
+      padding:
+          EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, 0),
+      child: VirtualManagerTable(rows: provider.workOrders),
+    );
   }
 
   Widget _buildSkeletonLoading() {
@@ -378,7 +408,7 @@ class VirtualManagerTable extends ConsumerWidget {
               children: [
                 Container(
                   padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+                      horizontal: AppSpacing.lg, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: const BorderRadius.only(
@@ -486,8 +516,8 @@ class _ManagerExpandableRowConsumerState
                 border:
                     Border(bottom: BorderSide(color: AppColors.tableBorder))),
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+              padding:
+                  EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
               child: Row(
                 children: [
                   _buildCell('${widget.index}', flex: 1),
@@ -529,7 +559,8 @@ class _ManagerExpandableRowConsumerState
             ),
           ),
         ),
-        if (_isExpanded) ManagerExpandedContent(workOrder: wo),
+        if (_isExpanded)
+          RepaintBoundary(child: ManagerExpandedContent(workOrder: wo)),
       ],
     );
   }
@@ -538,8 +569,8 @@ class _ManagerExpandableRowConsumerState
     return Expanded(
         flex: flex,
         child: Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs, vertical: AppSpacing.xs),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
             child: Text(text, overflow: TextOverflow.ellipsis)));
   }
 
@@ -657,4 +688,96 @@ class _DateChipProps {
   final DateTime date;
   final String label;
   _DateChipProps(this.date, this.label);
+}
+
+/// Modern date chip with gradient styling for selected state
+class _ModernDateChip extends StatelessWidget {
+  final DateTime date;
+  final String label;
+  final bool isSelected;
+  final bool isToday;
+  final VoidCallback onTap;
+
+  const _ModernDateChip({
+    required this.date,
+    required this.label,
+    required this.isSelected,
+    required this.isToday,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Parse the label to get display text
+    final lines = label.split('\n');
+    final hasTitle = lines.length > 1;
+    final title = hasTitle ? lines[0] : null;
+    final dateText = hasTitle ? lines[1] : lines[0];
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withValues(alpha: 0.8),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected
+                ? null
+                : (isToday ? AppColors.primaryLight : AppColors.surfaceAlt),
+            borderRadius: BorderRadius.circular(12),
+            border: isToday && !isSelected
+                ? Border.all(color: AppColors.primary, width: 1.5)
+                : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (title != null)
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : AppColors.primary,
+                    letterSpacing: 0.3,
+                    height: 1.2,
+                  ),
+                ),
+              Text(
+                dateText,
+                style: TextStyle(
+                  fontSize: hasTitle ? 12 : 13,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

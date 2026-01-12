@@ -71,4 +71,9 @@ class AppTextStyles {
     fontSize: 14,
     color: AppColors.textPrimary,
   );
+
+  static const TextStyle nameBadges = TextStyle(
+    fontSize: 8,
+    color: AppColors.error,
+  );
 }

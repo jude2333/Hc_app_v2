@@ -6,7 +6,7 @@ import 'package:anderson_crm_flutter/features/price_list/price_list.dart';
 import 'add_edit_price_dialog.dart';
 import 'history_sheet.dart';
 
-import '../../../powersync/widgets/common/common_widgets.dart';
+import '../../core/widgets/common/common_widgets.dart';
 
 class ManagerPriceViewPage extends ConsumerStatefulWidget {
   const ManagerPriceViewPage({Key? key}) : super(key: key);

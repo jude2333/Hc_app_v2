@@ -1,18 +1,19 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
-import 'package:anderson_crm_flutter/shell/main_shell.dart';
+import 'package:anderson_crm_flutter/features/shell/presentation/main_shell.dart';
 import 'package:anderson_crm_flutter/views/login_view.dart';
 // import 'package:anderson_crm_flutter/screens/loading_screen.dart';
 import 'package:anderson_crm_flutter/features/users/screens/Users.dart';
-import '../screens/search_screen.dart';
-import 'package:anderson_crm_flutter/screens/Notifications.dart';
+// import 'package:anderson_crm_flutter/features/search/screens/search_page.dart';
+import 'package:anderson_crm_flutter/features/notifications/screens/notifications_page.dart';
 import 'package:anderson_crm_flutter/features/dashboard/screens/dashboardScreen.dart';
 // import 'package:anderson_crm_flutter/screens/billingWorkOrder.dart';
 // import '../powersync/servicess/screens/work_order_page2.dart';
 // import 'package:anderson_crm_flutter/powersync/screens/manager/manager_work_order.dart';
-import 'package:anderson_crm_flutter/powersync/screens/technicians/technician_work_order.dart';
+import 'package:anderson_crm_flutter/features/technician_work_order/screens/technician_work_order_page.dart';
 import 'package:anderson_crm_flutter/features/billing_work_order/screens/billing_work_order_page.dart';
 import 'package:anderson_crm_flutter/features/manager_work_order/screens/manager_work_order_page.dart';
+import 'package:anderson_crm_flutter/features/search/screens/search_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -37,7 +38,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/search',
           name: 'search',
-          builder: (context, state) => const SearchScreen2(),
+          builder: (context, state) => const SearchPage(),
         ),
         GoRoute(
           path: '/notifications',

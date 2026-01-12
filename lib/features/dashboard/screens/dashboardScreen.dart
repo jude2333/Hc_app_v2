@@ -270,13 +270,16 @@ class _TabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tab(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 6),
+            Text(label),
+          ],
+        ),
       ),
     );
   }

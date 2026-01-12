@@ -77,15 +77,15 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
             ),
           ),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-            onPressed: state.isLoading
-                ? null
-                : () => ref.read(billingWorkOrderProvider.notifier).refresh(),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     tooltip: 'Refresh',
+        //     icon: const Icon(Icons.refresh, color: Colors.black87),
+        //     onPressed: state.isLoading
+        //         ? null
+        //         : () => ref.read(billingWorkOrderProvider.notifier).refresh(),
+        //   ),
+        // ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.orange,

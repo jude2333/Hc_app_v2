@@ -119,7 +119,15 @@ class BackendConnector extends PowerSyncBackendConnector {
     debugPrint('[BackendConnector] uploadData()');
 
     try {
-      final transaction = await database.getCrudBatch(limit: 100);
+      // Wrap getCrudBatch in its own try-catch for Flutter Web JS interop issues
+      CrudBatch? transaction;
+      try {
+        transaction = await database.getCrudBatch(limit: 100);
+      } catch (e) {
+        // Handle LegacyJavaScriptObject type error on Flutter Web
+        debugPrint('[BackendConnector] getCrudBatch error (likely Web): $e');
+        return;
+      }
 
       if (transaction == null || transaction.crud.isEmpty) {
         return;

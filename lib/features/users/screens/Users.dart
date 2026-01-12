@@ -49,7 +49,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.primaryLight,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.md),

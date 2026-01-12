@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'work_order_page.dart'; // reusable desktop view
+import 'work_order_page_oldVersion.dart'; // reusable desktop view
 import '../services/postgresService.dart';
-import 'package:anderson_crm_flutter/screens/work_order_page.dart'
+import 'package:anderson_crm_flutter/screens/work_order_page_oldVersion.dart'
     show DesktopTable;
 
 /* ----------  providers  ---------- */

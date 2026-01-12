@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
+import 'package:anderson_crm_flutter/features/theme/app_colors.dart';
+import 'package:anderson_crm_flutter/features/theme/app_spacing.dart';
 
 final _mobileSearchPod = StateProvider<String>((_) => '');
 
@@ -117,7 +119,7 @@ class _DebouncedSearchBarState extends State<_DebouncedSearchBar> {
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdAll,
           borderSide: BorderSide.none,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -142,8 +144,10 @@ class _BillingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
+      color: AppColors.surface,
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         childrenPadding: const EdgeInsets.all(16),
@@ -353,7 +357,7 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdAll,
         border: Border.all(color: color),
       ),
       child: Text(
@@ -394,7 +398,8 @@ class _ServerStatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        // borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdAll,
         border: Border.all(color: color),
       ),
       child: Text(
