@@ -7,6 +7,8 @@ import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 
 // Shared Widgets
 import '../features/core/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/features/theme/app_spacing.dart';
 
 final cancelledDatePod = StateProvider<DateTime>((ref) {
   return Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
@@ -51,28 +53,13 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
   Widget build(BuildContext context) {
     final asyncOrders = ref.watch(cancelledOrdersProvider);
     final selectedDate = ref.watch(cancelledDatePod);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.red,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Text(
-            'Cancelled Orders',
-            style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
+        title: const Text('Cancelled Orders'),
       ),
       body: Column(
         children: [
@@ -137,6 +124,10 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
                       ],
                     ),
                   );
+                }
+
+                if (isMobile) {
+                  return CancelledMobileView(workOrders: orders);
                 }
                 return VirtualCancelledTable(rows: orders);
               },
@@ -326,6 +317,271 @@ class _ExpandedContent extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w500))),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class CancelledMobileView extends ConsumerWidget {
+  final List<WorkOrder> workOrders;
+
+  const CancelledMobileView({
+    super.key,
+    required this.workOrders,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (workOrders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.assignment_outlined,
+                size: 48,
+                color: AppColors.textHint,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Canceled Orders',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select a different date',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textHint,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Results count
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              Text(
+                '${workOrders.length} canceled orders',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Work order cards
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            itemCount: workOrders.length,
+            itemBuilder: (context, index) {
+              return _MobileCancelledCard(
+                workOrder: workOrders[index],
+                index: index + 1,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileCancelledCard extends StatefulWidget {
+  final WorkOrder workOrder;
+  final int index;
+
+  const _MobileCancelledCard({
+    required this.workOrder,
+    required this.index,
+  });
+
+  @override
+  State<_MobileCancelledCard> createState() => _MobileCancelledCardState();
+}
+
+class _MobileCancelledCardState extends State<_MobileCancelledCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final wo = widget.workOrder;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.mdAll,
+        side: BorderSide(
+          color: _isExpanded ? AppColors.error : AppColors.divider,
+          width: _isExpanded ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Main card content (always visible)
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row: Index + Name + Expand icon
+                  Row(
+                    children: [
+                      // Index badge
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: AppRadius.mdAll,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${widget.index}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Patient name + badges
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    wo.patientName,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${wo.gender} • ${wo.age} • ${wo.mobile}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Expand icon
+                      AnimatedRotation(
+                        turns: _isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Status chips row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          wo.status,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ServerChip(status: wo.serverStatus),
+                      const Spacer(),
+                      // Visit time
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.access_time,
+                                size: 12, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              wo.visitTime,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded content
+          if (_isExpanded)
+            RepaintBoundary(
+              child: Column(
+                children: [
+                  Divider(height: 1, color: AppColors.divider),
+                  // Expanded details
+                  _ExpandedContent(workOrder: wo),
+                ],
+              ),
+            ),
         ],
       ),
     );

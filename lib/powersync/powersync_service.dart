@@ -84,6 +84,21 @@ class PowerSyncService {
     });
   }
 
+  // Watch work orders for 7-day range (start date + 6 days = "6+ Days" chip)
+  Stream<List<Map<String, dynamic>>> watchWorkOrdersFromDate(
+      DateTime startDate) {
+    final startStr = startDate.toIso8601String().split('T')[0];
+    final endDate = startDate.add(const Duration(days: 6));
+    final endStr = endDate.toIso8601String().split('T')[0];
+
+    return db.watch(
+      'SELECT * FROM hc_patient_visit_detail WHERE visible = 1 AND visit_date >= ? AND visit_date <= ? ORDER BY visit_date ASC, visit_time ASC',
+      parameters: [startStr, endStr],
+    ).map((rows) {
+      return rows.map((r) => Map<String, dynamic>.from(r)).toList();
+    });
+  }
+
   //  Returns List<Map> so Isolate can parse it
   Stream<List<Map<String, dynamic>>> watchTechnicianWorkOrders(String techId) {
     return db.watch(

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/components/add_work_order.dart';
-import '../screens/manager_work_order_page.dart';
+import '../providers/manager_work_order_provider.dart';
 import '../../theme/theme.dart';
 
 class ManagerActions extends ConsumerWidget {
@@ -86,7 +86,7 @@ class ManagerActions extends ConsumerWidget {
                   .read(workOrderProvider)
                   .softDeleteWorkOrder(int.parse(workOrder.id), 'Manager');
               if (success) {
-                final date = ref.read(selectedDatePod);
+                final date = ref.read(managerSelectedDatePod);
                 await ref.read(workOrderProvider).loadWorkOrdersByDate(date);
                 messenger.showSnackBar(
                   SnackBar(
@@ -104,7 +104,7 @@ class ManagerActions extends ConsumerWidget {
   }
 
   Future<void> _refresh(BuildContext context, WidgetRef ref, String msg) async {
-    final date = ref.read(selectedDatePod);
+    final date = ref.read(managerSelectedDatePod);
     await ref.read(workOrderProvider).loadWorkOrdersByDate(date);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

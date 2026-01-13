@@ -114,38 +114,77 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
+  /// Upload local changes to the backend.
+  ///
+  /// This method follows PowerSync's recommended pattern:
+  /// - Uses getNextCrudTransaction() to process transactions one at a time
+  /// - Always completes transactions to prevent stuck CRUD items
+  /// - Handles errors gracefully and allows PowerSync to retry
   @override
   Future<void> uploadData(PowerSyncDatabase database) async {
     debugPrint('[BackendConnector] uploadData()');
 
-    try {
-      // Wrap getCrudBatch in its own try-catch for Flutter Web JS interop issues
-      CrudBatch? transaction;
+    // Process all pending transactions using PowerSync's recommended pattern
+    while (true) {
+      CrudTransaction? transaction;
+
       try {
-        transaction = await database.getCrudBatch(limit: 100);
+        // Get the next pending transaction
+        transaction = await database.getNextCrudTransaction();
+
+        if (transaction == null) {
+          // No more transactions to process
+          return;
+        }
+
+        debugPrint(
+            '[BackendConnector] Processing transaction with ${transaction.crud.length} operations');
+
+        // Process each operation in the transaction
+        for (final operation in transaction.crud) {
+          await _processOperation(operation);
+        }
+
+        // Mark transaction as complete - this removes it from the queue
+        await transaction.complete();
+        debugPrint('[BackendConnector] Transaction completed successfully');
       } catch (e) {
-        // Handle LegacyJavaScriptObject type error on Flutter Web
-        debugPrint('[BackendConnector] getCrudBatch error (likely Web): $e');
-        return;
+        debugPrint('[BackendConnector] Upload error: $e');
+
+        // If we have a transaction, we should NOT complete it on error
+        // This allows PowerSync to retry the transaction later
+        // However, if it's a permanent failure, we may want to complete it
+        // to prevent blocking the queue
+
+        if (_isPermanentError(e)) {
+          // For permanent errors (e.g., validation failures), complete the transaction
+          // to prevent blocking the upload queue
+          if (transaction != null) {
+            try {
+              await transaction.complete();
+              debugPrint(
+                  '[BackendConnector] Skipped failed transaction (permanent error)');
+            } catch (_) {}
+          }
+        }
+
+        // Rethrow to let PowerSync handle retry logic
+        rethrow;
       }
-
-      if (transaction == null || transaction.crud.isEmpty) {
-        return;
-      }
-
-      debugPrint(
-          '[BackendConnector] Processing ${transaction.crud.length} operations');
-
-      for (final operation in transaction.crud) {
-        await _processOperation(operation);
-      }
-
-      await transaction.complete();
-      debugPrint('[BackendConnector] Upload complete');
-    } catch (e) {
-      debugPrint('[BackendConnector] Upload error: $e');
-      rethrow;
     }
+  }
+
+  /// Determine if an error is permanent (should not be retried)
+  bool _isPermanentError(dynamic error) {
+    final errorStr = error.toString().toLowerCase();
+    // Consider 4xx HTTP errors (except 429) as permanent
+    // Also consider validation errors as permanent
+    return errorStr.contains('400') ||
+        errorStr.contains('401') ||
+        errorStr.contains('403') ||
+        errorStr.contains('404') ||
+        errorStr.contains('422') ||
+        errorStr.contains('validation');
   }
 
   Future<void> _processOperation(CrudEntry operation) async {

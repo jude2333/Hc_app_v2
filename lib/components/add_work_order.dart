@@ -667,14 +667,18 @@ class _AddWorkOrderPageMobileState
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               flex: 2,
               child: DropdownButtonFormField<String>(
                 value: _salutation.isEmpty ? null : _salutation,
                 decoration: _inputDecoration('Title'),
+                isExpanded: true,
                 items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .map((s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s, overflow: TextOverflow.ellipsis)))
                     .toList(),
                 onChanged: (v) {
                   setState(() {
@@ -687,7 +691,7 @@ class _AddWorkOrderPageMobileState
             ),
             SizedBox(width: AppSpacing.md),
             Expanded(
-              flex: 5,
+              flex: 4,
               child: TextFormField(
                 controller: _nameController,
                 decoration:
@@ -700,6 +704,7 @@ class _AddWorkOrderPageMobileState
         ),
         SizedBox(height: AppSpacing.md),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: TextFormField(
@@ -713,6 +718,7 @@ class _AddWorkOrderPageMobileState
               child: DropdownButtonFormField<String>(
                 value: _gender,
                 decoration: _inputDecoration('Gender'),
+                isExpanded: true,
                 items: ['Male', 'Female', 'Other']
                     .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                     .toList(),
@@ -1334,30 +1340,34 @@ class _AddWorkOrderPageMobileState
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar('Error: $e');
     }
   }
 
   void _handleSaveResult(bool success, String message) {
+    if (!mounted) return;
+
     setState(() => _isLoading = false);
-    if (success && mounted) {
-      // Pop first, then show snackbar to avoid rendering on disposed view
+
+    if (success) {
+      // Store the messenger before popping to avoid context issues
+      final messenger = ScaffoldMessenger.of(context);
+
+      // Pop the page first
       Navigator.of(context).pop('refresh');
-      // Use a slight delay to ensure snackbar shows on the parent page
-      Future.microtask(() {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: AppColors.textPrimary,
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
-            ),
-          );
-        }
-      });
-    } else if (!success && mounted) {
+
+      // Show snackbar using stored messenger (works even after pop)
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.textPrimary,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
+        ),
+      );
+    } else {
       _showSnackBar('Operation failed');
     }
   }

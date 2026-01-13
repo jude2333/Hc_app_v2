@@ -97,6 +97,16 @@ class ManagerWorkOrderRepository {
     });
   }
 
+  Stream<List<WorkOrder>> watchWorkOrdersFromDate(DateTime startDate) {
+    return _powerSync
+        .watchWorkOrdersFromDate(startDate)
+        .asyncMap((rawRows) async {
+      debugPrint(
+          '📊 Parsing ${rawRows.length} work orders (6+ days) in isolate...');
+      return await compute(_parseWorkOrdersIsolate, rawRows);
+    });
+  }
+
   Future<bool> createWorkOrder(WorkOrder order) async {
     try {
       await _powerSync.createWorkOrder(order);

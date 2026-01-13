@@ -154,9 +154,12 @@ class _AddEditPriceDialogState extends ConsumerState<AddEditPriceDialog> {
                         decoration: const InputDecoration(
                             labelText: 'Department',
                             border: OutlineInputBorder()),
+                        isExpanded: true,
                         items: state.deptNames
-                            .map((e) =>
-                                DropdownMenuItem(value: e, child: Text(e)))
+                            .map((e) => DropdownMenuItem(
+                                value: e,
+                                child:
+                                    Text(e, overflow: TextOverflow.ellipsis)))
                             .toList(),
                         onChanged: isEdit
                             ? null

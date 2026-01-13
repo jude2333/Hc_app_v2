@@ -21,13 +21,8 @@ class ManagerMobileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Filter work orders based on search
-    final filtered = searchQuery.isEmpty
-        ? workOrders
-        : workOrders.where((wo) {
-            final term = searchQuery.toLowerCase();
-            return wo.searchableText.contains(term);
-          }).toList();
+    // Filter logic moved to provider for better performance
+    final filtered = workOrders;
 
     return Column(
       children: [

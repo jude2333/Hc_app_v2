@@ -6,24 +6,18 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/components/add_work_order.dart';
 import 'package:anderson_crm_flutter/components/assign_technicians.dart';
 import 'package:anderson_crm_flutter/components/canceled_work_order_page.dart';
-import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/price_list/screens/manager_price_view_page.dart';
-import 'package:anderson_crm_flutter/components/manager_tech_engagement_page.dart';
+import 'package:anderson_crm_flutter/features/tech_engagement/screens/tech_engagement_page.dart';
 
 import '../../theme/theme.dart';
 
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 
+import '../providers/manager_work_order_provider.dart';
 import '../widgets/manager_actions.dart';
 import '../widgets/manager_expanded_content.dart';
 import '../widgets/manager_mobile_view.dart';
-
-final todayPod = StateProvider<DateTime>((_) => DateTime(2022, 12, 14));
-final selectedDatePod = StateProvider<DateTime>((ref) => ref.watch(todayPod));
-final _searchPod = StateProvider<String>((_) => '');
-final _sortColumnPod = StateProvider<String>((_) => 'date');
-final _sortAscendingPod = StateProvider<bool>((_) => false);
 
 final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
@@ -44,11 +38,11 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (!mounted) return;
-        final provider = ref.read(workOrderProvider);
+        final provider = ref.read(managerWorkOrderProvider);
         if (provider.isInitializing) {
           provider.initialize();
         }
-        final today = ref.read(todayPod);
+        final today = ref.read(managerTodayPod);
         provider.loadWorkOrdersByDate(today);
       });
     });
@@ -56,24 +50,32 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = ref.watch(workOrderProvider);
-    final selected = ref.watch(selectedDatePod);
-    final today = ref.read(todayPod);
+    final provider = ref.watch(managerWorkOrderProvider);
+    final selected = ref.watch(managerSelectedDatePod);
+    final today = ref.read(managerTodayPod);
 
     final dateOffsets = [3, 2, 1, 0, -1, -2, -3, -4, -5];
-    final dateChips = dateOffsets.map((off) {
+    final dateChips = dateOffsets.asMap().entries.map((entry) {
+      final idx = entry.key;
+      final off = entry.value;
       final date = today.add(Duration(days: off));
       String label;
-      if (off == 3 || off == 2 || off <= -2) {
+      bool isFuturePlus = idx == 0; // First chip is "6+ Days"
+
+      if (isFuturePlus) {
+        label = '6+ Days\n${DateFormat('MM-dd').format(date)}';
+      } else if (off == 2) {
         label = _dateFormat.format(date);
       } else if (off == 1) {
         label = 'NEXTDAY\n${DateFormat('MM-dd').format(date)}';
       } else if (off == 0) {
         label = 'TODAY\n${DateFormat('MM-dd').format(date)}';
-      } else {
+      } else if (off == -1) {
         label = 'YESTERDAY\n${DateFormat('MM-dd').format(date)}';
+      } else {
+        label = _dateFormat.format(date);
       }
-      return _DateChipProps(date, label);
+      return _DateChipProps(date, label, isFuturePlus: isFuturePlus);
     }).toList();
 
     return Scaffold(
@@ -145,7 +147,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const ManagerTechEngagementPage())),
+                    builder: (context) => const TechEngagementPage())),
           ),
           IconButton(
             tooltip: 'Add',
@@ -186,8 +188,10 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                     isSelected: isSel,
                     isToday: isToday,
                     onTap: () async {
-                      ref.read(selectedDatePod.notifier).state = chip.date;
-                      await provider.loadWorkOrdersByDate(chip.date);
+                      ref.read(managerSelectedDatePod.notifier).state =
+                          chip.date;
+                      await provider.loadWorkOrdersByDate(chip.date,
+                          fromDateOnwards: chip.isFuturePlus);
                     },
                   ),
                 );
@@ -200,7 +204,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, WorkOrderProvider provider) {
+  Widget _buildBody(BuildContext context, ManagerWorkOrderProvider provider) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
 
@@ -224,7 +228,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
             Text('Error: ${provider.errorMessage}'),
             ElevatedButton(
               onPressed: () async {
-                final today = ref.read(todayPod);
+                final today = ref.read(managerTodayPod);
                 await provider.loadWorkOrdersByDate(today);
               },
               child: const Text('Retry'),
@@ -237,9 +241,10 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     // Mobile view with cards
     if (isMobile) {
       return ManagerMobileView(
-        workOrders: provider.workOrders,
-        searchQuery: ref.watch(_searchPod),
-        onSearchChanged: (value) => ref.read(_searchPod.notifier).state = value,
+        workOrders: ref.watch(managerFilteredWorkOrdersPod),
+        searchQuery: ref.watch(managerSearchPod),
+        onSearchChanged: (value) =>
+            ref.read(managerSearchPod.notifier).state = value,
       );
     }
 
@@ -247,7 +252,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     return Padding(
       padding:
           EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, 0),
-      child: VirtualManagerTable(rows: provider.workOrders),
+      child: VirtualManagerTable(rows: ref.watch(managerFilteredWorkOrdersPod)),
     );
   }
 
@@ -341,8 +346,10 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     )
         .then((value) async {
       if (value == 'refresh') {
-        final selectedDate = ref.read(selectedDatePod);
-        await ref.read(workOrderProvider).loadWorkOrdersByDate(selectedDate);
+        final selectedDate = ref.read(managerSelectedDatePod);
+        await ref
+            .read(managerWorkOrderProvider)
+            .loadWorkOrdersByDate(selectedDate);
       }
     });
   }
@@ -354,41 +361,21 @@ class VirtualManagerTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final search = ref.watch(_searchPod);
-    final sortCol = ref.watch(_sortColumnPod);
-    final sortAsc = ref.watch(_sortAscendingPod);
+    final sortCol = ref.watch(managerSortColumnPod);
+    final sortAsc = ref.watch(managerSortAscendingPod);
 
-    List<WorkOrder> filtered = search.isEmpty
-        ? rows
-        : rows.where((wo) {
-            final term = search.toLowerCase();
-            return wo.searchableText.contains(term);
-          }).toList();
+    // Use passed rows directly
+    final filtered = rows;
 
-    filtered.sort((a, b) {
-      int cmp = 0;
-      switch (sortCol) {
-        case 'name':
-          cmp = a.patientName.compareTo(b.patientName);
-          break;
-        case 'status':
-          cmp = a.status.compareTo(b.status);
-          break;
-        case 'date':
-        default:
-          cmp = a.visitDate.compareTo(b.visitDate);
-          if (cmp == 0) cmp = a.visitTime.compareTo(b.visitTime);
-          break;
-      }
-      return sortAsc ? cmp : -cmp;
-    });
+    debugPrint(
+        'VirtualManagerTable building. Filtered count: ${filtered.length}');
 
     void handleSort(String sortKey) {
       if (sortCol == sortKey) {
-        ref.read(_sortAscendingPod.notifier).state = !sortAsc;
+        ref.read(managerSortAscendingPod.notifier).state = !sortAsc;
       } else {
-        ref.read(_sortColumnPod.notifier).state = sortKey;
-        ref.read(_sortAscendingPod.notifier).state = true;
+        ref.read(managerSortColumnPod.notifier).state = sortKey;
+        ref.read(managerSortAscendingPod.notifier).state = true;
       }
     }
 
@@ -396,7 +383,7 @@ class VirtualManagerTable extends ConsumerWidget {
       children: [
         WorkOrderSearchBar(
           hintText: 'Search',
-          onChanged: (v) => ref.read(_searchPod.notifier).state = v,
+          onChanged: (v) => ref.read(managerSearchPod.notifier).state = v,
         ),
         Expanded(
           child: Card(
@@ -460,19 +447,27 @@ class VirtualManagerTable extends ConsumerWidget {
                   ),
                 ),
                 Expanded(
-                  child: ListView.separated(
-                    itemCount: filtered.length,
-                    separatorBuilder: (ctx, i) =>
-                        Divider(height: 1, color: AppColors.divider),
-                    itemBuilder: (context, index) {
-                      final wo = filtered[index];
-                      return RepaintBoundary(
-                        key: ValueKey(wo.id),
-                        child: _ManagerExpandableRowConsumer(
-                            workOrder: wo, index: index + 1),
-                      );
-                    },
-                  ),
+                  child: filtered.isEmpty
+                      ? Center(
+                          child: Text('No Data Available due to filtering',
+                              style: TextStyle(color: AppColors.textSecondary)))
+                      : ListView.separated(
+                          itemCount: filtered.length,
+                          cacheExtent:
+                              500, // Pre-render items for smooth scroll
+                          addAutomaticKeepAlives: false,
+                          addRepaintBoundaries: true,
+                          separatorBuilder: (ctx, i) =>
+                              Divider(height: 1, color: AppColors.divider),
+                          itemBuilder: (context, index) {
+                            final wo = filtered[index];
+                            return RepaintBoundary(
+                              key: ValueKey(wo.id),
+                              child: _ManagerExpandableRowConsumer(
+                                  workOrder: wo, index: index + 1),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
@@ -499,11 +494,16 @@ class _ManagerExpandableRowConsumer extends ConsumerStatefulWidget {
 }
 
 class _ManagerExpandableRowConsumerState
-    extends ConsumerState<_ManagerExpandableRowConsumer> {
+    extends ConsumerState<_ManagerExpandableRowConsumer>
+    with AutomaticKeepAliveClientMixin {
   bool _isExpanded = false;
 
   @override
+  bool get wantKeepAlive => _isExpanded; // Only keep alive if expanded
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final wo = widget.workOrder;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -585,7 +585,7 @@ class _ManagerExpandableRowConsumerState
       String techId, String techName) async {
     final parentMessenger = ScaffoldMessenger.of(context);
     try {
-      final provider = ref.read(workOrderProvider);
+      final provider = ref.read(managerWorkOrderProvider);
       final storage = ref.read(storageServiceProvider);
       final managerName = storage.getFromSession("logged_in_emp_name");
 
@@ -687,7 +687,8 @@ class _ManagerExpandableRowConsumerState
 class _DateChipProps {
   final DateTime date;
   final String label;
-  _DateChipProps(this.date, this.label);
+  final bool isFuturePlus;
+  _DateChipProps(this.date, this.label, {this.isFuturePlus = false});
 }
 
 /// Modern date chip with gradient styling for selected state

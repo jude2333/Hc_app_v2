@@ -475,9 +475,25 @@ class WorkOrder {
   }
 
   String get freeText => parsedDocMap['free_text'] ?? '';
-  bool get vip => (parsedDocMap['vip_client'] ?? 0) == 1;
-  bool get urgent => (parsedDocMap['urgent'] ?? 0) == 1;
-  int get credit => parsedDocMap['credit'] ?? 0;
+  bool get vip {
+    final val = parsedDocMap['vip_client'];
+    if (val is bool) return val;
+    return val == 1;
+  }
+
+  bool get urgent {
+    final val = parsedDocMap['urgent'];
+    if (val is bool) return val;
+    return val == 1;
+  }
+
+  int get credit {
+    final val = parsedDocMap['credit'];
+    if (val is bool) return val ? 1 : 0;
+    if (val is int) return val;
+    return int.tryParse(val?.toString() ?? '0') ?? 0;
+  }
+
   Map<String, dynamic> get settings => parsedDocMap['settings'] ?? {};
   bool get sendSms => (settings['send_sms'] ?? 1) == 1;
   bool get sendWhatsapp => (settings['send_whatsapp'] ?? 1) == 1;

@@ -33,15 +33,21 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadWorkOrdersByDate(DateTime selectedDate) async {
-    debugPrint('Manager loading orders for: $selectedDate');
+  Future<void> loadWorkOrdersByDate(DateTime selectedDate,
+      {bool fromDateOnwards = false}) async {
+    debugPrint(
+        'Manager loading orders for: $selectedDate (fromDateOnwards: $fromDateOnwards)');
 
     await _repo.ensureInitialized();
 
     try {
       await _ordersSubscription?.cancel();
 
-      _ordersSubscription = _repo.watchWorkOrdersByDate(selectedDate).listen(
+      final stream = fromDateOnwards
+          ? _repo.watchWorkOrdersFromDate(selectedDate)
+          : _repo.watchWorkOrdersByDate(selectedDate);
+
+      _ordersSubscription = stream.listen(
         (orders) {
           debugPrint('Manager UI notified with ${orders.length} work orders');
           _workOrders = orders;
@@ -70,7 +76,18 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
       lastUpdatedBy: managerName,
       lastUpdatedAt: DateTime.now(),
     );
-    return await _repo.updateWorkOrder(updatedOrder);
+
+    final formattedDate =
+        "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')} ${DateTime.now().hour > 12 ? DateTime.now().hour - 12 : DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')} ${DateTime.now().hour >= 12 ? 'PM' : 'AM'}";
+
+    final existingTimeline = List<String>.from(order.timeLine);
+    existingTimeline
+        .add("$formattedDate | $managerName | Assigned To $techName");
+
+    final customDoc = updatedOrder.buildDoc();
+    customDoc['time_line'] = existingTimeline;
+
+    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
   }
 
   Future<bool> cancelWorkOrder(
@@ -127,4 +144,56 @@ final managerWorkOrderProvider =
     ChangeNotifierProvider<ManagerWorkOrderProvider>((ref) {
   final repo = ref.read(managerWorkOrderRepositoryProvider);
   return ManagerWorkOrderProvider(repository: repo);
+});
+
+/// Today's date for reference (used for date chip calculations)
+final managerTodayPod = StateProvider<DateTime>((_) => DateTime(2022, 12, 14));
+
+/// Currently selected date for filtering work orders
+final managerSelectedDatePod =
+    StateProvider<DateTime>((ref) => ref.watch(managerTodayPod));
+
+/// Search query for filtering work orders
+final managerSearchPod = StateProvider<String>((_) => '');
+
+/// Sort column for work order list
+final managerSortColumnPod = StateProvider<String>((_) => 'date');
+
+/// Sort direction for work order list
+final managerSortAscendingPod = StateProvider<bool>((_) => false);
+
+/// Filtered and sorted work orders - computed from raw work orders
+/// This memoizes the filtering/sorting logic so it doesn't run on every build
+final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
+  final provider = ref.watch(managerWorkOrderProvider);
+  final search = ref.watch(managerSearchPod);
+  final sortCol = ref.watch(managerSortColumnPod);
+  final sortAsc = ref.watch(managerSortAscendingPod);
+
+  List<WorkOrder> filtered = search.isEmpty
+      ? List.from(provider.workOrders)
+      : provider.workOrders.where((wo) {
+          final term = search.toLowerCase();
+          return wo.searchableText.contains(term);
+        }).toList();
+
+  filtered.sort((a, b) {
+    int cmp = 0;
+    switch (sortCol) {
+      case 'name':
+        cmp = a.patientName.compareTo(b.patientName);
+        break;
+      case 'status':
+        cmp = a.status.compareTo(b.status);
+        break;
+      case 'date':
+      default:
+        cmp = a.visitDate.compareTo(b.visitDate);
+        if (cmp == 0) cmp = a.visitTime.compareTo(b.visitTime);
+        break;
+    }
+    return sortAsc ? cmp : -cmp;
+  });
+
+  return filtered;
 });

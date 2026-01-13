@@ -13,15 +13,24 @@ class HistorySheet extends ConsumerStatefulWidget {
 class _HistorySheetState extends ConsumerState<HistorySheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredHistory = [];
-  bool _isInit = true;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isInit) {
-      final state = ref.read(priceListProvider);
-      _filteredHistory = List.from(state.globalHistory);
-      _isInit = false;
+  void initState() {
+    super.initState();
+    // Initial load from current state
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateFilteredHistory();
+    });
+  }
+
+  void _updateFilteredHistory() {
+    final state = ref.read(priceListProvider);
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _filteredHistory = List.from(state.globalHistory);
+      });
+    } else {
+      _onSearchChanged(_searchController.text);
     }
   }
 
@@ -59,6 +68,13 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(priceListProvider);
+
+    // Listen for changes and update filtered history when data arrives
+    ref.listen<PriceListState>(priceListProvider, (previous, next) {
+      if (previous?.globalHistory != next.globalHistory) {
+        _updateFilteredHistory();
+      }
+    });
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -127,7 +143,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
           ),
           Expanded(
             child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildSkeletonLoading()
                 : _filteredHistory.isEmpty
                     ? const Center(
                         child: Text("No records found",
@@ -216,6 +232,80 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
       default:
         return Colors.black87;
     }
+  }
+
+  Widget _buildSkeletonLoading() {
+    return ListView.builder(
+      itemCount: 10,
+      itemBuilder: (context, index) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Container(
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 10,
+                    width: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: Container(
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 3,
+              child: Container(
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

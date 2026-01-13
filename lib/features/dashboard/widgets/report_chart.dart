@@ -150,6 +150,10 @@ class DailyCasesChart extends StatelessWidget {
     final maxY = (maxValue * 1.2).ceilToDouble();
     final interval = maxY <= 10 ? 2.0 : (maxY / 5).ceilToDouble();
 
+    // Responsive aspect ratio - taller on mobile
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final chartAspectRatio = isMobile ? 1.8 : 3.0;
+
     return AnimatedChartWrapper(
       delay: const Duration(milliseconds: 100),
       child: Container(
@@ -168,7 +172,7 @@ class DailyCasesChart extends StatelessWidget {
               LegendItem(label: 'Pending', color: Colors.orange),
             ]),
             AspectRatio(
-              aspectRatio: 5.0,
+              aspectRatio: chartAspectRatio,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
@@ -290,6 +294,10 @@ class DailyFinancialChart extends StatelessWidget {
     final maxY = (maxValue * 1.2).ceilToDouble();
     final interval = maxY <= 10000 ? 2000.0 : (maxY / 5).ceilToDouble();
 
+    // Responsive aspect ratio - taller on mobile
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final chartAspectRatio = isMobile ? 1.5 : 2.5;
+
     return AnimatedChartWrapper(
       delay: const Duration(milliseconds: 200),
       child: Container(
@@ -309,7 +317,7 @@ class DailyFinancialChart extends StatelessWidget {
               LegendItem(label: 'Trial', color: Colors.grey),
             ]),
             AspectRatio(
-              aspectRatio: 4.0,
+              aspectRatio: chartAspectRatio,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
