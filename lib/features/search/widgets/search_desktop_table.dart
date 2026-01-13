@@ -337,7 +337,7 @@ class _HeaderCell extends StatelessWidget {
     return Expanded(
       flex: flex,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        padding: EdgeInsets.symmetric(vertical: 4),
         child: Text(
           text,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
@@ -372,7 +372,7 @@ class _SortableHeader extends StatelessWidget {
       child: InkWell(
         onTap: () => onSort(sortKey),
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          padding: EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
               Text(

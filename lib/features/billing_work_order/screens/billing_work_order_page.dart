@@ -6,8 +6,6 @@ import '../widgets/billing_desktop_table.dart';
 import '../widgets/billing_mobile_list.dart';
 import '../widgets/bill_dialog.dart';
 
-/// Main page for billing work orders
-/// Responsive: Desktop table / Mobile cards
 class BillingWorkOrderPage extends ConsumerStatefulWidget {
   const BillingWorkOrderPage({super.key});
 
@@ -58,10 +56,10 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
         backgroundColor: Colors.white,
         elevation: 2,
         surfaceTintColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        //   onPressed: () => Navigator.of(context).pop(),
+        // ),
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
@@ -116,7 +114,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
   }
 
   Widget _buildTabContent(BillingWorkOrderState state, bool isDesktop) {
-    // Skeleton loading
     if (state.isInitializing || (state.isLoading && state.orders.isEmpty)) {
       return _buildSkeletonLoading();
     }
@@ -213,7 +210,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
   Widget _buildSkeletonLoading() {
     return Column(
       children: [
-        // Search bar skeleton
         Container(
           margin: const EdgeInsets.all(16),
           height: 48,
@@ -222,7 +218,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        // Table skeleton
         Expanded(
           child: Card(
             margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -232,7 +227,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             child: Column(
               children: [
-                // Header skeleton
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
