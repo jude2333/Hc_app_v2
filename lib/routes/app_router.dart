@@ -1,7 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/shell/presentation/main_shell.dart';
-import 'package:anderson_crm_flutter/views/login_view.dart';
+import 'package:anderson_crm_flutter/features/auth/auth.dart';
 // import 'package:anderson_crm_flutter/screens/loading_screen.dart';
 import 'package:anderson_crm_flutter/features/users/screens/Users.dart';
 // import 'package:anderson_crm_flutter/features/search/screens/search_page.dart';

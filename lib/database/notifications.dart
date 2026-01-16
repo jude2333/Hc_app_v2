@@ -92,6 +92,62 @@ class NotificationDB {
     return Dio(options);
   }
 
+  /// Create an in-app notification (mirrors Vue's send_notification function)
+  /// This is called when a work order is assigned to a technician
+  Future<String> createNotification({
+    required int toId,
+    required String toName,
+    required String msgHeader,
+    required String msgBody,
+    Map<String, dynamic>? msgAttachment,
+  }) async {
+    try {
+      final fromName =
+          await _storage.getSessionItem("logged_in_emp_name") ?? "";
+
+      // Generate notification ID matching Vue format: notifications:yyyy-MM-dd:uuid
+      final dateForId = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final uuid = DateTime.now().millisecondsSinceEpoch.toString() +
+          (DateTime.now().microsecond).toString();
+      final notificationId = "notifications:$dateForId:$uuid";
+
+      final notification = {
+        '_id': notificationId,
+        'from_id': '0',
+        'from_name': fromName,
+        'to_id': toId,
+        'to_name': toName,
+        'msg_header': msgHeader,
+        'msg_body': msgBody,
+        'msg_attachment': msgAttachment ?? {},
+        'status': 'New',
+        'msg_time': DateFormat('dd-MM-yyyy h:mm:ss a').format(DateTime.now()),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      debugPrint("📤 Creating in-app notification: $notificationId");
+      debugPrint("   To: $toName (ID: $toId)");
+
+      // Save to remote CouchDB
+      final remoteDb = await getServerDB("notifications");
+      final response = await remoteDb.put(
+        '/$notificationId',
+        data: notification,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint("✅ In-app notification created successfully");
+        return "OK";
+      } else {
+        debugPrint("❌ Failed to create notification: ${response.statusCode}");
+        return "ERROR: ${response.statusMessage}";
+      }
+    } catch (e) {
+      debugPrint("❌ Error creating notification: $e");
+      return "ERROR: $e";
+    }
+  }
+
   Future<List<Map<String, dynamic>>> list(String status, String today) async {
     try {
       debugPrint("list() today from state: $today");

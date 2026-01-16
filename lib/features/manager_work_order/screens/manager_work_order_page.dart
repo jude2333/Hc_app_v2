@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/components/add_work_order.dart';
 import 'package:anderson_crm_flutter/components/assign_technicians.dart';
 import 'package:anderson_crm_flutter/components/canceled_work_order_page.dart';
@@ -609,6 +610,9 @@ class _ManagerExpandableRowConsumerState
 
       await provider.updateWorkOrder(updatedOrder, customDoc: customDoc);
 
+      // Send in-app notification (mirrors Vue's send_notification)
+      await _sendInAppNotification(workOrder, techId, techName);
+
       if (context.mounted) {
         parentMessenger.showSnackBar(SnackBar(
             content: Text('Technician assigned!'),
@@ -620,6 +624,37 @@ class _ManagerExpandableRowConsumerState
         parentMessenger.showSnackBar(SnackBar(
             content: Text('Error: $e'), backgroundColor: AppColors.error));
       }
+    }
+  }
+
+  /// Send in-app notification to the assigned technician (mirrors Vue's send_notification)
+  Future<void> _sendInAppNotification(
+      WorkOrder workOrder, String techId, String techName) async {
+    try {
+      final notificationDb = ref.read(notificationDbProvider);
+
+      // Build notification message matching Vue format
+      final msgHeader =
+          "Collection on ${workOrder.visitDate} ${workOrder.visitTime} assigned.";
+      final msgBody = "Home collection for ${workOrder.patientName}"
+          "(${workOrder.age}/${workOrder.gender}) "
+          "address:${workOrder.address} mobile:${workOrder.mobile} pincode:${workOrder.pincode}"
+          " ${workOrder.freeText}";
+
+      final result = await notificationDb.createNotification(
+        toId: int.tryParse(techId) ?? 0,
+        toName: techName,
+        msgHeader: msgHeader,
+        msgBody: msgBody,
+      );
+
+      if (result == "OK") {
+        debugPrint("✅ In-app notification sent to $techName");
+      } else {
+        debugPrint("⚠️ Failed to send in-app notification: $result");
+      }
+    } catch (e) {
+      debugPrint("❌ Error sending in-app notification: $e");
     }
   }
 

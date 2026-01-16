@@ -56,30 +56,10 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     super.dispose();
   }
 
-  // 4. Handle Background/Foreground globally
+  // App lifecycle - sync runs continuously in background
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      debugPrint("zzz App Paused (Global) - Stopping Sync");
-
-      // Stop the DBHandler loop
-      ref.read(dbHandlerProvider).stopSync();
-
-      // Optionally cancel the subscription to be safe
-      _subscription?.cancel();
-      _subscription = null;
-      _isRealtimeSetup = false;
-    } else if (state == AppLifecycleState.resumed) {
-      debugPrint("☀️ App Resumed (Global) - Restarting Sync");
-
-      // We need to restart the listener.
-      // Checking if _subscription is null prevents double-subscribing
-      if (_subscription == null) {
-        _setupRealtimeListener();
-        // Optional: Do a hard refresh to catch up on missed data
-        loadNotifications();
-      }
-    }
+    // No action needed - sync continues uninterrupted
   }
 
   // ✅ OPTIMIZATION: Non-blocking init - sets loading state immediately

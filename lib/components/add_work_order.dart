@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import '../models/work_order.dart';
 import '../providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/providers/com_center_provider.dart';
+import 'package:anderson_crm_flutter/database/sms_template.dart';
 import '../services/postgresService.dart';
 import '../features/core/util.dart';
 import '../config/settings.dart';
@@ -310,44 +312,53 @@ class _AddWorkOrderPageMobileState
             children: [
               if (isCopyMode) _buildCopyBanner(),
               SizedBox(height: AppSpacing.lg),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
                 children: [
-                  Expanded(
-                    child: Column(
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildSectionCard(
-                          icon: Icons.calendar_today_rounded,
-                          title: 'Schedule',
-                          color: AppColors.secondary,
-                          child: _buildDateTimeFields(),
+                        Expanded(
+                          child: _buildSectionCard(
+                            icon: Icons.calendar_today_rounded,
+                            title: 'Schedule',
+                            color: AppColors.secondary,
+                            child: _buildDateTimeFields(),
+                          ),
                         ),
-                        SizedBox(height: AppSpacing.lg),
-                        _buildSectionCard(
-                          icon: Icons.person_rounded,
-                          title: 'Patient Details',
-                          color: AppColors.primary,
-                          child: _buildPatientFields(),
+                        SizedBox(width: AppSpacing.lg),
+                        Expanded(
+                          child: _buildSectionCard(
+                            icon: Icons.person_rounded,
+                            title: 'Patient Details',
+                            color: AppColors.primary,
+                            child: _buildPatientFields(),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: AppSpacing.lg),
-                  Expanded(
-                    child: Column(
+                  SizedBox(height: AppSpacing.lg),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildSectionCard(
-                          icon: Icons.contact_phone_rounded,
-                          title: 'Contact Information',
-                          color: AppColors.success,
-                          child: _buildContactFields(),
+                        Expanded(
+                          child: _buildSectionCard(
+                            icon: Icons.medical_services_rounded,
+                            title: 'Additional Details',
+                            color: AppColors.secondary,
+                            child: _buildAdditionalFields(),
+                          ),
                         ),
-                        SizedBox(height: AppSpacing.lg),
-                        _buildSectionCard(
-                          icon: Icons.medical_services_rounded,
-                          title: 'Additional Details',
-                          color: AppColors.secondary,
-                          child: _buildAdditionalFields(),
+                        SizedBox(width: AppSpacing.lg),
+                        Expanded(
+                          child: _buildSectionCard(
+                            icon: Icons.contact_phone_rounded,
+                            title: 'Contact Information',
+                            color: AppColors.primary,
+                            child: _buildContactFields(),
+                          ),
                         ),
                       ],
                     ),
@@ -388,7 +399,7 @@ class _AddWorkOrderPageMobileState
         _buildSectionCard(
           icon: Icons.contact_phone_rounded,
           title: 'Contact Information',
-          color: AppColors.success,
+          color: AppColors.primary,
           child: _buildContactFields(),
         ),
         SizedBox(height: AppSpacing.md),
@@ -663,81 +674,159 @@ class _AddWorkOrderPageMobileState
     );
   }
 
+  // Widget _buildPatientFields() {
+
+  //   return Column(
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             flex: 2,
+  //             child: DropdownButtonFormField<String>(
+  //               value: _salutation.isEmpty ? null : _salutation,
+  //               decoration: _inputDecoration('Title'),
+  //               items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
+  //                   .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+  //                   .toList(),
+  //               onChanged: (v) {
+  //                 setState(() {
+  //                   _salutation = v!;
+  //                   _updateGenderFromSalutation();
+  //                 });
+  //               },
+  //               validator: (v) => v == null ? 'Required' : null,
+  //             ),
+  //           ),
+  //           SizedBox(width: AppSpacing.md),
+  //           Expanded(
+  //             flex: 5,
+  //             child: TextFormField(
+  //               controller: _nameController,
+  //               decoration:
+  //                   _inputDecoration('Full Name', icon: Icons.person_outline),
+  //               textCapitalization: TextCapitalization.words,
+  //               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       SizedBox(height: AppSpacing.md),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: TextFormField(
+  //               controller: _ageController,
+  //               decoration: _inputDecoration('Age', icon: Icons.cake_outlined),
+  //               keyboardType: TextInputType.number,
+  //             ),
+  //           ),
+  //           SizedBox(width: AppSpacing.md),
+  //           Expanded(
+  //             child: DropdownButtonFormField<String>(
+  //               value: _gender,
+  //               decoration: _inputDecoration('Gender'),
+  //               items: ['Male', 'Female', 'Other']
+  //                   .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+  //                   .toList(),
+  //               onChanged: (v) => setState(() => _gender = v!),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
   Widget _buildPatientFields() {
+    final bool isMobile = MediaQuery.of(context).size.width <= 800;
+
     return Column(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: DropdownButtonFormField<String>(
-                value: _salutation.isEmpty ? null : _salutation,
-                decoration: _inputDecoration('Title'),
-                isExpanded: true,
-                items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
-                    .map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Text(s, overflow: TextOverflow.ellipsis)))
-                    .toList(),
-                onChanged: (v) {
-                  setState(() {
-                    _salutation = v!;
-                    _updateGenderFromSalutation();
-                  });
-                },
-                validator: (v) => v == null ? 'Required' : null,
+        if (isMobile) ...[
+          DropdownButtonFormField<String>(
+            value: _salutation.isEmpty ? null : _salutation,
+            decoration: _inputDecoration('Title'),
+            items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
+                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .toList(),
+            onChanged: (v) {
+              setState(() {
+                _salutation = v!;
+                _updateGenderFromSalutation();
+              });
+            },
+            validator: (v) => v == null ? 'Required' : null,
+          ),
+          SizedBox(height: AppSpacing.md),
+          TextFormField(
+            controller: _nameController,
+            decoration:
+                _inputDecoration('Full Name', icon: Icons.person_outline),
+            textCapitalization: TextCapitalization.words,
+            validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+          ),
+        ] else ...[
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  value: _salutation.isEmpty ? null : _salutation,
+                  decoration: _inputDecoration('Title'),
+                  items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _salutation = v!;
+                      _updateGenderFromSalutation();
+                    });
+                  },
+                ),
               ),
-            ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              flex: 4,
-              child: TextFormField(
-                controller: _nameController,
-                decoration:
-                    _inputDecoration('Full Name', icon: Icons.person_outline),
-                textCapitalization: TextCapitalization.words,
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                flex: 5,
+                child: TextFormField(
+                  controller: _nameController,
+                  decoration:
+                      _inputDecoration('Full Name', icon: Icons.person_outline),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ],
+        SizedBox(height: AppSpacing.md),
+        TextFormField(
+          controller: _ageController,
+          decoration: _inputDecoration('Age', icon: Icons.cake_outlined),
+          keyboardType: TextInputType.number,
+          maxLength: 3,
         ),
         SizedBox(height: AppSpacing.md),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _ageController,
-                decoration: _inputDecoration('Age', icon: Icons.cake_outlined),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: _gender,
-                decoration: _inputDecoration('Gender'),
-                isExpanded: true,
-                items: ['Male', 'Female', 'Other']
-                    .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                    .toList(),
-                onChanged: (v) => setState(() => _gender = v!),
-              ),
-            ),
-          ],
+        DropdownButtonFormField<String>(
+          value: _gender,
+          decoration: _inputDecoration('Gender'),
+          items: ['Male', 'Female', 'Other']
+              .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+              .toList(),
+          onChanged: (v) => setState(() => _gender = v!),
         ),
       ],
     );
   }
 
   Widget _buildContactFields() {
+    final bool isMobile = MediaQuery.of(context).size.width <= 800;
+
     return Column(
       children: [
         TextFormField(
           controller: _mobileController,
-          decoration: _inputDecoration('Mobile Number',
-              icon: Icons.phone_outlined, prefix: '+91 '),
+          decoration: _inputDecoration(
+            'Mobile Number',
+            icon: Icons.phone_outlined,
+            prefix: '+91 ',
+          ),
           keyboardType: TextInputType.phone,
           maxLength: 10,
           validator: (v) => (v!.length != 10) ? 'Invalid' : null,
@@ -751,52 +840,154 @@ class _AddWorkOrderPageMobileState
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
         SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: TextFormField(
-                controller: _emailController,
-                decoration:
-                    _inputDecoration('Email', icon: Icons.email_outlined),
-                keyboardType: TextInputType.emailAddress,
+        if (isMobile) ...[
+          TextFormField(
+            controller: _emailController,
+            decoration: _inputDecoration('Email', icon: Icons.email_outlined),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          SizedBox(height: AppSpacing.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _pincodeController,
+                  decoration: _inputDecoration('Pincode'),
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  validator: (v) => v!.length != 6 ? 'Invalid' : null,
+                ),
               ),
-            ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              flex: 2,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _pincodeController,
-                      decoration: _inputDecoration('Pincode'),
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      validator: (v) => v!.length != 6 ? 'Invalid' : null,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.xs),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: AppRadius.smAll,
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.search, color: AppColors.primary),
-                      tooltip: 'Search Pincode',
-                      onPressed: () => _showPincodeSearchDialog(),
-                    ),
-                  ),
-                ],
+              SizedBox(width: AppSpacing.xs),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: AppRadius.smAll,
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.search, color: AppColors.primary),
+                  tooltip: 'Search Pincode',
+                  onPressed: () => _showPincodeSearchDialog(),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ] else ...[
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextFormField(
+                  controller: _emailController,
+                  decoration:
+                      _inputDecoration('Email', icon: Icons.email_outlined),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                flex: 2,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _pincodeController,
+                        decoration: _inputDecoration('Pincode'),
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        validator: (v) => v!.length != 6 ? 'Invalid' : null,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: AppRadius.smAll,
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.search, color: AppColors.primary),
+                        tooltip: 'Search Pincode',
+                        onPressed: () => _showPincodeSearchDialog(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
+
+  // Widget _buildContactFields() {
+  //   return Column(
+  //     children: [
+  //       TextFormField(
+  //         controller: _mobileController,
+  //         decoration: _inputDecoration('Mobile Number',
+  //             icon: Icons.phone_outlined, prefix: '+91 '),
+  //         keyboardType: TextInputType.phone,
+  //         maxLength: 10,
+  //         validator: (v) => (v!.length != 10) ? 'Invalid' : null,
+  //       ),
+  //       SizedBox(height: AppSpacing.md),
+  //       TextFormField(
+  //         controller: _addressController,
+  //         decoration:
+  //             _inputDecoration('Address', icon: Icons.location_on_outlined),
+  //         maxLines: 3,
+  //         validator: (v) => v!.isEmpty ? 'Required' : null,
+  //       ),
+  //       SizedBox(height: AppSpacing.md),
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             flex: 3,
+  //             child: TextFormField(
+  //               controller: _emailController,
+  //               decoration:
+  //                   _inputDecoration('Email', icon: Icons.email_outlined),
+  //               keyboardType: TextInputType.emailAddress,
+  //             ),
+  //           ),
+  //           SizedBox(width: AppSpacing.md),
+  //           Expanded(
+  //             flex: 2,
+  //             child: Row(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Expanded(
+  //                   child: TextFormField(
+  //                     controller: _pincodeController,
+  //                     decoration: _inputDecoration('Pincode'),
+  //                     keyboardType: TextInputType.number,
+  //                     maxLength: 6,
+  //                     validator: (v) => v!.length != 6 ? 'Invalid' : null,
+  //                   ),
+  //                 ),
+  //                 SizedBox(width: AppSpacing.xs),
+  //                 Container(
+  //                   decoration: BoxDecoration(
+  //                     color: AppColors.primary.withOpacity(0.1),
+  //                     borderRadius: AppRadius.smAll,
+  //                   ),
+  //                   child: IconButton(
+  //                     icon: Icon(Icons.search, color: AppColors.primary),
+  //                     tooltip: 'Search Pincode',
+  //                     onPressed: () => _showPincodeSearchDialog(),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildAdditionalFields() {
     return Column(
@@ -1336,38 +1527,98 @@ class _AddWorkOrderPageMobileState
         } else {
           final success =
               await ref.read(workOrderProvider).createWorkOrder(workOrder);
+
+          if (success) {
+            await _sendConfirmationSms(workOrder);
+          }
+
           _handleSaveResult(success, 'Work Order Created');
         }
       }
     } catch (e) {
-      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar('Error: $e');
     }
   }
 
+  Future<void> _sendConfirmationSms(WorkOrder workOrder) async {
+    // if (Settings.development) {
+    //   debugPrint('⏭️ Skipping SMS (development mode)');
+    //   return;
+    // }
+    if (!_msgSms) {
+      debugPrint('⏭️ Skipping SMS (user disabled SMS)');
+      return;
+    }
+
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final comCenter = ref.read(comCenterProvider);
+
+      final idPart = Util.getRandomString(5);
+      final centerId = storage.getFromSession('logged_in_tenant_id') ?? '';
+      final centerName = storage.getFromSession('logged_in_tenant_name') ?? '';
+      final departmentId = storage.getFromSession('department_id') ?? '';
+      final departmentName = storage.getFromSession('department_name') ?? '';
+      final roleId = storage.getFromSession('role_id') ?? '';
+      final roleName = storage.getFromSession('role_name') ?? '';
+      final empId = storage.getFromSession('logged_in_emp_id') ?? '';
+      final empName = storage.getFromSession('logged_in_emp_name') ?? '';
+
+      final appointmentDate =
+          DateFormat('dd-MM-yyyy').format(workOrder.visitDate);
+      final smsMessage = SmsTemplate.workorderConfirmation(appointmentDate);
+
+      final message = {
+        '_id': 'sms_center:$idPart:${Util.uuidv4()}',
+        'center_id': centerId,
+        'center_name': centerName,
+        'department_id': departmentId,
+        'department_name': departmentName,
+        'role_id': roleId,
+        'role_name': roleName,
+        'emp_id': empId,
+        'emp_name': empName,
+        'recipient_mobile': workOrder.mobile,
+        'recipient_name': workOrder.patientName,
+        'status': '2',
+        'message': smsMessage,
+        'msg_time': Util.getTodayWithTime(),
+        'updated_at': Util.getTimeStamp(),
+      };
+
+      debugPrint('📤 Sending confirmation SMS to ${workOrder.mobile}');
+      final result = await comCenter.sendMsg(message);
+
+      if (result == 'OK') {
+        debugPrint('✅ Confirmation SMS sent successfully');
+      } else {
+        debugPrint('⚠️ SMS sending failed: $result');
+      }
+    } catch (e) {
+      debugPrint('❌ Error sending confirmation SMS: $e');
+    }
+  }
+
   void _handleSaveResult(bool success, String message) {
-    if (!mounted) return;
-
     setState(() => _isLoading = false);
-
-    if (success) {
-      // Store the messenger before popping to avoid context issues
-      final messenger = ScaffoldMessenger.of(context);
-
-      // Pop the page first
+    if (success && mounted) {
+      // Pop first, then show snackbar to avoid rendering on disposed view
       Navigator.of(context).pop('refresh');
-
-      // Show snackbar using stored messenger (works even after pop)
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.textPrimary,
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
-        ),
-      );
-    } else {
+      // Use a slight delay to ensure snackbar shows on the parent page
+      Future.microtask(() {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.textPrimary,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
+            ),
+          );
+        }
+      });
+    } else if (!success && mounted) {
       _showSnackBar('Operation failed');
     }
   }
