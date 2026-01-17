@@ -67,7 +67,8 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
 
       final db = PowerSyncService.instance.db;
       final couchClient = _ref.read(couchDbClientProvider);
-      _repository = BillingWorkOrderRepository(db, couchClient);
+      final storage = _ref.read(storageRepositoryProvider);
+      _repository = BillingWorkOrderRepository(db, couchClient, storage);
       return _repository;
     } catch (e) {
       debugPrint('[BillingProvider] Error creating repository: $e');
@@ -213,6 +214,72 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       await loadUnbilled();
     } else {
       await loadBilled();
+    }
+  }
+
+  /// Send order to lab system (matches Vue's send_confirmed_item)
+  Future<String> sendOrder(WorkOrder workOrder) async {
+    final repo = _getRepository();
+    if (repo == null) return 'Error: PowerSync not ready';
+
+    try {
+      final storage = _ref.read(storageServiceProvider);
+      final createdBy = storage.getFromSession('logged_in_emp_id');
+
+      // Parse age safely
+      int age = 0;
+      try {
+        age = int.parse(workOrder.age);
+      } catch (_) {
+        age = 0;
+      }
+
+      // Build API payload (matching Vue format)
+      final data = {
+        'patient': {
+          'firstName': workOrder.patientName,
+          'lastName': 'null',
+          'age': age,
+          'period': 3,
+          'mobileNumber': workOrder.mobile,
+          'addressLine1': workOrder.address,
+          'postalCode': workOrder.pincode,
+        },
+        'clientName': 'null',
+        'clientId': 0,
+        'investigations': workOrder.testItems
+            .map((test) => ({
+                  'investigationId': test['invest_id'],
+                  'investigationName': test['invest_name'],
+                  'amount': test['base_cost'],
+                  'discount': 0,
+                }))
+            .toList(),
+        'payments': [
+          {'amount': double.tryParse(workOrder.amountReceived) ?? 0},
+        ],
+        'createdBy': createdBy,
+        'remarks': workOrder.remarks,
+      };
+
+      debugPrint('[BillingProvider] Sending order: $data');
+
+      // Call repository to send and update status
+      final result = await repo.sendOrderToApi(
+        workOrder: workOrder,
+        payload: data,
+      );
+
+      if (result == 'SUCCESS') {
+        // Refresh the list
+        await refresh();
+        return 'OK';
+      } else {
+        return 'Failed to send data';
+      }
+    } catch (e) {
+      debugPrint('[BillingProvider] Error sending: $e');
+      return 'Error: $e';
     }
   }
 }

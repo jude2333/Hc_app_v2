@@ -1,27 +1,34 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/theme/app_colors.dart';
 import 'package:anderson_crm_flutter/features/theme/app_spacing.dart';
+import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
+import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 
 final _mobileSearchPod = StateProvider<String>((_) => '');
 
 class BillingMobileList extends ConsumerWidget {
   final List<WorkOrder> orders;
   final Function(WorkOrder) onBill;
+  final Function(WorkOrder)? onSend;
   final bool showBillAction;
 
   const BillingMobileList({
     super.key,
     required this.orders,
     required this.onBill,
+    this.onSend,
     this.showBillAction = true,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final search = ref.watch(_mobileSearchPod);
+    final storage = ref.watch(storageRepositoryProvider);
 
     final filtered = search.isEmpty
         ? orders
@@ -51,8 +58,11 @@ class BillingMobileList extends ConsumerWidget {
                 child: _BillingCard(
                   key: ValueKey('card_${order.id}'),
                   order: order,
+                  storage: storage,
                   onBill: onBill,
+                  onSend: onSend,
                   showBillAction: showBillAction && _canBill(order),
+                  showSendAction: _canSend(order),
                 ),
               );
             },
@@ -64,6 +74,12 @@ class BillingMobileList extends ConsumerWidget {
 
   bool _canBill(WorkOrder order) {
     return order.status == 'Finished' && order.serverStatus == 'Received';
+  }
+
+  bool _canSend(WorkOrder order) {
+    return order.status == 'Finished' &&
+        order.serverStatus == 'Received' &&
+        order.sentStatus != 'sent';
   }
 }
 
@@ -130,14 +146,20 @@ class _DebouncedSearchBarState extends State<_DebouncedSearchBar> {
 
 class _BillingCard extends StatelessWidget {
   final WorkOrder order;
+  final StorageRepository storage;
   final Function(WorkOrder) onBill;
+  final Function(WorkOrder)? onSend;
   final bool showBillAction;
+  final bool showSendAction;
 
   const _BillingCard({
     super.key,
     required this.order,
+    required this.storage,
     required this.onBill,
+    this.onSend,
     required this.showBillAction,
+    required this.showSendAction,
   });
 
   @override
@@ -146,7 +168,6 @@ class _BillingCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       color: AppColors.surface,
       elevation: 2,
-      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -168,34 +189,8 @@ class _BillingCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (order.vip)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          margin: const EdgeInsets.only(left: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.amber,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text('VIP',
-                              style: TextStyle(
-                                  fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      if (order.urgent)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          margin: const EdgeInsets.only(left: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text('URGENT',
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white)),
-                        ),
+                      // Use consistent red bordered badge style
+                      _buildBadges(),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -215,9 +210,30 @@ class _BillingCard extends StatelessWidget {
               _StatusChip(order.status),
               const SizedBox(width: 8),
               _ServerStatusChip(order.serverStatus),
+              // Sent status chip
+              if (order.sentStatus == 'sent') ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.blue),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'sent',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
               const Spacer(),
+              // Use calculatedTotal instead of billAmount
               Text(
-                order.formattedBillAmount,
+                order.formattedCalculatedTotal,
                 style: const TextStyle(
                   color: Colors.green,
                   fontWeight: FontWeight.bold,
@@ -231,10 +247,34 @@ class _BillingCard extends StatelessWidget {
           _DetailRow('Address', order.address),
           _DetailRow('Pincode', order.pincode),
           _DetailRow('Ref By', order.doctorName),
+          _DetailRow('Assigned To', order.assignedTo),
+
+          // Prescription files
+          if (order.prescriptionPhoto.isNotEmpty)
+            _FileRow(
+              label: 'Prescription',
+              filePath: order.prescriptionPhoto,
+              storage: storage,
+            ),
+          if (order.prescriptionPath.isNotEmpty)
+            _FileRow(
+              label: 'Prescription Photo',
+              filePath: order.prescriptionPath,
+              storage: storage,
+            ),
+          if (order.proformaPath.isNotEmpty)
+            _FileRow(
+              label: 'Proforma Invoice',
+              filePath: order.proformaPath,
+              storage: storage,
+            ),
+
           if (order.billNumber.isNotEmpty)
             _DetailRow('Bill Number', order.billNumber),
           if (order.labNumber.isNotEmpty)
             _DetailRow('Lab Number', order.labNumber),
+
+          // Test items with min_cost
           if (order.testItems.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Text('Test Items',
@@ -247,15 +287,29 @@ class _BillingCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
+                      flex: 3,
                       child: Text(
                         map['invest_name']?.toString() ?? '',
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
-                    Text(
-                      '₹${map['base_cost']?.toString() ?? '0'}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w500, fontSize: 13),
+                    Expanded(
+                      child: Text(
+                        '₹${map['base_cost']?.toString() ?? '0'}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w500, fontSize: 12),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '₹${map['min_cost']?.toString() ?? '0'}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            color: Colors.grey.shade600),
+                        textAlign: TextAlign.right,
+                      ),
                     ),
                   ],
                 ),
@@ -267,8 +321,9 @@ class _BillingCard extends StatelessWidget {
               children: [
                 const Text('Total: ',
                     style: TextStyle(fontWeight: FontWeight.bold)),
+                // Use calculatedTotal
                 Text(
-                  order.formattedBillAmount,
+                  order.formattedCalculatedTotal,
                   style: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
@@ -278,26 +333,79 @@ class _BillingCard extends StatelessWidget {
               ],
             ),
           ],
-          if (showBillAction) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => onBill(order),
-                icon: const Icon(Icons.receipt_long),
-                label: const Text('Bill Order'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+
+          // Action buttons
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Bill action
+              if (showBillAction)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => onBill(order),
+                    icon: const Icon(Icons.receipt_long, size: 18),
+                    label: const Text('Bill'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
+              if (showBillAction && showSendAction) const SizedBox(width: 12),
+              // Send action
+              if (showSendAction)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => onSend?.call(order),
+                    icon: const Icon(Icons.send, size: 18),
+                    label: const Text('Send'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  /// Build badges in consistent red bordered style (matching NameWithBadges)
+  Widget _buildBadges() {
+    final flags = <String>[];
+    if (order.urgent) flags.add('Urgent');
+    if (order.vip) flags.add('VIP');
+    if (order.credit > 0) {
+      flags.add(order.credit == 1 ? 'Credit' : 'Trial');
+    }
+    if ((order.b2bClientId ?? 0) > 0) flags.add('B2B');
+
+    if (flags.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.red),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        flags.join(' '),
+        style: const TextStyle(
+          fontSize: 10,
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -317,7 +425,7 @@ class _DetailRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 120,
             child: Text('$label:',
                 style: const TextStyle(
                     fontWeight: FontWeight.w500, color: Colors.grey)),
@@ -328,6 +436,67 @@ class _DetailRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _FileRow extends StatelessWidget {
+  final String label;
+  final String filePath;
+  final StorageRepository storage;
+
+  const _FileRow({
+    required this.label,
+    required this.filePath,
+    required this.storage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fileName = FileService.getFileName(filePath);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text('$label:',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w500, color: Colors.grey)),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () => _openFile(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  fileName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFile(BuildContext context) {
+    final fileService = FileService(
+      dio: Dio(),
+      storage: storage,
+    );
+    fileService.downloadAndOpen(context, filePath);
   }
 }
 
@@ -398,7 +567,6 @@ class _ServerStatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        // borderRadius: BorderRadius.circular(12),
         borderRadius: AppRadius.mdAll,
         border: Border.all(color: color),
       ),

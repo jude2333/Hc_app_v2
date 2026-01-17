@@ -1,8 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
+import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import '../../theme/theme.dart';
 
 final _billingSearchPod = StateProvider<String>((_) => '');
 final _billingSortColumnPod = StateProvider<String>((_) => 'date');
@@ -11,12 +15,14 @@ final _billingSortAscendingPod = StateProvider<bool>((_) => false);
 class BillingDesktopTable extends ConsumerWidget {
   final List<WorkOrder> orders;
   final Function(WorkOrder) onBill;
+  final Function(WorkOrder)? onSend;
   final bool showBillAction;
 
   const BillingDesktopTable({
     super.key,
     required this.orders,
     required this.onBill,
+    this.onSend,
     this.showBillAction = true,
   });
 
@@ -40,7 +46,7 @@ class BillingDesktopTable extends ConsumerWidget {
           cmp = a.patientName.compareTo(b.patientName);
           break;
         case 'total':
-          cmp = a.billAmount.compareTo(b.billAmount);
+          cmp = a.calculatedTotal.compareTo(b.calculatedTotal);
           break;
         case 'date':
         default:
@@ -61,42 +67,42 @@ class BillingDesktopTable extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacing.lg),
       child: Column(
         children: [
-          _DebouncedSearchBar(
+          WorkOrderSearchBar(
             hintText: 'Search by name, mobile, bill number...',
-            onSearch: (v) => ref.read(_billingSearchPod.notifier).state = v,
+            onChanged: (v) => ref.read(_billingSearchPod.notifier).state = v,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacing.md),
           Expanded(
             child: Card(
-              elevation: 2,
-              color: Colors.white,
+              elevation: AppSizes.cardElevation,
+              color: AppColors.surface,
               margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
               child: Column(
                 children: [
+                  // Header row
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: AppColors.primaryLight,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(8),
                         topRight: Radius.circular(8),
                       ),
                       border: Border(
                         bottom:
-                            BorderSide(color: Colors.grey.shade300, width: 1),
+                            BorderSide(color: AppColors.tableBorder, width: 1),
                       ),
                     ),
                     child: Row(
                       children: [
                         const HeaderCell('No', flex: 1),
                         SortableHeader(
-                          label: 'Patient Name',
+                          label: 'Name',
                           sortKey: 'name',
                           flex: 3,
                           currentSortColumn: sortCol,
@@ -121,22 +127,24 @@ class BillingDesktopTable extends ConsumerWidget {
                           isAscending: sortAsc,
                           onSort: handleSort,
                         ),
+                        const HeaderCell('Assigned', flex: 2),
                         const HeaderCell('Tech Status', flex: 2),
                         const HeaderCell('Server Status', flex: 2),
                         if (showBillAction)
-                          const HeaderCell('Actions', flex: 2),
+                          const HeaderCell('Actions', flex: 1),
+                        const HeaderCell('Send', flex: 1),
                         const SizedBox(width: 40),
                       ],
                     ),
                   ),
+                  // Data rows
                   Expanded(
                     child: ListView.separated(
                       itemCount: filtered.length,
                       separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: Colors.black12),
+                          Divider(height: 1, color: AppColors.divider),
                       itemBuilder: (context, index) {
                         final order = filtered[index];
-
                         return RepaintBoundary(
                           key: ValueKey(order.id),
                           child: _BillingExpandableRow(
@@ -144,6 +152,7 @@ class BillingDesktopTable extends ConsumerWidget {
                             index: index + 1,
                             order: order,
                             onBill: onBill,
+                            onSend: onSend,
                             showBillAction: showBillAction,
                           ),
                         );
@@ -160,71 +169,11 @@ class BillingDesktopTable extends ConsumerWidget {
   }
 }
 
-class _DebouncedSearchBar extends StatefulWidget {
-  final String hintText;
-  final ValueChanged<String> onSearch;
-
-  const _DebouncedSearchBar({
-    required this.hintText,
-    required this.onSearch,
-  });
-
-  @override
-  State<_DebouncedSearchBar> createState() => _DebouncedSearchBarState();
-}
-
-class _DebouncedSearchBarState extends State<_DebouncedSearchBar> {
-  final _controller = TextEditingController();
-  Timer? _debounce;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () {
-      widget.onSearch(value);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      onChanged: _onChanged,
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        suffixIcon: _controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear, color: Colors.grey),
-                onPressed: () {
-                  _controller.clear();
-                  widget.onSearch('');
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-    );
-  }
-}
-
 class _BillingExpandableRow extends StatefulWidget {
   final int index;
   final WorkOrder order;
   final Function(WorkOrder) onBill;
+  final Function(WorkOrder)? onSend;
   final bool showBillAction;
 
   const _BillingExpandableRow({
@@ -232,6 +181,7 @@ class _BillingExpandableRow extends StatefulWidget {
     required this.index,
     required this.order,
     required this.onBill,
+    this.onSend,
     required this.showBillAction,
   });
 
@@ -255,38 +205,58 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
       children: [
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
+          hoverColor: AppColors.surfaceAlt,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding:
+                EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.tableBorder)),
+            ),
             child: Row(
               children: [
-                FlexDataCell('${widget.index}', flex: 1),
-                _NameCell(order: order, flex: 3),
-                FlexDataCell(order.mobile, flex: 2),
-                FlexDataCell(order.formattedShortDate, flex: 2),
-                FlexDataCell(order.visitTime, flex: 1),
-                FlexDataCell(order.formattedBillAmount, flex: 2),
+                _buildCell('${widget.index}', flex: 1),
+                // Name with badges (using shared widget)
+                Expanded(
+                  flex: 3,
+                  child: NameWithBadges(
+                    workOrder: order,
+                    layout: BadgeLayout.row,
+                  ),
+                ),
+                _buildCell(order.mobile, flex: 2),
+                _buildCell(order.formattedShortDate, flex: 2),
+                _buildCell(order.visitTime, flex: 1),
+                _buildCell(order.formattedCalculatedTotal, flex: 2),
+                _buildCell(order.assignedTo, flex: 2),
                 Expanded(flex: 2, child: StatusChip(status: order.status)),
                 Expanded(
                     flex: 2, child: ServerChip(status: order.serverStatus)),
+                // Bill action
                 if (widget.showBillAction)
                   Expanded(
-                    flex: 2,
+                    flex: 1,
                     child: _canBill(order)
                         ? IconButton(
-                            icon: const Icon(Icons.receipt_long,
-                                color: Colors.blue, size: 20),
+                            icon: Icon(Icons.receipt_long,
+                                color: Colors.blue, size: AppSizes.iconSm),
                             tooltip: 'Bill Order',
                             onPressed: () => widget.onBill(order),
                           )
                         : const SizedBox(),
                   ),
+                // Send action
+                Expanded(
+                  flex: 1,
+                  child: _buildSendAction(order),
+                ),
                 SizedBox(
                   width: 40,
                   child: Icon(
                     _isExpanded
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
-                    color: Colors.grey,
+                    size: AppSizes.iconSm - 2,
+                    color: AppColors.textHint,
                   ),
                 ),
               ],
@@ -298,87 +268,124 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
     );
   }
 
+  Widget _buildCell(String text, {required int flex}) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+        child: Text(text, overflow: TextOverflow.ellipsis),
+      ),
+    );
+  }
+
+  Widget _buildSendAction(WorkOrder order) {
+    // Already sent - show chip
+    if (order.sentStatus == 'sent') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blue),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          'sent',
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.blue,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    // Can send - show button
+    if (_canSend(order)) {
+      return IconButton(
+        icon: Icon(Icons.send, color: AppColors.success, size: AppSizes.iconSm),
+        tooltip: 'Send to Lab System',
+        onPressed: () => widget.onSend?.call(order),
+      );
+    }
+
+    return const SizedBox();
+  }
+
   bool _canBill(WorkOrder order) {
     return order.status == 'Finished' && order.serverStatus == 'Received';
   }
+
+  bool _canSend(WorkOrder order) {
+    return order.status == 'Finished' &&
+        order.serverStatus == 'Received' &&
+        order.sentStatus != 'sent';
+  }
 }
 
-class _ExpandedContent extends StatelessWidget {
+class _ExpandedContent extends ConsumerWidget {
   final WorkOrder order;
 
   const _ExpandedContent({required this.order});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final storage = ref.watch(storageRepositoryProvider);
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey.shade50,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      color: AppColors.surfaceAlt,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Basic details
           _DetailRow('Address', order.address),
           _DetailRow('Pincode', order.pincode),
           _DetailRow('Ref By', order.doctorName),
+
+          // Prescription file
+          if (order.prescriptionPhoto.isNotEmpty)
+            _FileRow(
+              label: 'Prescription',
+              filePath: order.prescriptionPhoto,
+              storage: storage,
+            ),
+
+          // Prescription Photo (from process)
+          if (order.prescriptionPath.isNotEmpty)
+            _FileRow(
+              label: 'Prescription Photo',
+              filePath: order.prescriptionPath,
+              storage: storage,
+            ),
+
+          // Proforma Invoice
+          if (order.proformaPath.isNotEmpty)
+            _FileRow(
+              label: 'Proforma Invoice',
+              filePath: order.proformaPath,
+              storage: storage,
+            ),
+
+          // Bill/Lab numbers if billed
           if (order.billNumber.isNotEmpty)
             _DetailRow('Bill Number', order.billNumber),
           if (order.labNumber.isNotEmpty)
             _DetailRow('Lab Number', order.labNumber),
-          const SizedBox(height: 12),
+
+          SizedBox(height: AppSpacing.md),
+
+          // Test items table
           if (order.testItems.isNotEmpty) ...[
-            const Text('Test Items',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            Text('Test Items',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            SizedBox(height: AppSpacing.sm),
             _TestItemsTable(testItems: order.testItems),
-            const SizedBox(height: 8),
-            Text('Total: ${order.formattedBillAmount}',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              'Total: ${order.formattedCalculatedTotal}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _NameCell extends StatelessWidget {
-  final WorkOrder order;
-  final int flex;
-
-  const _NameCell({required this.order, required this.flex});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              order.patientName,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (order.vip)
-            const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: Chip(
-                label: Text('VIP', style: TextStyle(fontSize: 10)),
-                backgroundColor: Colors.amber,
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-          if (order.urgent)
-            const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: Chip(
-                label: Text('URGENT', style: TextStyle(fontSize: 10)),
-                backgroundColor: Colors.red,
-                labelStyle: TextStyle(color: Colors.white),
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
         ],
       ),
     );
@@ -394,16 +401,136 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 120,
             child: Text('$label:',
                 style: const TextStyle(fontWeight: FontWeight.w500)),
           ),
           Expanded(child: Text(value.isEmpty ? 'N/A' : value)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FileRow extends StatelessWidget {
+  final String label;
+  final String filePath;
+  final StorageRepository storage;
+
+  const _FileRow({
+    required this.label,
+    required this.filePath,
+    required this.storage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fileName = FileService.getFileName(filePath);
+    final fileCount = filePath.contains(',')
+        ? '${filePath.split(',').length} files'
+        : fileName;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text('$label:',
+                style: const TextStyle(fontWeight: FontWeight.w500)),
+          ),
+          InkWell(
+            onTap: () => _openFile(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                fileCount,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFile(BuildContext context) {
+    final fileService = FileService(
+      dio: Dio(),
+      storage: storage,
+    );
+
+    // Handle multiple files
+    if (filePath.contains(',')) {
+      _showFileListDialog(context, fileService);
+    } else {
+      fileService.downloadAndOpen(context, filePath);
+    }
+  }
+
+  void _showFileListDialog(BuildContext context, FileService fileService) {
+    final files = filePath.split(',').map((f) => f.trim()).toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Container(
+          padding: AppPadding.card,
+          color: AppColors.primary,
+          child: Text('View / Download Files',
+              style: TextStyle(color: AppColors.textOnPrimary)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: files.map((file) {
+            final name = FileService.getFileName(file);
+            return ListTile(
+              title: Text(name),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      fileService.downloadAndOpen(context, file);
+                    },
+                    child: const Text('View'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await fileService.downloadToDevice(file);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Downloaded: $name')),
+                        );
+                      }
+                    },
+                    child: const Text('Download'),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -418,78 +545,72 @@ class _TestItemsTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Table(
-      border: TableBorder.all(color: Colors.grey.shade300),
+      border: TableBorder.all(color: AppColors.tableBorder),
       columnWidths: const {
         0: FlexColumnWidth(1),
         1: FlexColumnWidth(2),
         2: FlexColumnWidth(1),
-        3: FlexColumnWidth(2),
+        3: FlexColumnWidth(3),
         4: FlexColumnWidth(1),
+        5: FlexColumnWidth(1),
       },
       children: [
-        const TableRow(
-          decoration: BoxDecoration(color: Colors.white),
-          children: [
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Text('Dept ID',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Text('Dept Name',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Text('Invest ID',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Text('Investigation',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: Text('Cost',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
+        // Header row
+        TableRow(
+          decoration: BoxDecoration(color: AppColors.primaryLight),
+          children: const [
+            _TableHeader('Dept ID'),
+            _TableHeader('Dept Name'),
+            _TableHeader('Invest ID'),
+            _TableHeader('Investigation'),
+            _TableHeader('Base Cost'),
+            _TableHeader('Min Cost'),
           ],
         ),
+        // Data rows
         ...testItems.map((item) {
           final map = item as Map<String, dynamic>;
           return TableRow(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(map['dept_id']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 12)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(map['dept_name']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 12)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(map['invest_id']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 12)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(map['invest_name']?.toString() ?? '',
-                    style: const TextStyle(fontSize: 12)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text('₹${map['base_cost']?.toString() ?? '0'}',
-                    style: const TextStyle(fontSize: 12)),
-              ),
+              _TableCell(map['dept_id']?.toString() ?? ''),
+              _TableCell(map['dept_name']?.toString() ?? ''),
+              _TableCell(map['invest_id']?.toString() ?? ''),
+              _TableCell(map['invest_name']?.toString() ?? ''),
+              _TableCell('₹${map['base_cost']?.toString() ?? '0'}'),
+              _TableCell('₹${map['min_cost']?.toString() ?? '0'}'),
             ],
           );
         }),
       ],
+    );
+  }
+}
+
+class _TableHeader extends StatelessWidget {
+  final String text;
+  const _TableHeader(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(AppSpacing.sm),
+      child: Text(
+        text,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+      ),
+    );
+  }
+}
+
+class _TableCell extends StatelessWidget {
+  final String text;
+  const _TableCell(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(AppSpacing.sm),
+      child: Text(text, style: const TextStyle(fontSize: 11)),
     );
   }
 }

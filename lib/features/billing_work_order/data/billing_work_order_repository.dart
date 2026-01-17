@@ -5,6 +5,7 @@ import 'package:powersync/powersync.dart';
 import 'package:anderson_crm_flutter/database/couch_db.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
+import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 
 List<WorkOrder> _parseWorkOrdersIsolate(List<Map<String, dynamic>> rows) {
   return rows.map((row) => WorkOrder.fromRow(row)).toList();
@@ -13,8 +14,9 @@ List<WorkOrder> _parseWorkOrdersIsolate(List<Map<String, dynamic>> rows) {
 class BillingWorkOrderRepository {
   final PowerSyncDatabase _db;
   final CouchDBClient _couchClient;
+  final StorageRepository _storage;
 
-  BillingWorkOrderRepository(this._db, this._couchClient);
+  BillingWorkOrderRepository(this._db, this._couchClient, this._storage);
 
   DateTime _getBaseDate() {
     if (Settings.development) {
@@ -211,6 +213,67 @@ class BillingWorkOrderRepository {
       debugPrint('[BillingRepo] Billing doc updated with work order link');
     } catch (e) {
       debugPrint('[BillingRepo] Error updating billing doc: $e');
+    }
+  }
+
+  /// Send order to lab API and update sent_status (matches Vue's send_confirmed_item)
+  Future<String> sendOrderToApi({
+    required WorkOrder workOrder,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      // POST to lab API
+      final dio = Dio();
+      final response = await dio.post(
+        '/api',
+        data: payload,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'x-static-key':
+                'oxJvBOWYwwByrHlmaf/7tQsy5V7X9Q2Bez8rCeVMeP073A07UzBajHu9S+1DTQAJ',
+          },
+        ),
+      );
+
+      if (response.data == 'SUCCESS') {
+        debugPrint('[BillingRepo] Order sent successfully');
+
+        // Update status in CouchDB
+        final now = DateTime.now().toIso8601String();
+        final docDbs =
+            await _storage.getSessionItem('doc_dbs') ?? 'work_orders';
+        final workOrderDb = await _couchClient.getDB(docDbs);
+
+        try {
+          final docResponse = await workOrderDb.get('/${workOrder.docId}');
+          if (docResponse.statusCode == 200) {
+            final doc = Map<String, dynamic>.from(docResponse.data);
+            doc['sent_status'] = 'sent';
+            doc['sent_status_updated_at'] = now;
+
+            await workOrderDb.put('/${workOrder.docId}', data: doc);
+            debugPrint('[BillingRepo] Updated sent_status in CouchDB');
+          }
+        } catch (e) {
+          debugPrint('[BillingRepo] Error updating CouchDB status: $e');
+        }
+
+        // Update local DB
+        await _db.execute('''
+          UPDATE hc_patient_visit_detail
+          SET last_updated_at = ?
+          WHERE id = ?
+        ''', [now, workOrder.id]);
+
+        return 'SUCCESS';
+      } else {
+        debugPrint('[BillingRepo] Send failed: ${response.data}');
+        return 'FAILED';
+      }
+    } catch (e) {
+      debugPrint('[BillingRepo] Error sending order: $e');
+      return 'ERROR: $e';
     }
   }
 }

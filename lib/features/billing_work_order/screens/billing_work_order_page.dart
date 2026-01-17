@@ -168,12 +168,14 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       return BillingDesktopTable(
         orders: state.filteredOrders,
         onBill: _showBillDialog,
+        onSend: _sendOrder,
         showBillAction: state.selectedTab == 'unbilled',
       );
     } else {
       return BillingMobileList(
         orders: state.filteredOrders,
         onBill: _showBillDialog,
+        onSend: _sendOrder,
         showBillAction: state.selectedTab == 'unbilled',
       );
     }
@@ -205,6 +207,29 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
         },
       ),
     );
+  }
+
+  Future<void> _sendOrder(WorkOrder order) async {
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sending to lab system...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    final result =
+        await ref.read(billingWorkOrderProvider.notifier).sendOrder(order);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result == 'OK' ? 'Sent successfully' : result),
+          backgroundColor: result == 'OK' ? Colors.green : Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildSkeletonLoading() {
@@ -260,7 +285,7 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
                     itemBuilder: (context, index) {
                       return Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           border: Border(
                             bottom: BorderSide(color: Colors.grey.shade200),

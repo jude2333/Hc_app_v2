@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,15 +68,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Container(
         height: size.height,
         width: size.width,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
+          // iOS-style dark gradient background for liquid glass effect
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF1A1A2E),
-              const Color(0xFF16213E),
-              const Color(0xFF0F3460),
+              Color(0xFF0A4D68), // Deep teal (top)
+              Color(0xFF088395), // Anderson teal
+              Color(0xFF05BFDB), // Bright teal/cyan
+              Color(0xFF00FFCA), // Vibrant mint accent (bottom)
             ],
+            stops: [0.0, 0.35, 0.7, 1.0],
           ),
         ),
         child: KeyboardListener(
@@ -130,17 +134,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [
-                Colors.orange.shade400,
-                Colors.deepOrange.shade600,
+                Color(0xFFF7941D), // Anderson Orange
+                Color(0xFFE07D0A), // Darker orange
               ],
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.orange.withOpacity(0.4),
-                blurRadius: 30,
-                spreadRadius: 5,
+                color: const Color(0xFFF7941D).withOpacity(0.4),
+                blurRadius: 25,
+                spreadRadius: 3,
               ),
             ],
           ),
@@ -161,12 +167,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Healthcare Management System',
+        const Text(
+          'Diagnostics & Labs',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
+            fontStyle: FontStyle.italic,
+            color: Color(0xFFF7941D), // Anderson Orange
             letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Adding Health to Life...',
+          style: TextStyle(
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+            color: Colors.white.withOpacity(0.7),
+            letterSpacing: 0.3,
           ),
         ),
       ],
@@ -174,73 +191,98 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildLoginCard(AuthState authState, AuthNotifier notifier) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        // Blur creates the liquid distortion effect
+        filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
         child: Container(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            // Fully transparent - no background, just blur
+            color: Colors.transparent,
+            // Subtle luminous border to define the glass edge
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.0,
+            ),
+          ),
+          child: Stack(
             children: [
-              // Welcome text
-              const Text(
-                'Welcome back',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              // Top edge highlight (like light hitting liquid surface)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 1.5,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(24)),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.0),
+                        Colors.white.withOpacity(0.6),
+                        Colors.white.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Sign in to continue to your account',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.7),
+              // Main content
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Welcome text
+                    const Text(
+                      'Welcome back',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sign in to continue to your account',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Error message
+                    if (authState.hasError)
+                      _buildErrorBanner(authState.errorMessage ?? ''),
+
+                    // Mobile input
+                    _buildMobileInput(authState, notifier),
+
+                    const SizedBox(height: 20),
+
+                    // Role selector (if needed)
+                    if (authState.currentStep == LoginStep.selectRole)
+                      _buildRoleSelector(authState, notifier),
+
+                    // Remember checkbox
+                    _buildRememberCheckbox(authState, notifier),
+
+                    const SizedBox(height: 24),
+
+                    // Login button
+                    _buildLoginButton(authState, notifier),
+
+                    const SizedBox(height: 16),
+
+                    // Get OTP button
+                    _buildOtpButton(authState, notifier),
+                  ],
                 ),
               ),
-              const SizedBox(height: 32),
-
-              // Error message
-              if (authState.hasError)
-                _buildErrorBanner(authState.errorMessage ?? ''),
-
-              // Mobile input
-              _buildMobileInput(authState, notifier),
-
-              const SizedBox(height: 20),
-
-              // Role selector (if needed)
-              if (authState.currentStep == LoginStep.selectRole)
-                _buildRoleSelector(authState, notifier),
-
-              // Remember checkbox
-              _buildRememberCheckbox(authState, notifier),
-
-              const SizedBox(height: 24),
-
-              // Login button
-              _buildLoginButton(authState, notifier),
-
-              const SizedBox(height: 16),
-
-              // Get OTP button
-              _buildOtpButton(authState, notifier),
             ],
           ),
         ),
@@ -288,10 +330,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.3),
             ),
           ),
           child: TextFormField(
@@ -359,10 +401,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.3),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -374,10 +416,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: TextStyle(color: Colors.white.withOpacity(0.5)),
               ),
               isExpanded: true,
-              dropdownColor: const Color(0xFF16213E),
+              dropdownColor: const Color(0xFF0A4D68),
               style: const TextStyle(color: Colors.white, fontSize: 14),
               icon: Icon(Icons.keyboard_arrow_down,
-                  color: Colors.white.withOpacity(0.6)),
+                  color: Colors.white.withOpacity(0.7)),
               items: authState.roles.map((role) {
                 return DropdownMenuItem<String>(
                   value: role.id,
@@ -388,7 +430,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (value != null) {
                   final role = authState.roles.firstWhere((r) => r.id == value);
                   final success = await notifier.selectRole(role.id, role.name);
-                  // Navigate directly to dashboard (matching old behavior)
                   if (success && mounted) {
                     context.go('/dashboard');
                   }
@@ -411,9 +452,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Checkbox(
             value: authState.rememberMobile,
             onChanged: (value) => notifier.setRememberMobile(value ?? false),
-            side: BorderSide(color: Colors.white.withOpacity(0.4)),
+            side: BorderSide(color: Colors.white.withOpacity(0.5)),
             checkColor: Colors.white,
-            activeColor: Colors.orange,
+            activeColor: const Color(0xFFF7941D), // Anderson Orange
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
@@ -438,10 +479,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: ElevatedButton(
         onPressed: authState.isLoading ? null : notifier.quickLogin,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
+          backgroundColor: const Color(0xFFF7941D), // Anderson Orange
           foregroundColor: Colors.white,
-          disabledBackgroundColor: Colors.orange.withOpacity(0.5),
-          elevation: 0,
+          disabledBackgroundColor: const Color(0xFFF7941D).withOpacity(0.5),
+          elevation: 4,
+          shadowColor: const Color(0xFFF7941D).withOpacity(0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -474,24 +516,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: OutlinedButton(
         onPressed: authState.isLoading ? null : notifier.sendOtp,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.white.withOpacity(0.3)),
-          foregroundColor: Colors.white,
+          side:
+              const BorderSide(color: Color(0xFF00669B)), // Anderson Teal Blue
+          foregroundColor: const Color(0xFF00669B),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.sms_outlined,
-                size: 18, color: Colors.white.withOpacity(0.8)),
-            const SizedBox(width: 8),
+            Icon(Icons.sms_outlined, size: 18, color: Color(0xFF00669B)),
+            SizedBox(width: 8),
             Text(
               'Login with OTP',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.white.withOpacity(0.9),
+                color: Color(0xFF00669B), // Anderson Teal Blue
               ),
             ),
           ],
@@ -506,7 +548,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Text(
           'Version 1.0.0',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withOpacity(0.5),
             fontSize: 12,
           ),
         ),
@@ -514,7 +556,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Text(
           '© 2024 Anderson Healthcare',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withOpacity(0.5),
             fontSize: 12,
           ),
         ),

@@ -9,7 +9,7 @@ class WOTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(4.0),
       child: Text(
         text,
         style: const TextStyle(
@@ -31,7 +31,7 @@ class WOTableCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(4.0),
       child: Text(
         text,
         style: TextStyle(fontSize: fontSize),

@@ -513,6 +513,43 @@ class WorkOrder {
   String get firstStep => process['first_step'] ?? '';
   String get prescriptionPath => process['fifth_step'] ?? '';
   String get proformaPath => process['second_step'] ?? '';
+  String get prescriptionPhoto => parsedDocMap['pres_photo'] ?? '';
+
+  // Sent status for billing send functionality
+  String get sentStatus => parsedDocMap['sent_status']?.toString() ?? '';
+
+  // Amount received for send API
+  String get amountReceived =>
+      parsedDocMap['amount_received']?.toString() ?? '0';
+  String get remarks => parsedDocMap['remarks']?.toString() ?? '';
+
+  /// Calculated total: uses doc 'total' field, or sums test_items base_cost
+  double get calculatedTotal {
+    // First try the document's 'total' field
+    final docTotal = parsedDocMap['total'];
+    if (docTotal != null) {
+      if (docTotal is num && docTotal > 0) return docTotal.toDouble();
+      final parsed = double.tryParse(docTotal.toString());
+      if (parsed != null && parsed > 0) return parsed;
+    }
+
+    // Fallback: sum test_items base_cost
+    final items = testItems;
+    if (items.isNotEmpty) {
+      return items.fold<double>(0, (sum, item) {
+        final cost = item['base_cost'];
+        if (cost is num) return sum + cost.toDouble();
+        return sum + (double.tryParse(cost?.toString() ?? '0') ?? 0);
+      });
+    }
+
+    // Final fallback to billAmount field
+    return billAmount;
+  }
+
+  /// Formatted calculated total for display
+  String get formattedCalculatedTotal =>
+      _currencyFormat.format(calculatedTotal);
 
   // Factory for DB Row
   factory WorkOrder.fromRow(Map<String, dynamic> row) {
