@@ -1,10 +1,16 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/providers/com_center_provider.dart';
+import 'package:anderson_crm_flutter/providers/notification_provider.dart';
+import 'package:anderson_crm_flutter/database/sms_template.dart';
+import 'package:anderson_crm_flutter/config/settings.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 class CancelWorkOrderDialog extends ConsumerStatefulWidget {
   final WorkOrder workOrder;
@@ -68,7 +74,17 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
           customDoc: updatedDocMap);
 
       if (success && mounted) {
+        // Send in-app notification to technician (if assigned)
+        if (widget.workOrder.assignedTo.isNotEmpty) {
+          await _sendCancellationNotification();
+        }
+
         Navigator.of(context).pop(true);
+
+        // Show cancellation notification dialog (mirrors Vue's close_edit_screen with Cancelled action)
+        if (widget.workOrder.assignedTo.isNotEmpty) {
+          _showCancellationNotificationDialog();
+        }
       } else if (mounted) {
         Navigator.of(context).pop(false);
       }
@@ -77,6 +93,169 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
       if (mounted) Navigator.of(context).pop(false);
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Send in-app notification to technician about cancellation (mirrors Vue's send_cancellation_sms notification part)
+  Future<void> _sendCancellationNotification() async {
+    try {
+      final notificationDb = ref.read(notificationDbProvider);
+      final wo = widget.workOrder;
+
+      final msgHeader =
+          "Cancelled Collection on ${DateFormat('dd-MM-yyyy').format(wo.visitDate)} ${wo.visitTime}.";
+      final msgBody = "Cancelled home collection for ${wo.patientName}"
+          "(${wo.age}/${wo.gender}) "
+          "address:${wo.address} mobile:${wo.mobile} pincode:${wo.pincode}"
+          " ${wo.freeText}";
+
+      final result = await notificationDb.createNotification(
+        toId: wo.assignedId ?? 0,
+        toName: wo.assignedTo,
+        msgHeader: msgHeader,
+        msgBody: msgBody,
+      );
+
+      if (result == "OK") {
+        debugPrint("✅ Cancellation notification sent to ${wo.assignedTo}");
+      } else {
+        debugPrint("⚠️ Failed to send cancellation notification: $result");
+      }
+    } catch (e) {
+      debugPrint("❌ Error sending cancellation notification: $e");
+    }
+  }
+
+  /// Show dialog to ask about sending SMS/WhatsApp to patient (mirrors Vue's msg_dialog for Cancelled)
+  void _showCancellationNotificationDialog() {
+    final wo = widget.workOrder;
+    bool sendSms = true;
+    bool sendWhatsApp = true;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(4),
+                ),
+              ),
+              child: const Text('Cancelled Successfully',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    'Do you wish to inform ${wo.patientName} (Mob: ${wo.mobile}) about the cancellation?'),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: const Text('SMS'),
+                  value: sendSms,
+                  onChanged: (v) => setState(() => sendSms = v ?? false),
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  title: const Text('WhatsApp'),
+                  value: sendWhatsApp,
+                  onChanged: (v) => setState(() => sendWhatsApp = v ?? false),
+                  dense: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Close'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+
+                  if (Settings.development) {
+                    debugPrint(
+                        '⏭️ Skipping cancellation SMS (development mode)');
+                    return;
+                  }
+
+                  await _sendCancellationMessages(
+                      sendSms: sendSms, sendWhatsApp: sendWhatsApp);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Send cancellation SMS/WhatsApp (mirrors Vue's send_cancellation_sms)
+  Future<void> _sendCancellationMessages(
+      {required bool sendSms, required bool sendWhatsApp}) async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final comCenter = ref.read(comCenterProvider);
+      final wo = widget.workOrder;
+
+      final rescheduleUrl = '${Settings.msgUrl}reschedule';
+
+      final baseMessage = {
+        'center_id': storage.getFromSession('logged_in_tenant_id'),
+        'center_name': storage.getFromSession('logged_in_tenant_name'),
+        'department_id': storage.getFromSession('department_id'),
+        'department_name': storage.getFromSession('department_name'),
+        'role_id': storage.getFromSession('role_id'),
+        'role_name': storage.getFromSession('role_name'),
+        'emp_id': storage.getFromSession('logged_in_emp_id'),
+        'emp_name': storage.getFromSession('logged_in_emp_name'),
+        'recipient_mobile': wo.mobile,
+        'recipient_name': wo.patientName,
+        'status': '0',
+        'msg_time': Util.getTodayWithTime(),
+        'updated_at': Util.getTimeStamp(),
+      };
+
+      // Send SMS
+      if (sendSms) {
+        final smsMsg = SmsTemplate.homeCollectionCancellation(rescheduleUrl);
+
+        final smsMessage = Map<String, dynamic>.from(baseMessage);
+        smsMessage['_id'] =
+            'sms_center:${Util.getDateForId()}:${Util.uuidv4()}';
+        smsMessage['message'] = smsMsg;
+
+        debugPrint('📤 Sending cancellation SMS to ${wo.mobile}');
+        final result = await comCenter.sendMsg(smsMessage);
+        debugPrint(result == 'OK'
+            ? '✅ Cancellation SMS sent'
+            : '⚠️ SMS failed: $result');
+      }
+
+      // Send WhatsApp
+      if (sendWhatsApp) {
+        final waMessage = Map<String, dynamic>.from(baseMessage);
+        waMessage['_id'] =
+            'whatsapp_center:${Util.getDateForId()}:${Util.uuidv4()}';
+        waMessage['message'] = [rescheduleUrl];
+        waMessage['template'] = 'hc_cancellation';
+
+        debugPrint('📤 Sending cancellation WhatsApp to ${wo.mobile}');
+        final result = await comCenter.sendMsg(waMessage);
+        debugPrint(result == 'OK'
+            ? '✅ Cancellation WhatsApp sent'
+            : '⚠️ WhatsApp failed: $result');
+      }
+    } catch (e) {
+      debugPrint('❌ Error sending cancellation messages: $e');
     }
   }
 

@@ -4,12 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
+import 'package:anderson_crm_flutter/providers/com_center_provider.dart';
+import 'package:anderson_crm_flutter/database/sms_template.dart';
+import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/components/add_work_order.dart';
 import 'package:anderson_crm_flutter/components/assign_technicians.dart';
 import 'package:anderson_crm_flutter/components/canceled_work_order_page.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/price_list/screens/manager_price_view_page.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/screens/tech_engagement_page.dart';
+import 'package:anderson_crm_flutter/features/core/util.dart';
 
 import '../../theme/theme.dart';
 
@@ -590,6 +594,9 @@ class _ManagerExpandableRowConsumerState
       final storage = ref.read(storageServiceProvider);
       final managerName = storage.getFromSession("logged_in_emp_name");
 
+      // Check if this is a re-assignment (Vue: doc.prev_assigned_to)
+      final isReassignment = workOrder.assignedTo.isNotEmpty;
+
       final updatedOrder = workOrder.copyWith(
         assignedId: int.tryParse(techId) ?? 0,
         assignedTo: techName,
@@ -600,13 +607,20 @@ class _ManagerExpandableRowConsumerState
 
       final now = DateTime.now();
       final formattedDate = DateFormat('MMMM dd, hh:mm a').format(now);
-      final assignmentLog =
-          "$formattedDate | $managerName | Assigned To $techName";
+      final assignmentLog = isReassignment
+          ? "$formattedDate | $managerName | Re-assigned To $techName (prev: ${workOrder.assignedTo})"
+          : "$formattedDate | $managerName | Assigned To $techName";
       final existingTimeline = List<String>.from(workOrder.timeLine);
       existingTimeline.add(assignmentLog);
 
       final customDoc = updatedOrder.buildDoc();
       customDoc['time_line'] = existingTimeline;
+
+      // Track previous assignment for re-assignment SMS (Vue: prev_assigned_to/id)
+      if (isReassignment) {
+        customDoc['prev_assigned_to'] = workOrder.assignedTo;
+        customDoc['prev_assigned_id'] = workOrder.assignedId;
+      }
 
       await provider.updateWorkOrder(updatedOrder, customDoc: customDoc);
 
@@ -617,7 +631,14 @@ class _ManagerExpandableRowConsumerState
         parentMessenger.showSnackBar(SnackBar(
             content: Text('Technician assigned!'),
             backgroundColor: AppColors.success));
-        _showNotificationDialog(context, workOrder, techName, parentMessenger);
+        _showNotificationDialog(
+          context,
+          workOrder,
+          techId,
+          techName,
+          parentMessenger,
+          isReassignment: isReassignment,
+        );
       }
     } catch (e) {
       if (context.mounted) {
@@ -658,8 +679,14 @@ class _ManagerExpandableRowConsumerState
     }
   }
 
-  void _showNotificationDialog(BuildContext context, WorkOrder workOrder,
-      String techName, ScaffoldMessengerState messenger) {
+  void _showNotificationDialog(
+    BuildContext context,
+    WorkOrder workOrder,
+    String techId,
+    String techName,
+    ScaffoldMessengerState messenger, {
+    bool isReassignment = false,
+  }) {
     bool sendSms = true;
     bool sendWhatsApp = true;
     bool sendEmail = workOrder.email.isNotEmpty;
@@ -705,9 +732,27 @@ class _ManagerExpandableRowConsumerState
               TextButton(
                 onPressed: () async {
                   Navigator.pop(dialogContext);
-                  messenger.showSnackBar(SnackBar(
-                      content: Text('Notifications sent'),
-                      backgroundColor: AppColors.success));
+
+                  // Skip in development mode
+                  if (Settings.development) {
+                    debugPrint('⏭️ Skipping SMS/WhatsApp (development mode)');
+                    messenger.showSnackBar(SnackBar(
+                        content: Text('Dev mode: Messages skipped'),
+                        backgroundColor: AppColors.primary));
+                    return;
+                  }
+
+                  // Send actual messages (mirrors Vue's ok_msg_dialog)
+                  await _sendAssignmentMessages(
+                    workOrder: workOrder,
+                    techId: techId,
+                    techName: techName,
+                    sendSms: sendSms,
+                    sendWhatsApp: sendWhatsApp,
+                    sendEmail: sendEmail,
+                    isReassignment: isReassignment,
+                    messenger: messenger,
+                  );
                 },
                 child: const Text('OK'),
               ),
@@ -716,6 +761,131 @@ class _ManagerExpandableRowConsumerState
         },
       ),
     );
+  }
+
+  Future<void> _sendAssignmentMessages({
+    required WorkOrder workOrder,
+    required String techId,
+    required String techName,
+    required bool sendSms,
+    required bool sendWhatsApp,
+    required bool sendEmail,
+    required bool isReassignment,
+    required ScaffoldMessengerState messenger,
+  }) async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final comCenter = ref.read(comCenterProvider);
+
+      // Get technician mobile (TODO: fetch from PostgresDB if needed)
+      final techMobile = ""; // Will be empty for now
+
+      final idPart = Util.getRandomString(5);
+      final msgUrl = '${Settings.msgUrl}$idPart';
+
+      // Build base message object
+      final baseMessage = {
+        'center_id': storage.getFromSession('logged_in_tenant_id'),
+        'center_name': storage.getFromSession('logged_in_tenant_name'),
+        'department_id': storage.getFromSession('department_id'),
+        'department_name': storage.getFromSession('department_name'),
+        'role_id': storage.getFromSession('role_id'),
+        'role_name': storage.getFromSession('role_name'),
+        'emp_id': storage.getFromSession('logged_in_emp_id'),
+        'emp_name': storage.getFromSession('logged_in_emp_name'),
+        'recipient_mobile': workOrder.mobile,
+        'recipient_name': workOrder.patientName,
+        'status': '0',
+        'msg_time': Util.getTodayWithTime(),
+        'updated_at': Util.getTimeStamp(),
+      };
+
+      // Send SMS
+      if (sendSms) {
+        String smsMsg;
+        if (isReassignment) {
+          // Tech change SMS template
+          smsMsg = SmsTemplate.homeCollectionTechChange(
+              techName, techMobile, msgUrl);
+        } else {
+          // New assignment SMS template
+          final appTime =
+              "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}";
+          smsMsg = SmsTemplate.sampleCollection(
+              workOrder.patientName, techName, appTime, techMobile, msgUrl);
+        }
+
+        final smsMessage = Map<String, dynamic>.from(baseMessage);
+        smsMessage['_id'] = 'sms_center:$idPart:${Util.uuidv4()}';
+        smsMessage['message'] = smsMsg;
+
+        debugPrint('📤 Sending assignment SMS to ${workOrder.mobile}');
+        final result = await comCenter.sendMsg(smsMessage);
+        if (result == 'OK') {
+          debugPrint('✅ SMS sent successfully');
+        } else {
+          debugPrint('⚠️ SMS failed: $result');
+        }
+      }
+
+      // Send WhatsApp
+      if (sendWhatsApp) {
+        List<String> whatsappMsg;
+        String template;
+
+        if (isReassignment) {
+          whatsappMsg = [techName, techMobile, msgUrl];
+          template = 'Technician_change_for_hc';
+        } else {
+          final appTime =
+              "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}";
+          whatsappMsg = [
+            workOrder.patientName,
+            techName,
+            appTime,
+            techMobile,
+            msgUrl
+          ];
+          template = 'hc_technician_allocation3';
+        }
+
+        final waMessage = Map<String, dynamic>.from(baseMessage);
+        waMessage['_id'] = 'whatsapp_center:$idPart:${Util.uuidv4()}';
+        waMessage['message'] = whatsappMsg;
+        waMessage['template'] = template;
+
+        debugPrint('📤 Sending assignment WhatsApp to ${workOrder.mobile}');
+        final result = await comCenter.sendMsg(waMessage);
+        if (result == 'OK') {
+          debugPrint('✅ WhatsApp sent successfully');
+        } else {
+          debugPrint('⚠️ WhatsApp failed: $result');
+        }
+      }
+
+      // Send Email (placeholder - uses same pattern)
+      if (sendEmail) {
+        final emailMessage = Map<String, dynamic>.from(baseMessage);
+        emailMessage['_id'] = 'email_center:$idPart:${Util.uuidv4()}';
+
+        debugPrint('📤 Sending assignment Email to ${workOrder.email}');
+        final result = await comCenter.sendMsg(emailMessage);
+        if (result == 'OK') {
+          debugPrint('✅ Email sent successfully');
+        } else {
+          debugPrint('⚠️ Email failed: $result');
+        }
+      }
+
+      messenger.showSnackBar(SnackBar(
+          content: Text('Notifications sent'),
+          backgroundColor: AppColors.success));
+    } catch (e) {
+      debugPrint('❌ Error sending assignment messages: $e');
+      messenger.showSnackBar(SnackBar(
+          content: Text('Error sending notifications'),
+          backgroundColor: AppColors.error));
+    }
   }
 }
 

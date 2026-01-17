@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 import 'package:anderson_crm_flutter/features/core/util.dart';
+import 'package:anderson_crm_flutter/features/manager_work_order/providers/manager_work_order_provider.dart';
 
 final techniciansProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String?>(
@@ -83,38 +85,103 @@ class _AssignTechnicianDialogState
     return [...matchFound, ...matchNotFound];
   }
 
-  bool _validateAssignment(String techId, String techName,
-      List<Map<String, dynamic>> allWorkOrders) {
+  bool _validateAssignment(
+      String techId, String techName, List<WorkOrder> allWorkOrders) {
     final workOrder = widget.workOrder;
     final appointmentDate = workOrder.visitDate;
     final appointmentTime = workOrder.visitTime;
 
     for (var wo in allWorkOrders) {
-      if (wo['status'] == 'assigned' &&
-          wo['assigned_id'] == techId &&
-          wo['appointment_date'] == appointmentDate) {
-        final currentTime = appointmentTime;
-        final woTime = wo['appointment_time'];
+      if (wo.status.toLowerCase() == 'assigned' &&
+          wo.assignedId.toString() == techId &&
+          wo.visitDate.year == appointmentDate.year &&
+          wo.visitDate.month == appointmentDate.month &&
+          wo.visitDate.day == appointmentDate.day) {
+        try {
+          final currentTimeStr =
+              "${DateFormat('dd-MM-yyyy').format(appointmentDate)} $appointmentTime";
+          final woTimeStr =
+              "${DateFormat('dd-MM-yyyy').format(wo.visitDate)} ${wo.visitTime}";
 
-        if (currentTime == woTime) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  '$techName has already got appointment at the same time.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return false;
+          // Parse both times
+          final currentDateTime = _parseAppTime(currentTimeStr);
+          final woDateTime = _parseAppTime(woTimeStr);
+
+          if (currentDateTime != null && woDateTime != null) {
+            final diffMinutes =
+                woDateTime.difference(currentDateTime).inMinutes.abs();
+
+            // Check for exact same time
+            if (diffMinutes == 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      '$techName has already got appointment at the same time.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return false;
+            }
+
+            // Check for within 1 minute (Vue: if(mins >= -1 && mins <= 1))
+            if (diffMinutes == 1) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      '$techName has already got appointment within $diffMinutes min from this time.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return false;
+            }
+          }
+        } catch (e) {
+          debugPrint('Error parsing time for validation: $e');
+          // Fall back to string comparison
+          if (appointmentTime == wo.visitTime) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    '$techName has already got appointment at the same time.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return false;
+          }
         }
       }
     }
     return true;
   }
 
+  /// Parse appointment time string (dd-MM-yyyy HH:mm)
+  DateTime? _parseAppTime(String timeStr) {
+    try {
+      // Try common time formats
+      final formats = [
+        DateFormat('dd-MM-yyyy HH:mm'),
+        DateFormat('dd-MM-yyyy H:mm'),
+        DateFormat('dd-MM-yyyy hh:mm a'),
+      ];
+
+      for (var format in formats) {
+        try {
+          return format.parse(timeStr);
+        } catch (_) {}
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final techniciansAsync = ref
         .watch(techniciansProvider(_searchQuery.isEmpty ? null : _searchQuery));
+
+    // Get current work orders for validation from the provider
+    final allWorkOrders = ref.watch(managerWorkOrderProvider).workOrders;
 
     return Dialog(
       child: Container(
@@ -191,10 +258,15 @@ class _AssignTechnicianDialogState
                       return _TechnicianListItem(
                         technician: tech,
                         onTap: () {
-                          widget.onAssign(
-                            tech['_id'].toString(),
-                            tech['name'].toString(),
-                          );
+                          final techId = tech['_id'].toString();
+                          final techName = tech['name'].toString();
+
+                          if (!_validateAssignment(
+                              techId, techName, allWorkOrders)) {
+                            return;
+                          }
+
+                          widget.onAssign(techId, techName);
                           Navigator.of(context).pop();
                         },
                       );
