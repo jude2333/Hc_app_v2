@@ -1,58 +1,45 @@
 # bucket_definitions:
-#   work_orders:
-#     parameters: SELECT token_parameters.emp_id AS emp_id  # Wrong!
+#   # ============================================================
+#   # GLOBAL: Price list synced to ALL users (no parameters needed)
+#   # ============================================================
+#   global:
 #     data:
-#       - SELECT * FROM hc_patient_visit_detail 
-#         WHERE manager_id = bucket.emp_id  # This would show nothing if they're not a manager in the table
+#       - SELECT * FROM price_list WHERE visible = true
 
-# bucket_definitions:
+#   # ============================================================
+#   # TECHNICIAN: Only their assigned work orders
+#   # Use: request.jwt() ->> 'emp_id' to extract emp_id from JWT
+#   # ============================================================
 #   technician_work_orders:
 #     parameters: SELECT request.jwt() ->> 'emp_id' AS emp_id
 #     data:
-#       - SELECT 
-#           id, tenant_id, hcpm_id, doc_id, patient_name, visit_date,
-#           visit_time, doctor_name, pro_id, manager_id, manager_name,
-#           assigned_id, assigned_to, b2b_client_id, b2b_client_name,
-#           status, server_status, bill_amount, received_amount, discount_amount,
-#           doc, bill_number, lab_number, visible, created_by, created_at,
-#           last_updated_by, last_updated_at
-#         FROM data.hc_patient_visit_detail
+#       - SELECT * FROM hc_patient_visit_detail 
 #         WHERE assigned_id = bucket.emp_id
 #           AND visible = true
 #           AND visit_date >= '2022-12-10'
 #           AND visit_date <= '2022-12-17'
-          
+
+#   # ============================================================
+#   # MANAGER: All work orders for their tenant
+#   # ============================================================
 #   manager_work_orders:
 #     parameters: SELECT request.jwt() ->> 'tenant_id' AS tenant_id
 #     data:
-#       - SELECT 
-#           id, tenant_id, hcpm_id, doc_id, patient_name, visit_date,
-#           visit_time, doctor_name, pro_id, manager_id, manager_name,
-#           assigned_id, assigned_to, b2b_client_id, b2b_client_name,
-#           status, server_status, bill_amount, received_amount, discount_amount,
-#           doc, bill_number, lab_number, visible, created_by, created_at,
-#           last_updated_by, last_updated_at
-#         FROM data.hc_patient_visit_detail
+#       - SELECT * FROM hc_patient_visit_detail 
 #         WHERE tenant_id = bucket.tenant_id
 #           AND visible = true
 #           AND visit_date >= '2022-12-10'
 #           AND visit_date <= '2022-12-17'
-          
+
+#   # ============================================================
+#   # BILLING: Finished work orders ready for billing
+#   # ============================================================
 #   billing_work_orders:
 #     parameters: SELECT request.jwt() ->> 'tenant_id' AS tenant_id
 #     data:
-#       - SELECT 
-#           id, tenant_id, hcpm_id, doc_id, patient_name, visit_date,
-#           visit_time, doctor_name, pro_id, manager_id, manager_name,
-#           assigned_id, assigned_to, b2b_client_id, b2b_client_name,
-#           status, server_status, bill_amount, received_amount, discount_amount,
-#           doc, bill_number, lab_number, visible, created_by, created_at,
-#           last_updated_by, last_updated_at
-#         FROM data.hc_patient_visit_detail
+#       - SELECT * FROM hc_patient_visit_detail 
 #         WHERE tenant_id = bucket.tenant_id
 #           AND visible = true
+#           AND status = 'Finished'
 #           AND visit_date >= '2022-12-10'
 #           AND visit_date <= '2022-12-17'
-  # ============================================================
-  # TECHNICIANS: Sync only their assigned work orders
-  # ============================================================
