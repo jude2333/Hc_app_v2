@@ -67,9 +67,16 @@ class NotificationDB {
 
   Future<Dio> getServerDB(String name) async {
     String? dbName = _dbHandler.resolveName(name);
-    if (dbName == null) return Dio();
+    debugPrint("🔍 getServerDB('$name') resolved to: '$dbName'");
+
+    if (dbName == null) {
+      debugPrint("❌ Could not resolve database name for '$name'");
+      return Dio();
+    }
 
     String baseUrl = "https://db-2.andrsn.in/$dbName";
+    debugPrint("📡 CouchDB URL: $baseUrl");
+
     String username = "webuser";
     String password = "cka0t20iwlxf";
 
@@ -129,7 +136,7 @@ class NotificationDB {
       debugPrint("   To: $toName (ID: $toId)");
 
       // Save to remote CouchDB
-      final remoteDb = await getServerDB("notifications");
+      final remoteDb = await getServerDB("hc_notifications");
       final response = await remoteDb.put(
         '/$notificationId',
         data: notification,
@@ -279,7 +286,7 @@ class NotificationDB {
             0;
       }
 
-      String? name = _dbHandler.resolveName("notifications");
+      String? name = _dbHandler.resolveName("hc_notifications");
       if (name == null) return [];
 
       Dio? remoteDb = await _couchDB.getDB(name);
@@ -456,7 +463,7 @@ class NotificationDB {
   Future<Map<String, dynamic>?> getWithIdRemote(String id) async {
     debugPrint("🔍 Remote Fetch data > getWithIdRemote() > $id");
 
-    String? name = _dbHandler.resolveName("notifications");
+    String? name = _dbHandler.resolveName("hc_notifications");
     if (name == null) {
       debugPrint("❌ Could not resolve notifications database name");
       return null;

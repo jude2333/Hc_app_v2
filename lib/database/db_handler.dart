@@ -64,15 +64,15 @@ class DBHandler {
         "temp_db",
         "login_log",
         "dashboard",
-        "pin_codes"
+        "pin_codes",
+        "chennai11_hc_notifications", // Hardcoded - doc_dbs session has wrong DB name
       ];
 
-      String? centerBasedDB = await _storage.getSessionItem("doc_dbs");
-      // String? delDocDBs = await _storage.getSessionItem("del_doc_dbs");
-
-      if (centerBasedDB != null && centerBasedDB.isNotEmpty) {
-        _dbNames!.addAll(centerBasedDB.split(","));
-      }
+      // debugPrint(
+      //     "/////////////////////   /////////////    centerBasedDB: $centerBasedDB");
+      // if (centerBasedDB != null && centerBasedDB.isNotEmpty) {
+      //   _dbNames!.addAll(centerBasedDB.split(","));
+      // }
 
       String token = await _getToken();
       // await _setUp(token);
@@ -282,8 +282,12 @@ class DBHandler {
   }
 
   Stream<Map<String, dynamic>> startContinuousStream(String dbName) async* {
-    String? resolvedName = resolveName(dbName);
-    if (resolvedName == null) return;
+    // temp fix
+
+    // String? resolvedName = resolveName(dbName);
+    // if (resolvedName == null) return;
+
+    String resolvedName = dbName;
 
     String token = await _getToken();
     String remoteUrl = "${Settings.remoteCouchUrl}/$resolvedName";

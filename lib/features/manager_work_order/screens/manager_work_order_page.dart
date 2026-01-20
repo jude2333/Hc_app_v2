@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import 'package:anderson_crm_flutter/providers/notification_provider.dart';
+import 'package:anderson_crm_flutter/providers/notificationCenter_provider.dart';
 import 'package:anderson_crm_flutter/providers/com_center_provider.dart';
 import 'package:anderson_crm_flutter/database/sms_template.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
@@ -625,6 +625,7 @@ class _ManagerExpandableRowConsumerState
       await provider.updateWorkOrder(updatedOrder, customDoc: customDoc);
 
       // Send in-app notification (mirrors Vue's send_notification)
+      debugPrint("🔔 About to send in-app notification...");
       await _sendInAppNotification(workOrder, techId, techName);
 
       if (context.mounted) {
@@ -649,33 +650,50 @@ class _ManagerExpandableRowConsumerState
   }
 
   /// Send in-app notification to the assigned technician (mirrors Vue's send_notification)
+  /// Uses NotificationCenter which properly resolves DB name from doc_dbs session
   Future<void> _sendInAppNotification(
       WorkOrder workOrder, String techId, String techName) async {
     try {
-      final notificationDb = ref.read(notificationDbProvider);
+      final notificationCenter = ref.read(notificationCenterServiceProvider);
+      final storage = ref.read(storageServiceProvider);
 
       // Build notification message matching Vue format
+      final appointmentDate =
+          DateFormat('dd-MM-yyyy').format(workOrder.visitDate);
       final msgHeader =
-          "Collection on ${workOrder.visitDate} ${workOrder.visitTime} assigned.";
+          "Collection on $appointmentDate ${workOrder.visitTime} assigned.";
       final msgBody = "Home collection for ${workOrder.patientName}"
           "(${workOrder.age}/${workOrder.gender}) "
           "address:${workOrder.address} mobile:${workOrder.mobile} pincode:${workOrder.pincode}"
           " ${workOrder.freeText}";
 
-      final result = await notificationDb.createNotification(
-        toId: int.tryParse(techId) ?? 0,
-        toName: techName,
-        msgHeader: msgHeader,
-        msgBody: msgBody,
-      );
+      debugPrint(
+          "📤 Sending notification to techId=$techId, techName=$techName");
+
+      // Build notification payload matching Vue format
+      final notification = {
+        '_id': 'notifications:${Util.getDateForId()}:${Util.uuidv4()}',
+        'from_id': storage.getFromSession('logged_in_emp_id'),
+        'from_name': storage.getFromSession('logged_in_emp_name'),
+        'to_id': techId,
+        'to_name': techName,
+        'msg_header': msgHeader,
+        'msg_body': msgBody,
+        'msg_attachment': {},
+        'status': 'New',
+        'msg_time': Util.getTodayWithTime(),
+        'updated_at': Util.getTimeStamp(),
+      };
+
+      final result = await notificationCenter.sendNotification(notification);
 
       if (result == "OK") {
-        debugPrint("✅ In-app notification sent to $techName");
+        debugPrint(" In-app notification sent to $techName");
       } else {
-        debugPrint("⚠️ Failed to send in-app notification: $result");
+        debugPrint(" Failed to send in-app notification: $result");
       }
     } catch (e) {
-      debugPrint("❌ Error sending in-app notification: $e");
+      debugPrint(" Error sending in-app notification: $e");
     }
   }
 
@@ -734,13 +752,13 @@ class _ManagerExpandableRowConsumerState
                   Navigator.pop(dialogContext);
 
                   // Skip in development mode
-                  if (Settings.development) {
-                    debugPrint('⏭️ Skipping SMS/WhatsApp (development mode)');
-                    messenger.showSnackBar(SnackBar(
-                        content: Text('Dev mode: Messages skipped'),
-                        backgroundColor: AppColors.primary));
-                    return;
-                  }
+                  // if (Settings.development) {
+                  //   debugPrint('⏭️ Skipping SMS/WhatsApp (development mode)');
+                  //   messenger.showSnackBar(SnackBar(
+                  //       content: Text('Dev mode: Messages skipped'),
+                  //       backgroundColor: AppColors.primary));
+                  //   return;
+                  // }
 
                   // Send actual messages (mirrors Vue's ok_msg_dialog)
                   await _sendAssignmentMessages(
@@ -822,9 +840,9 @@ class _ManagerExpandableRowConsumerState
         debugPrint('📤 Sending assignment SMS to ${workOrder.mobile}');
         final result = await comCenter.sendMsg(smsMessage);
         if (result == 'OK') {
-          debugPrint('✅ SMS sent successfully');
+          debugPrint(' SMS sent successfully');
         } else {
-          debugPrint('⚠️ SMS failed: $result');
+          debugPrint(' SMS failed: $result');
         }
       }
 
@@ -857,9 +875,9 @@ class _ManagerExpandableRowConsumerState
         debugPrint('📤 Sending assignment WhatsApp to ${workOrder.mobile}');
         final result = await comCenter.sendMsg(waMessage);
         if (result == 'OK') {
-          debugPrint('✅ WhatsApp sent successfully');
+          debugPrint(' WhatsApp sent successfully');
         } else {
-          debugPrint('⚠️ WhatsApp failed: $result');
+          debugPrint(' WhatsApp failed: $result');
         }
       }
 
@@ -871,9 +889,9 @@ class _ManagerExpandableRowConsumerState
         debugPrint('📤 Sending assignment Email to ${workOrder.email}');
         final result = await comCenter.sendMsg(emailMessage);
         if (result == 'OK') {
-          debugPrint('✅ Email sent successfully');
+          debugPrint(' Email sent successfully');
         } else {
-          debugPrint('⚠️ Email failed: $result');
+          debugPrint(' Email failed: $result');
         }
       }
 
@@ -881,7 +899,7 @@ class _ManagerExpandableRowConsumerState
           content: Text('Notifications sent'),
           backgroundColor: AppColors.success));
     } catch (e) {
-      debugPrint('❌ Error sending assignment messages: $e');
+      debugPrint(' Error sending assignment messages: $e');
       messenger.showSnackBar(SnackBar(
           content: Text('Error sending notifications'),
           backgroundColor: AppColors.error));

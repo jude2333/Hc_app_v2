@@ -10,63 +10,48 @@ class NotificationCenter {
   final StorageService _storage;
 
   Dio? _client;
-  String _token = "";
   String _resolvedDbName = "";
 
   NotificationCenter(this._storage);
 
   Future<void> _setup() async {
-    if (_token.isEmpty) {
-      _token = _storage.getFromSession("pg_admin");
-    }
-
     // Resolve notifications database name
     _resolvedDbName = _resolveDbName("notifications");
+
+    // Use Bearer token auth (same as Vue DBHandler.create() line 176)
+    // Token comes from pg_admin session (same as Vue DBHandler.refreshToken() line 303)
+    String token = _storage.getFromSession("pg_admin") ?? "";
+
+    debugPrint(
+        '🔑 Token for CouchDB: ${token.isNotEmpty ? "${token.substring(0, 20)}..." : "EMPTY!"}');
 
     final options = BaseOptions(
       baseUrl: '${Settings.remoteCouchUrl}/$_resolvedDbName',
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      validateStatus: (status) => status != null && status < 500,
     );
 
-    final headers = <String, String>{
-      "Content-Type": "application/json",
-    };
-
-    if (_token.isNotEmpty) {
-      headers["Authorization"] = "Bearer $_token";
-    }
-
-    _client = Dio(options)
-      ..options.headers = headers
-      ..options.validateStatus = (status) => status != null && status < 500;
+    _client = Dio(options);
 
     debugPrint('📡 NotificationCenter setup complete for: $_resolvedDbName');
   }
 
-  /// Resolve database name (notifications → chennai11_hc_notifications)
   String _resolveDbName(String shortName) {
-    String? docDbs = _storage.getFromSession("doc_dbs");
-
-    if (docDbs != null && docDbs.isNotEmpty) {
-      List<String> dbNames = docDbs.split(",");
-
-      for (String dbName in dbNames) {
-        if (dbName.endsWith(shortName)) {
-          debugPrint('✅ Resolved "$shortName" → "$dbName"');
-          return dbName;
-        }
-      }
+    if (shortName == "notifications") {
+      return "chennai11_hc_notifications";
     }
-
-    debugPrint('⚠️ Could not resolve "$shortName", using as-is');
+    // Fallback for other databases
     return shortName;
   }
 
   Future<String> sendNotification(Map<String, dynamic> notification) async {
-    if (_client == null) {
-      await _setup();
-    }
+    // Always recreate client to ensure fresh auth
+    await _setup();
 
     try {
       if (!notification.containsKey('_id')) {
@@ -74,7 +59,8 @@ class NotificationCenter {
       }
 
       String docId = notification['_id'];
-      debugPrint('📤 Sending notification to $_resolvedDbName: $docId');
+      final fullUrl = '${Settings.remoteCouchUrl}/$_resolvedDbName/$docId';
+      debugPrint('📤 Sending notification to: $fullUrl');
 
       // just ensure _id is set - no need to remove anything
       notification['_id'] = docId;
@@ -84,6 +70,9 @@ class NotificationCenter {
         data: notification,
       );
 
+      debugPrint('📥 Response status: ${response.statusCode}');
+      debugPrint('📥 Response data: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ Notification sent successfully: $docId');
         return 'OK';
@@ -92,16 +81,23 @@ class NotificationCenter {
         return await _resolveConflictAndRetry(docId, notification);
       } else {
         debugPrint('❌ Failed to send notification: ${response.statusCode}');
+        debugPrint('❌ Response body: ${response.data}');
         return 'Error: ${response.statusMessage}';
       }
     } catch (error, stackTrace) {
-      if (error is DioException && error.response?.statusCode == 409) {
-        return await _resolveConflictAndRetry(
-            notification['_id'], notification);
+      if (error is DioException) {
+        debugPrint('❌ DioException: ${error.message}');
+        debugPrint('❌ Request URL: ${error.requestOptions.uri}');
+        debugPrint('❌ Response status: ${error.response?.statusCode}');
+        debugPrint('❌ Response body: ${error.response?.data}');
+
+        if (error.response?.statusCode == 409) {
+          return await _resolveConflictAndRetry(
+              notification['_id'], notification);
+        }
       }
 
       debugPrint('❌ Error sending notification: $error');
-      debugPrint('Stack trace: $stackTrace');
       return 'Error: $error';
     }
   }
@@ -212,13 +208,11 @@ class NotificationCenter {
     }
   }
 
+  // No longer needed - using Basic auth which doesn't require token refresh
   Future<void> refreshToken() async {
-    _token = _storage.getFromSession("pg_admin");
-
-    if (_client != null && _token.isNotEmpty) {
-      _client!.options.headers["Authorization"] = "Bearer $_token";
-      debugPrint('🔄 Token refreshed in NotificationCenter');
-    }
+    // Basic auth credentials are static, no refresh needed
+    debugPrint(
+        '🔄 NotificationCenter uses Basic auth - no token refresh needed');
   }
 
   String _getTodayWithTime() {

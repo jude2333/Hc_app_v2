@@ -1,0 +1,52 @@
+# PowerSync Self-Hosted Configuration
+# Based on official PowerSync docs: https://docs.powersync.com/self-hosting
+
+# Database Replication Settings
+replication:
+  connections:
+    - type: postgresql
+      uri: postgres://postgres:root@postgres:5432/live_db2
+      sslmode: disable
+      publication_name: powersync
+
+# Sync Bucket Storage (MongoDB)
+storage:
+  type: mongodb
+  uri: mongodb://mongo:27017/powersync_anderson?replicaSet=rs0
+
+# API Port
+port: 8080
+
+# Sync Rules
+sync_rules:
+  content: |
+    bucket_definitions:
+      manager_work_orders:
+        data:
+          - SELECT * FROM data.hc_patient_visit_detail 
+            WHERE tenant_id = 1
+            AND visible = true
+            AND visit_date >= '2022-12-10'
+            AND visit_date <= '2022-12-23'
+
+      price_list:
+        data:
+          - SELECT * FROM data.price_list
+            WHERE visible = true        
+        
+
+
+# Client Authentication - Inline JWKS (your existing RSA public key)
+client_auth:
+  jwks:
+    keys:
+      - kty: 'RSA'
+        n: 'uIyEmd0HNaIqZXxFCXFNGxCH-pwH2D871IBlfdwuEGT2FoIjFlmgCWAWjFeHqy-FLddAy6q0AAMYQ3vsHMM6k4_14HalRy8byxQxEQK3Pq4Ua79zc4WLqQcDsCRfbEd5FD2O3NIk7nKHpJ3wKRk8fMcuMUfNEhNlEMfQzqTgiLUpG5CfDbfRGeBndG3pXF63iqZ1rZbVdkrMncCDkqS2MMxua7T98tdi_6nqYXQzCV-QFHRkOD7mx0K8zHYPR5psn1m_8xdIa_IJxYGo6JiYWtZB-gbqbU5AfI5uKqVppdEqfmFt2yb7pT5zMl5BOexJmgRWB6oTBNFmzSnkQXLMyw'
+        e: 'AQAB'
+        alg: 'RS256'
+        kid: 'powersync-963d4c3800'
+  audience: ['http://localhost:8181', 'powersync-dev', 'anderson-crm-flutter']
+
+# Telemetry (disabled for privacy)
+telemetry:
+  disable_telemetry_sharing: true

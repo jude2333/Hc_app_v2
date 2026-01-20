@@ -1429,10 +1429,25 @@ class _AddWorkOrderPageMobileState
       final freeText = _freeTextController.text.trim();
 
       if (isEditMode) {
-        final status =
-            _isCancelled ? 'cancelled' : widget.existingWorkOrder!.status;
-        final serverStatus =
-            _isCancelled ? 'cancelled' : widget.existingWorkOrder!.serverStatus;
+        // Vue behavior: When editing (not cancelling), reset status to unassigned
+        // and clear technician assignment so manager can reassign
+        final String status;
+        final String serverStatus;
+        final int? assignedId;
+        final String assignedTo;
+
+        if (_isCancelled) {
+          status = 'cancelled';
+          serverStatus = 'cancelled';
+          assignedId = widget.existingWorkOrder!.assignedId;
+          assignedTo = widget.existingWorkOrder!.assignedTo;
+        } else {
+          // Reset to unassigned - matching Vue edit_work_order.vue lines 513-516
+          status = 'unassigned';
+          serverStatus = 'waiting';
+          assignedId = null;
+          assignedTo = '';
+        }
 
         final updatedOrder = widget.existingWorkOrder!.copyWith(
           patientName: patientName,
@@ -1453,6 +1468,8 @@ class _AddWorkOrderPageMobileState
           b2bClientName: _selectedB2BClientName,
           status: status,
           serverStatus: serverStatus,
+          assignedId: assignedId,
+          assignedTo: assignedTo,
           settings: {
             'send_sms': _msgSms ? 1 : 0,
             'send_whatsapp': _msgWhatsapp ? 1 : 0,
@@ -1536,7 +1553,7 @@ class _AddWorkOrderPageMobileState
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       _showSnackBar('Error: $e');
     }
   }
@@ -1601,6 +1618,7 @@ class _AddWorkOrderPageMobileState
   }
 
   void _handleSaveResult(bool success, String message) {
+    if (!mounted) return;
     setState(() => _isLoading = false);
     if (success && mounted) {
       // Pop first, then show snackbar to avoid rendering on disposed view
@@ -1775,6 +1793,7 @@ class _AddWorkOrderPageMobileState
         ref.read(_b2bClientsPod.notifier).state =
             List<Map<String, dynamic>>.from(clients);
 
+        if (!mounted) return;
         setState(() => _isLoading = false);
 
         if (!mounted) return;
@@ -1782,7 +1801,7 @@ class _AddWorkOrderPageMobileState
           context: context,
           builder: (context) => const _B2BClientDialog(),
         ).then((selectedClient) {
-          if (selectedClient != null) {
+          if (selectedClient != null && mounted) {
             setState(() {
               _selectedB2BClientId = selectedClient['id'];
               _selectedB2BClientName =
@@ -1791,6 +1810,7 @@ class _AddWorkOrderPageMobileState
           }
         });
       } else {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _b2b = false;
@@ -1798,6 +1818,7 @@ class _AddWorkOrderPageMobileState
         _showSnackBar('Failed to load B2B clients');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _b2b = false;

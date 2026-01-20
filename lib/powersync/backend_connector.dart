@@ -20,11 +20,9 @@ class BackendConnector extends PowerSyncBackendConnector {
   }
 
   String get postgrestBaseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:3000';
-    } else {
-      return 'http://10.0.2.2:3000';
-    }
+    // Use Settings.currentPostgresUrl which respects development flag
+    // Docker: http://localhost:3001, Production: https://api.andrsn.in
+    return Settings.currentPostgresUrl;
   }
 
   final String powerSyncUrl = Settings.powerSyncUrl;
