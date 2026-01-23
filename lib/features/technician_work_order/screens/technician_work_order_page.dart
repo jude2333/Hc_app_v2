@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/components/tech_engagement_page.dart';
+import '../widgets/technician_daily_summary_dialog.dart';
 import 'package:anderson_crm_flutter/components/price_view_page.dart';
 
 import '../../theme/theme.dart';
@@ -87,13 +87,13 @@ class _TechnicianWorkOrderPageState
             },
           ),
           IconButton(
-            tooltip: 'Tech Engagements',
+            tooltip: 'Daily Summary',
             icon: const Icon(Icons.account_box_outlined, color: Colors.black87),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const TechEngagementPage(),
+                  builder: (context) => const TechnicianDailySummaryDialog(),
                   fullscreenDialog: true,
                 ),
               );
@@ -336,6 +336,7 @@ class VirtualTechnicianTable extends ConsumerWidget {
                         isAscending: sortAsc,
                         onSort: handleSort,
                       ),
+                      const HeaderCell('Server', flex: 2),
                       const Expanded(
                           flex: 3,
                           child: Text('Actions',
@@ -414,6 +415,9 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
                   _buildCell(wo.formattedVisitDate, flex: 3),
                   _buildCell(wo.visitTime, flex: 2),
                   Expanded(flex: 3, child: StatusChip(status: wo.status)),
+                  Expanded(
+                      flex: 2,
+                      child: ServerStatusChip(status: wo.serverStatus)),
                   Expanded(flex: 3, child: TechnicianActions(workOrder: wo)),
                   SizedBox(
                       width: 40,

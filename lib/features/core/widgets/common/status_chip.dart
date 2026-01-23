@@ -58,3 +58,46 @@ class StatusChip extends StatelessWidget {
     );
   }
 }
+
+class ServerStatusChip extends StatelessWidget {
+  final String status;
+
+  const ServerStatusChip({
+    super.key,
+    required this.status,
+  });
+
+  Color _getColor(String status) {
+    final s = status.toLowerCase().trim();
+    if (s == 'billed') return Colors.green;
+    if (s == 'pending') return Colors.orange;
+    if (s == 'processing') return Colors.blue;
+    if (s == 'cancelled') return Colors.grey;
+    if (s == 'error' || s == 'failed') return Colors.red;
+    return Colors.grey;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getColor(status);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          status.isEmpty ? 'N/A' : status,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -125,7 +125,7 @@ class HCProcessController {
     _notifier.updateWorkOrder(updatedOrder);
   }
 
-  void _beforeFirstStep() {
+  Future<void> _beforeFirstStep() async {
     final resumeStep = _determineCurrentStep();
     if (resumeStep > 0) {
       _notifier.setCurrentStep(resumeStep);
@@ -145,7 +145,8 @@ class HCProcessController {
 
           if (difference.inMinutes > -30) {
             _notifier.setDelayReason("On Time");
-            afterFirstStep();
+            // Defer the async work to prevent blocking navigation
+            Future.microtask(() => afterFirstStep());
             return;
           }
 

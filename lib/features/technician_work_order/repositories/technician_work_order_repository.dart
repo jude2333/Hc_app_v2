@@ -143,6 +143,12 @@ class TechnicianWorkOrderRepository {
     return orders.where((o) => o.searchableText.contains(q)).toList();
   }
 
+  /// Get technician's daily orders for a specific date (for daily summary)
+  Future<List<Map<String, dynamic>>> getDailyOrders(
+      String techId, String dateStr) async {
+    return await _powerSync.getTechnicianDailyOrders(techId, dateStr);
+  }
+
   void dispose() {
     _statusSubscription?.cancel();
   }

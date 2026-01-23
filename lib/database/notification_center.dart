@@ -20,7 +20,7 @@ class NotificationCenter {
 
     // Use Bearer token auth (same as Vue DBHandler.create() line 176)
     // Token comes from pg_admin session (same as Vue DBHandler.refreshToken() line 303)
-    String token = _storage.getFromSession("pg_admin") ?? "";
+    String token = _storage.getFromSession("pg_admin");
 
     debugPrint(
         '🔑 Token for CouchDB: ${token.isNotEmpty ? "${token.substring(0, 20)}..." : "EMPTY!"}');

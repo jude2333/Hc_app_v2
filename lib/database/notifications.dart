@@ -325,7 +325,7 @@ class NotificationDB {
       debugPrint("✅ Loaded ${allItems.length} notifications via Isolate.");
       return allItems;
     } catch (e) {
-      debugPrint("❌ Error fetching remote notifications: $e");
+      debugPrint("❌ Error fetching remote notifications IN LISTREMOTEDATA: $e");
       return [];
     }
   }
@@ -490,7 +490,7 @@ class NotificationDB {
         return null;
       }
     } catch (e) {
-      debugPrint("❌ Error fetching remote notification: $e");
+      debugPrint("❌ Error fetching remote notification IN getWithIdRemote: $e");
       return null;
     }
   }

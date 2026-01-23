@@ -94,6 +94,24 @@ class PostgresService {
     return await _db.upsertAllocatedAreas(empId, areas);
   }
 
+  /// Get technician details by emp_id - returns mobile and id_card_location
+  /// Matches Vue's technician_details lookup for SMS/WhatsApp sending
+  Future<Map<String, String>> getTechnicianById(String empId) async {
+    try {
+      final result = await _db.getUserDetails(empId);
+      if (result != null && result != "Error") {
+        return {
+          'mobile': result['mobile']?.toString() ?? '',
+          'id_card_location': result['id_card_location']?.toString() ?? '',
+          'name': result['name']?.toString() ?? '',
+        };
+      }
+    } catch (e) {
+      // Ignore errors, return empty
+    }
+    return {'mobile': '', 'id_card_location': '', 'name': ''};
+  }
+
   // Client methods
   Future<dynamic> getAllClients() async {
     return await _db.getAllClients();

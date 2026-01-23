@@ -103,134 +103,63 @@ class PriceViewPage extends ConsumerWidget {
     );
   }
 
-  // ---------------- MOBILE VIEW (Optimized) ----------------
+  // ---------------- MOBILE VIEW (Refactored to match Manager Layout) ----------------
   Widget _buildMobileList(BuildContext context, List<PriceListItem> items) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: items.length,
-      prototypeItem:
-          const Card(child: SizedBox(height: 100, width: double.infinity)),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final price = item.baseCost;
-        final history = item.history;
-
-        return RepaintBoundary(
-          child: Card(
-            elevation: 2,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: ExpansionTile(
-              tilePadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: CircleAvatar(
-                backgroundColor: Colors.orange.shade50,
-                child: Text(
-                  item.investName.isNotEmpty
-                      ? item.investName[0].toUpperCase()
-                      : 'T',
-                  style: const TextStyle(
-                      color: Colors.orange, fontWeight: FontWeight.bold),
-                ),
+    if (items.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No items found',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
-              title: Text(
-                item.investName,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              subtitle: Text(
-                item.deptName,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-              ),
-              trailing: Text(
-                _currencyFormatter.format(price),
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDetailRow(
-                          'Min Price', _currencyFormatter.format(item.minCost)),
-                      const Divider(),
-                      _buildDetailRow('CGHS Price',
-                          _currencyFormatter.format(item.cghsPrice)),
-                      const Divider(),
-                      _buildDetailRow('Investigation ID', item.investId),
-                      const SizedBox(height: 16),
-                      const Text('History',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange)),
-                      const Divider(color: Colors.orange, thickness: 1),
-                      if (history.isEmpty)
-                        const Text('No history available',
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontStyle: FontStyle.italic))
-                      else
-                        ...history.map((h) => Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(h['action'] ?? '',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      Text(h['time_stamp'] ?? '',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(h['summary'] ?? '',
-                                      style: TextStyle(
-                                          color: Colors.grey.shade800)),
-                                  const SizedBox(height: 2),
-                                  Text('${h['emp_name']} (${h['emp_mobile']})',
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey)),
-                                  const Divider(),
-                                ],
-                              ),
-                            )),
-                    ],
-                  ),
-                ),
-              ],
             ),
-          ),
-        );
-      },
-    );
-  }
+          ],
+        ),
+      );
+    }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Row(
+            children: [
+              Text(
+                '${items.length} items',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            itemCount: items.length,
+            cacheExtent: 400,
+            addAutomaticKeepAlives: false,
+            addRepaintBoundaries: true,
+            itemBuilder: (context, index) {
+              return RepaintBoundary(
+                key: ValueKey(items[index].id),
+                child: _MobilePriceCard(
+                  item: items[index],
+                  formatter: _currencyFormatter,
+                ),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
@@ -400,6 +329,244 @@ class _DesktopExpandableRowState extends State<_DesktopExpandableRow> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _MobilePriceCard extends StatefulWidget {
+  final PriceListItem item;
+  final NumberFormat formatter;
+
+  const _MobilePriceCard({
+    required this.item,
+    required this.formatter,
+  });
+
+  @override
+  State<_MobilePriceCard> createState() => _MobilePriceCardState();
+}
+
+class _MobilePriceCardState extends State<_MobilePriceCard>
+    with AutomaticKeepAliveClientMixin {
+  bool _isExpanded = false;
+
+  @override
+  bool get wantKeepAlive => _isExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final item = widget.item;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: _isExpanded ? Colors.orange : Colors.grey.shade200,
+          width: _isExpanded ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: Dept Chip + Name
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade100),
+                        ),
+                        child: Text(
+                          item.deptName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange.shade800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.investName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Prices Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Base Price (Key info)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Price',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            widget.formatter.format(item.baseCost),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Min Price
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Min',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            widget.formatter.format(item.minCost),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // CGHS
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CGHS',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            widget.formatter.format(item.cghsPrice),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        _isExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.grey.shade400,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isExpanded)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade100),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDetailRow('Investigation ID', item.investId),
+                  const SizedBox(height: 16),
+                  const Text('History',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.orange)),
+                  const Divider(color: Colors.orange, thickness: 1),
+                  if (item.history.isEmpty)
+                    const Text('No history available',
+                        style: TextStyle(
+                            color: Colors.grey, fontStyle: FontStyle.italic))
+                  else
+                    ...item.history.take(5).map((h) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(h['action'] ?? '',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  Text(h['time_stamp'] ?? '',
+                                      style: const TextStyle(
+                                          fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(h['summary'] ?? '',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade800,
+                                      fontSize: 13)),
+                              const SizedBox(height: 2),
+                              Text('${h['emp_name']} (${h['emp_mobile']})',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
+                              const Divider(),
+                            ],
+                          ),
+                        )),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
-import 'package:anderson_crm_flutter/components/add_work_order.dart';
+import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import '../providers/manager_work_order_provider.dart';
 import '../../theme/theme.dart';
+import '../../../components/add_work_order.dart';
 
 class ManagerActions extends ConsumerWidget {
   final WorkOrder workOrder;
@@ -46,7 +47,7 @@ class ManagerActions extends ConsumerWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddWorkOrderPageMobile(copyFrom: workOrder),
+        builder: (context) => AddWorkOrderPage(copyFrom: workOrder),
         fullscreenDialog: true,
       ),
     ).then((res) async {
@@ -58,8 +59,7 @@ class ManagerActions extends ConsumerWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            AddWorkOrderPageMobile(existingWorkOrder: workOrder),
+        builder: (context) => AddWorkOrderPage(existingWorkOrder: workOrder),
         fullscreenDialog: true,
       ),
     ).then((res) async {

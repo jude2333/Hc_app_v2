@@ -188,6 +188,13 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
   }
 
+  /// Get technician's daily orders for a specific date (for daily summary)
+  Future<List<Map<String, dynamic>>> getDailyOrders(
+      String techId, String dateStr) async {
+    await _repo.ensureInitialized();
+    return await _repo.getDailyOrders(techId, dateStr);
+  }
+
   /// Get work order by ID from current list
   WorkOrder? getWorkOrderById(String docId) {
     try {

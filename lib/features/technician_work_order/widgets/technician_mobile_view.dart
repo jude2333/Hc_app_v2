@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/components/add_work_order.dart';
+import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
@@ -328,8 +328,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
     Navigator.of(context)
         .push(
       MaterialPageRoute(
-        builder: (context) =>
-            AddWorkOrderPageMobile(copyFrom: widget.workOrder),
+        builder: (context) => AddWorkOrderPage(copyFrom: widget.workOrder),
         fullscreenDialog: true,
       ),
     )

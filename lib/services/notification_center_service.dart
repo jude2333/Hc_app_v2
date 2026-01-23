@@ -10,7 +10,7 @@ class NotificationCenterService {
     return await _notificationCenter.sendNotification(notification);
   }
 
-  /// Send work order completed notification to manager
+  /// Send work order completed notification
   Future<String> sendWorkOrderCompleted({
     required String appointmentDate,
     required String appointmentTime,
