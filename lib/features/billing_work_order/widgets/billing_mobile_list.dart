@@ -5,9 +5,11 @@ import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/theme/app_colors.dart';
 import 'package:anderson_crm_flutter/features/theme/app_spacing.dart';
-import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
+
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/work_order_chips.dart';
 
 final _mobileSearchPod = StateProvider<String>((_) => '');
 
@@ -453,6 +455,9 @@ class _FileRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fileName = FileService.getFileName(filePath);
+    final fileCount = filePath.contains(',')
+        ? '${filePath.split(',').length} files'
+        : fileName;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -466,24 +471,10 @@ class _FileRow extends StatelessWidget {
                     fontWeight: FontWeight.w500, color: Colors.grey)),
           ),
           Expanded(
-            child: InkWell(
+            child: ActionLinkChip(
+              label: fileCount,
+              color: Colors.blue,
               onTap: () => _openFile(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  fileName,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
             ),
           ),
         ],
@@ -492,11 +483,34 @@ class _FileRow extends StatelessWidget {
   }
 
   void _openFile(BuildContext context) {
-    final fileService = FileService(
-      dio: Dio(),
-      storage: storage,
-    );
-    fileService.downloadAndOpen(context, filePath);
+    if (filePath.isEmpty) return;
+
+    // Parse multiple files
+    final files = filePath.contains(',')
+        ? filePath.split(',').map((f) => f.trim()).toList()
+        : [filePath];
+
+    if (files.length == 1) {
+      FileViewer.view(context, s3Path: files.first);
+    } else {
+      FilePickerDialog.show(
+        context,
+        files: files,
+        title: 'View / Download Files',
+        onAction: (path, action) {
+          if (action == 'view') {
+            FileViewer.view(context, s3Path: path);
+          } else {
+            // Download using FileService
+            final fileService = FileService(
+              dio: Dio(),
+              storage: storage,
+            );
+            fileService.downloadAndOpen(context, path);
+          }
+        },
+      );
+    }
   }
 }
 

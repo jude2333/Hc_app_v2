@@ -1,13 +1,22 @@
+import 'dart:io';
 import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:ui_web' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
+import 'package:anderson_crm_flutter/services/s3_file_service.dart';
 
 /// Full-screen PDF viewer with zoom and page navigation
-class PdfViewerPage extends StatefulWidget {
+/// Supports loading from S3 path or preloaded bytes
+/// Handles Web (iframe) and Mobile/Desktop (PDFView)
+class PdfViewerPage extends ConsumerStatefulWidget {
   final String s3Path;
   final String? title;
   final Uint8List? preloadedBytes;
@@ -38,15 +47,22 @@ class PdfViewerPage extends StatefulWidget {
   }
 
   @override
-  State<PdfViewerPage> createState() => _PdfViewerPageState();
+  ConsumerState<PdfViewerPage> createState() => _PdfViewerPageState();
 }
 
-class _PdfViewerPageState extends State<PdfViewerPage> {
+class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
   bool _isLoading = true;
   String? _localPath;
   String? _error;
   int _currentPage = 0;
   int _totalPages = 0;
+
+  // Static cache to prevent duplicate registration
+  static final Set<String> _registeredViewTypes = {};
+
+  // Web specific
+  String? _blobUrl;
+  Uint8List? _pdfBytes;
 
   @override
   void initState() {
@@ -54,32 +70,69 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     _loadPdf();
   }
 
+  @override
+  void dispose() {
+    // Clean up blob URL if created
+    if (_blobUrl != null && kIsWeb) {
+      html.Url.revokeObjectUrl(_blobUrl!);
+    }
+    super.dispose();
+  }
+
   Future<void> _loadPdf() async {
     try {
       Uint8List? bytes = widget.preloadedBytes;
 
+      // Download from S3 if no preloaded bytes
       if (bytes == null) {
-        // Download from S3 - we need FileService but for now use direct bytes
-        setState(() => _error = 'PDF data not provided');
-        return;
+        final s3Service = ref.read(s3FileServiceProvider);
+        bytes = await s3Service.downloadFile(filePath: widget.s3Path);
       }
 
-      // Save to temp file for PDFView
-      final dir = await getTemporaryDirectory();
-      final fileName = FileService.getFileName(widget.s3Path);
-      final file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(bytes);
+      if (bytes.length < 1000 && bytes.toString().contains('Error')) {
+        throw Exception('Invalid PDF data');
+      }
 
-      setState(() {
-        _localPath = file.path;
-        _isLoading = false;
-      });
+      _pdfBytes = bytes;
+
+      if (kIsWeb) {
+        // For web, create a blob URL and use iframe
+        _blobUrl = _createBlobUrl(bytes);
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } else {
+        // For mobile/desktop, save to temp file
+        final dir = await getTemporaryDirectory();
+        final fileName = FileService.getFileName(widget.s3Path);
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(bytes);
+
+        if (mounted) {
+          setState(() {
+            _localPath = file.path;
+            _isLoading = false;
+          });
+        }
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to load PDF: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load PDF: $e';
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  String _createBlobUrl(Uint8List bytes) {
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], 'application/pdf');
+      return html.Url.createObjectUrlFromBlob(blob);
+    }
+    return '';
   }
 
   @override
@@ -95,7 +148,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: const TextStyle(fontSize: 16)),
-            if (_totalPages > 0)
+            if (_totalPages > 0 && !kIsWeb)
               Text(
                 'Page ${_currentPage + 1} of $_totalPages',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
@@ -141,6 +194,37 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       );
     }
 
+    // Web: Use iframe with blob URL
+    if (kIsWeb && _blobUrl != null) {
+      final String viewType = 'pdf-viewer-${widget.s3Path.hashCode}';
+
+      // Prevent duplicate registration which causes assertions
+      if (!_registeredViewTypes.contains(viewType)) {
+        // Register view factory for web
+        // ignore: undefined_prefixed_name
+        ui.platformViewRegistry.registerViewFactory(
+          viewType,
+          (int viewId) => html.IFrameElement()
+            ..src = _blobUrl!
+            ..style.border = 'none'
+            ..style.width = '100%'
+            ..style.height = '100%',
+        );
+        _registeredViewTypes.add(viewType);
+      }
+
+      return HtmlElementView(
+        viewType: viewType,
+      );
+    }
+
+    // Mobile/Desktop: PDFView requires a file path
+    if (_localPath == null) {
+      return const Center(
+          child: Text('Unexpected error: No file path',
+              style: TextStyle(color: Colors.white)));
+    }
+
     return PDFView(
       filePath: _localPath!,
       enableSwipe: true,
@@ -154,12 +238,29 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   }
 
   void _downloadFile(BuildContext context) {
-    if (_localPath != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('PDF saved: ${FileService.getFileName(widget.s3Path)}')),
-      );
+    if (kIsWeb) {
+      if (_pdfBytes != null) {
+        final blob = html.Blob([_pdfBytes!], 'application/pdf');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        html.AnchorElement(href: url)
+          ..setAttribute('download', FileService.getFileName(widget.s3Path))
+          ..click();
+        html.Url.revokeObjectUrl(url);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Downloading: ${FileService.getFileName(widget.s3Path)}')),
+        );
+      }
+    } else {
+      if (_localPath != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('PDF saved: ${FileService.getFileName(widget.s3Path)}')),
+        );
+      }
     }
   }
 }

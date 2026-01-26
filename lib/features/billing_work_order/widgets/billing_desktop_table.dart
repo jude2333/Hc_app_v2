@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
-import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
+
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/work_order_chips.dart';
 import '../../theme/theme.dart';
 
 final _billingSearchPod = StateProvider<String>((_) => '');
@@ -329,6 +331,8 @@ class _ExpandedContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('testItems: ${order.testItems.toString()}');
+    debugPrint('order: ${order.toString()}');
     final storage = ref.watch(storageRepositoryProvider);
 
     return Container(
@@ -436,31 +440,20 @@ class _FileRow extends StatelessWidget {
         : fileName;
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
             child: Text('$label:',
-                style: const TextStyle(fontWeight: FontWeight.w500)),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w500, color: Colors.grey)),
           ),
-          InkWell(
+          ActionLinkChip(
+            label: fileCount,
+            color: Colors.blue,
             onTap: () => _openFile(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                fileCount,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.blue,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -468,72 +461,36 @@ class _FileRow extends StatelessWidget {
   }
 
   void _openFile(BuildContext context) {
-    final fileService = FileService(
-      dio: Dio(),
-      storage: storage,
-    );
+    if (filePath.isEmpty) return;
 
-    // Handle multiple files
-    if (filePath.contains(',')) {
-      _showFileListDialog(context, fileService);
+    // Parse multiple files if comma-separated
+    final files = filePath.contains(',')
+        ? filePath.split(',').map((f) => f.trim()).toList()
+        : [filePath];
+
+    if (files.length == 1) {
+      // Single file - open directly
+      FileViewer.view(context, s3Path: files.first);
     } else {
-      fileService.downloadAndOpen(context, filePath);
-    }
-  }
-
-  void _showFileListDialog(BuildContext context, FileService fileService) {
-    final files = filePath.split(',').map((f) => f.trim()).toList();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Container(
-          padding: AppPadding.card,
-          color: AppColors.primary,
-          child: Text('View / Download Files',
-              style: TextStyle(color: AppColors.textOnPrimary)),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: files.map((file) {
-            final name = FileService.getFileName(file);
-            return ListTile(
-              title: Text(name),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      fileService.downloadAndOpen(context, file);
-                    },
-                    child: const Text('View'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      await fileService.downloadToDevice(file);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Downloaded: $name')),
-                        );
-                      }
-                    },
-                    child: const Text('Download'),
-                  ),
-                ],
-              ),
+      // Multiple files - show picker
+      FilePickerDialog.show(
+        context,
+        files: files,
+        title: 'View / Download Files',
+        onAction: (selectedPath, action) {
+          if (action == 'view') {
+            FileViewer.view(context, s3Path: selectedPath);
+          } else {
+            // Download logic
+            final fileService = FileService(
+              dio: Dio(),
+              storage: storage,
             );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+            fileService.downloadAndOpen(context, selectedPath);
+          }
+        },
+      );
+    }
   }
 }
 
