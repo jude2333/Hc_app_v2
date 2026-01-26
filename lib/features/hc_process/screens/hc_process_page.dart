@@ -449,7 +449,8 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
               value: progress,
               minHeight: 8,
               backgroundColor: AppColors.gradientStart.withValues(alpha: 0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.gradientStart),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.gradientStart),
             ),
           ),
           const SizedBox(height: 16),
@@ -511,7 +512,8 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
           style: TextStyle(
             fontSize: 10,
             fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
-            color: isCurrent ? AppColors.gradientStart : AppColors.textSecondary,
+            color:
+                isCurrent ? AppColors.gradientStart : AppColors.textSecondary,
           ),
         ),
       ],
@@ -671,4 +673,3 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
     );
   }
 }
-

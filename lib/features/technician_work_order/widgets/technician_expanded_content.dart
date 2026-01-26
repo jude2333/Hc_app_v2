@@ -58,13 +58,7 @@ class _TechnicianExpandedContentState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Address', wo.address),
-          _buildInfoRow('Pincode', wo.pincode),
-          _buildInfoRow(
-              'Additional Info', wo.freeText.isEmpty ? 'N/A' : wo.freeText),
-          _buildInfoRow(
-              'Ref. By', wo.doctorName.isEmpty ? 'N/A' : wo.doctorName),
-          Divider(height: AppSpacing.lg, color: AppColors.divider),
+          // Address/Pincode/Additional Info/Ref By moved to View More dialog
           if (!isCancelled) ...[
             _buildActionRow('Test Items', testItems != null ? 'View' : 'Nil',
                 showAction: testItems != null,
@@ -94,8 +88,7 @@ class _TechnicianExpandedContentState
             _buildActionRow('Remarks', remarks.isEmpty ? 'Add' : 'Edit',
                 showAction: true, onAction: () => _editRemarks(remarks)),
             if (reportStatus.isNotEmpty)
-              _buildInfoRow('Report Status', reportStatus,
-                  valueColor: _getReportStatusColor(reportStatus)),
+              _buildReportStatusRow(wo, reportStatus),
             _buildActionRow(
                 'Report PDF', reportPath.isEmpty ? 'Nil' : 'Download',
                 showAction: reportPath.isNotEmpty,
@@ -244,6 +237,43 @@ class _TechnicianExpandedContentState
     if (s == 'part') return AppColors.secondary;
     if (s == 'error') return AppColors.error;
     return AppColors.textSecondary;
+  }
+
+  /// Build report status row with status_in_number prefix (matching Vue behavior)
+  Widget _buildReportStatusRow(WorkOrder wo, String reportStatus) {
+    final statusInNumber = wo.parsedDoc['status_in_number']?.toString() ?? '';
+    final displayText = statusInNumber.isNotEmpty
+        ? '$statusInNumber $reportStatus'
+        : reportStatus;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          SizedBox(
+              width: 120,
+              child: Text('Report Status',
+                  style:
+                      TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+          Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+            decoration: BoxDecoration(
+              border: Border.all(color: _getReportStatusColor(reportStatus)),
+              borderRadius: AppRadius.smAll,
+            ),
+            child: Text(
+              displayText,
+              style: TextStyle(
+                fontSize: 12,
+                color: _getReportStatusColor(reportStatus),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _toggleRemittance(bool value) async {

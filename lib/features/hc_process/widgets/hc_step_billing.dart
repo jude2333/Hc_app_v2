@@ -41,7 +41,9 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     controller.calculateDiscount();
   }
 
-  void _onHcChargesChanged(String value) {
+  void _onHcChargesChanged(String? value) {
+    if (value == null) return;
+    _hcChargesController.text = value;
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
     final controller =
         ref.read(hcProcessControllerProvider(widget.workOrderId));
@@ -49,7 +51,9 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     controller.calculateDiscount();
   }
 
-  void _onDispChargesChanged(String value) {
+  void _onDispChargesChanged(String? value) {
+    if (value == null) return;
+    _dispChargesController.text = value;
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
     final controller =
         ref.read(hcProcessControllerProvider(widget.workOrderId));
@@ -98,26 +102,36 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: _hcChargesController,
-          enabled: areChargesEnabled,
-          onChanged: _onHcChargesChanged,
+        DropdownButtonFormField<String>(
+          value: _hcChargesController.text,
+          onChanged: areChargesEnabled ? _onHcChargesChanged : null,
           decoration: const InputDecoration(
-            labelText: 'HC Charges (₹)',
+            labelText: 'Home Collection Charges',
             border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.currency_rupee, size: 16),
           ),
-          keyboardType: TextInputType.number,
+          items: ['0', '25', '50', '100', '150', '200', '250']
+              .map((label) => DropdownMenuItem(
+                    value: label,
+                    child: Text(label),
+                  ))
+              .toList(),
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: _dispChargesController,
-          enabled: areChargesEnabled,
-          onChanged: _onDispChargesChanged,
+        DropdownButtonFormField<String>(
+          value: _dispChargesController.text,
+          onChanged: areChargesEnabled ? _onDispChargesChanged : null,
           decoration: const InputDecoration(
-            labelText: 'Disposable Charges (₹)',
+            labelText: 'Disposable Charges',
             border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.currency_rupee, size: 16),
           ),
-          keyboardType: TextInputType.number,
+          items: ['0', '10', '20', '30', '40', '50', '100']
+              .map((label) => DropdownMenuItem(
+                    value: label,
+                    child: Text(label),
+                  ))
+              .toList(),
         ),
         const SizedBox(height: 16),
         Card(

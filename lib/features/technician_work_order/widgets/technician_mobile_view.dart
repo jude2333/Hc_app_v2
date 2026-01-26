@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
+import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../../theme/theme.dart';
@@ -72,10 +73,17 @@ class _TechnicianMobileCard extends ConsumerStatefulWidget {
 class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
   bool _isExpanded = false;
 
+  /// Check if work order status allows editing
+  bool _checkEditableStatus() {
+    final status = widget.workOrder.status.toLowerCase();
+    return status != 'na' && status != 'finished' && status != 'cancelled';
+  }
+
   @override
   Widget build(BuildContext context) {
     final wo = widget.workOrder;
     final clientStatus = _getClientStatus(wo);
+    final canEdit = _checkEditableStatus();
 
     return Card(
       margin: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -103,12 +111,18 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (wo.status != 'cancelled' &&
-                              wo.status != 'Finished')
+                          if (canEdit)
                             Padding(
                               padding: EdgeInsets.only(left: AppSpacing.xs),
-                              child: Icon(Icons.edit,
-                                  size: 14, color: AppColors.success),
+                              child: InkWell(
+                                onTap: () => _onEdit(context),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(Icons.edit,
+                                      size: 14, color: AppColors.success),
+                                ),
+                              ),
                             ),
                         ],
                       ),
@@ -184,18 +198,27 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
                 ],
                 const Spacer(),
                 IconButton(
+                  icon: Icon(Icons.chevron_right, color: AppColors.textHint),
+                  onPressed: _showViewMoreDialog,
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'More Info',
+                ),
+                IconButton(
                   icon: Icon(
-                    _isExpanded ? Icons.keyboard_arrow_up : Icons.chevron_right,
-                    color: AppColors.textHint,
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: AppColors.primary,
                   ),
                   onPressed: () => setState(() => _isExpanded = !_isExpanded),
                   visualDensity: VisualDensity.compact,
+                  tooltip: _isExpanded ? 'Collapse' : 'Expand',
                 ),
               ],
             ),
           ),
 
-          // Expanded content
+          // Expanded content (work items only, not address info which is in View More)
           if (_isExpanded)
             RepaintBoundary(
               child: TechnicianExpandedContent(workOrder: wo),
@@ -207,6 +230,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
 
   Widget _buildInfoTable(WorkOrder wo) {
     final isCancelled = wo.status == 'cancelled' || wo.status == 'NA';
+    final testItems = wo.parsedDoc['test_items'];
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -221,9 +245,9 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
           _tableRow('My Status', '',
               statusWidget: StatusChip(status: wo.status)),
           if (!isCancelled) ...[
-            _tableRow('Test Items',
-                wo.parsedDoc['test_items'] != null ? 'View' : 'Nil',
-                isViewable: wo.parsedDoc['test_items'] != null),
+            _tableRow('Test Items', testItems != null ? 'View' : 'Nil',
+                isViewable: testItems != null,
+                onTap: testItems != null ? () => _viewTests(testItems) : null),
             _tableRow('GPay', _getGPayDisplay(wo)),
             _tableRow(
                 'Prescription',
@@ -237,7 +261,17 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
   }
 
   TableRow _tableRow(String label, String value,
-      {Widget? statusWidget, bool isViewable = false}) {
+      {Widget? statusWidget, bool isViewable = false, VoidCallback? onTap}) {
+    final valueWidget = statusWidget ??
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            color: isViewable ? AppColors.primary : AppColors.textPrimary,
+            fontWeight: isViewable ? FontWeight.w500 : FontWeight.normal,
+          ),
+        );
+
     return TableRow(
       children: [
         Padding(
@@ -247,15 +281,12 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
         ),
         Padding(
           padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-          child: statusWidget ??
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isViewable ? AppColors.primary : AppColors.textPrimary,
-                  fontWeight: isViewable ? FontWeight.w500 : FontWeight.normal,
-                ),
-              ),
+          child: onTap != null
+              ? GestureDetector(
+                  onTap: onTap,
+                  child: valueWidget,
+                )
+              : valueWidget,
         ),
       ],
     );
@@ -381,5 +412,105 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
         );
       }
     });
+  }
+
+  void _onEdit(BuildContext context) {
+    final parentMessenger = ScaffoldMessenger.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => EditWorkOrderDialog(workOrder: widget.workOrder),
+    ).then((result) async {
+      if (result == true) {
+        final storage = ref.read(storageServiceProvider);
+        final techId = storage.getFromSession('logged_in_emp_id').toString();
+        await ref
+            .read(technicianWorkOrderProvider)
+            .loadTechnicianWorkOrders(techId);
+        if (mounted) {
+          parentMessenger.showSnackBar(
+            SnackBar(
+              content: Text('Updated Successfully'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  /// View test items in a dialog - matching Vue behavior
+  void _viewTests(dynamic testItems) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Test Items',
+            style: TextStyle(
+                color: AppColors.primary, fontWeight: FontWeight.w600)),
+        content: SingleChildScrollView(
+          child: Text(
+            testItems.toString(),
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show View More dialog with address/pincode/additional info - matching Vue behavior
+  void _showViewMoreDialog() {
+    final wo = widget.workOrder;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('More Info',
+            style: TextStyle(
+                color: AppColors.primary, fontWeight: FontWeight.w600)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _viewMoreRow('Address', wo.address.isEmpty ? 'N/A' : wo.address),
+            _viewMoreRow('Pincode', wo.pincode.isEmpty ? 'N/A' : wo.pincode),
+            _viewMoreRow('Mobile', wo.mobile.isEmpty ? 'N/A' : wo.mobile),
+            _viewMoreRow(
+                'Additional Info', wo.freeText.isEmpty ? 'N/A' : wo.freeText),
+            _viewMoreRow(
+                'Ref. By', wo.doctorName.isEmpty ? 'N/A' : wo.doctorName),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _viewMoreRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+      child: RichText(
+        text: TextSpan(
+          style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+          children: [
+            TextSpan(
+                text: '$label : ',
+                style: TextStyle(fontWeight: FontWeight.w500)),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
   }
 }

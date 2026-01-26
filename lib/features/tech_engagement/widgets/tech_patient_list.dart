@@ -13,41 +13,58 @@ class TechPatientList extends StatelessWidget {
     return Container(
       color: Colors.grey.shade50,
       padding: const EdgeInsets.all(12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: 700, // Fixed width for horizontal scroll
-          child: Column(
-            children: [
-              // Inner Header - Light Orange
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Row(
-                  children: [
-                    TechHeaderCell("Patient", flex: 2),
-                    TechHeaderCell("Gender", flex: 1),
-                    TechHeaderCell("Age", flex: 1),
-                    TechHeaderCell("Mobile", flex: 2),
-                    TechHeaderCell("Time", flex: 1),
-                    TechHeaderCell("Status", flex: 1, align: TextAlign.center),
-                    TechHeaderCell("HC", flex: 1),
-                    TechHeaderCell("Amt", flex: 1),
-                    TechHeaderCell("Remit", flex: 1, align: TextAlign.center),
-                  ],
+      width: double.infinity,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 900) {
+            // Mobile/Tablet: Scrollable
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: 900,
+                child: Column(
+                  children: _buildTableContent(orders),
                 ),
               ),
-              const SizedBox(height: 4),
-              // Patient Rows
-              ...orders.map((order) => TechPatientRow(order: order)).toList(),
-            ],
-          ),
-        ),
+            );
+          } else {
+            // Desktop: Full Width
+            return Column(
+              children: _buildTableContent(orders),
+            );
+          }
+        },
       ),
     );
+  }
+
+  List<Widget> _buildTableContent(List<Map<String, dynamic>> orders) {
+    return [
+      // Inner Header - Light Orange
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Row(
+          children: [
+            TechHeaderCell("Patient", flex: 2),
+            TechHeaderCell("Gender", flex: 1),
+            TechHeaderCell("Age", flex: 1),
+            TechHeaderCell("Mobile", flex: 2),
+            TechHeaderCell("Time", flex: 1),
+            TechHeaderCell("Status", flex: 1, align: TextAlign.center),
+            TechHeaderCell("HC", flex: 1),
+            TechHeaderCell("Amt", flex: 1),
+            TechHeaderCell("Remit", flex: 1, align: TextAlign.center),
+          ],
+        ),
+      ),
+      const SizedBox(height: 4),
+      // Patient Rows
+      ...orders.map((order) => TechPatientRow(order: order)).toList(),
+    ];
   }
 }
 
@@ -57,6 +74,8 @@ class TechPatientRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state =
+        ref.watch(techEngagementProvider); // Watch state for monthWise
     final doc = jsonDecode(order['doc'] ?? '{}');
     final accepted = doc['accept_remittance'] == true;
     final amount =
@@ -65,6 +84,18 @@ class TechPatientRow extends ConsumerWidget {
     final isCash = paymentMethod == 'cash' && amount > 0;
     final hcCharges = doc['hc_charges']?.toString() ?? '0';
     final status = order['status'] ?? '';
+    final gpayRef = doc['gpay_ref']?.toString() ?? '';
+
+    // Date/Time Logic from Vue: get_date_or_time
+    String timeOrDate = order['visit_time']?.toString() ?? '';
+    if (state.isMonthWise) {
+      final visitDate =
+          DateTime.tryParse(order['visit_date']?.toString() ?? '');
+      if (visitDate != null) {
+        timeOrDate =
+            "${visitDate.year}-${visitDate.month.toString().padLeft(2, '0')}-${visitDate.day.toString().padLeft(2, '0')}";
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
@@ -76,11 +107,11 @@ class TechPatientRow extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          TechDataCell(order['patient_name'] ?? '', flex: 1),
+          TechDataCell(order['patient_name'] ?? '', flex: 2),
           TechDataCell(doc['gender']?.toString() ?? '', flex: 1),
           TechDataCell(doc['age']?.toString() ?? '', flex: 1),
-          TechDataCell(doc['mobile']?.toString() ?? '', flex: 1),
-          TechDataCell(order['visit_time']?.toString() ?? '', flex: 1),
+          TechDataCell(doc['mobile']?.toString() ?? '', flex: 2),
+          TechDataCell(timeOrDate, flex: 1),
           // Status Chip (Compact)
           Expanded(
             flex: 1,
@@ -91,28 +122,49 @@ class TechPatientRow extends ConsumerWidget {
 
           TechDataCell(hcCharges, flex: 1),
           TechDataCell("${amount.toInt()}", flex: 1),
-          // Remittance Toggle (Compact)
+          // Remittance Toggle (Full Logic)
           Expanded(
             flex: 1,
             child: Center(
-              child: isCash
-                  ? RemittanceToggle(
-                      accepted: accepted,
-                      onToggle: () {
-                        ref
-                            .read(techEngagementProvider.notifier)
-                            .toggleRemittance(order['id'].toString(), accepted);
-                      },
-                    )
-                  : Text(
-                      paymentMethod == 'gpay' ? "GP" : "Cr",
-                      style:
-                          TextStyle(fontSize: 9, color: Colors.grey.shade500),
-                    ),
+              child: _buildRemittanceCell(
+                  ref, isCash, paymentMethod, accepted, gpayRef, order),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildRemittanceCell(WidgetRef ref, bool isCash, String paymentMethod,
+      bool accepted, String gpayRef, Map<String, dynamic> order) {
+    if (paymentMethod == 'gpay') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.blue),
+        ),
+        child: Text(
+          "GPay $gpayRef",
+          style: const TextStyle(fontSize: 10, color: Colors.blue),
+          textAlign: TextAlign.center,
+        ),
+      );
+    } else if (isCash) {
+      return RemittanceToggle(
+        accepted: accepted,
+        onToggle: () {
+          ref
+              .read(techEngagementProvider.notifier)
+              .toggleRemittance(order['id'].toString(), accepted);
+        },
+      );
+    } else {
+      return const Text(
+        "Credit Client",
+        style: TextStyle(fontSize: 10, color: Colors.black54),
+        textAlign: TextAlign.center,
+      );
+    }
   }
 }

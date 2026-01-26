@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
+import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import '../widgets/technician_daily_summary_dialog.dart';
 import 'package:anderson_crm_flutter/components/price_view_page.dart';
 
@@ -45,7 +46,74 @@ class _TechnicianWorkOrderPageState
       if (techId.isNotEmpty) {
         provider.loadTechnicianWorkOrders(techId);
       }
+
+      // Check for Sugar Test (Glucose PP) prompt - matching Vue behavior
+      _checkSugarTestPrompt(storage);
     });
+  }
+
+  /// Check if there's a pending sugar test prompt and show dialog
+  void _checkSugarTestPrompt(dynamic storage) {
+    final sugarTestId = storage.getFromSession('sugar_tests')?.toString() ?? '';
+    if (sugarTestId.isNotEmpty && mounted) {
+      _showSugarTestDialog(sugarTestId);
+    }
+  }
+
+  /// Show dialog asking if user wants to book Glucose(PP) test
+  void _showSugarTestDialog(String docId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Glucose (PP) Test',
+            style: TextStyle(color: AppColors.primary)),
+        content: Text('Do you want to book Glucose(PP) for this patient?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Clear session value and close dialog
+              ref.read(storageServiceProvider).setSession('sugar_tests', '');
+              Navigator.pop(ctx);
+            },
+            child: Text('No', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              // Clear session value
+              ref.read(storageServiceProvider).setSession('sugar_tests', '');
+              // Fetch the work order and navigate to copy with cleared time
+              await _handleSugarTestCopy(docId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
+            child: Text('Yes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handle copying work order for Glucose PP test
+  Future<void> _handleSugarTestCopy(String docId) async {
+    final provider = ref.read(technicianWorkOrderProvider);
+    final workOrder = provider.getWorkOrderById(docId);
+    if (workOrder != null && mounted) {
+      // Create copy with cleared appointment time to match Vue behavior
+      final workOrderForCopy = workOrder.copyWith(visitTime: '');
+      // Navigate to add work order page with copyFrom
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddWorkOrderPage(
+            copyFrom: workOrderForCopy,
+          ),
+          fullscreenDialog: true,
+        ),
+      );
+    }
   }
 
   @override

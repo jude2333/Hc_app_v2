@@ -85,8 +85,7 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
         const SizedBox(height: 8),
         _buildPaymentOption(state, notifier, 'cash', 'Cash', Icons.money),
         _buildPaymentOption(
-            state, notifier, 'gpay', 'GPay / UPI', Icons.phone_android),
-        _buildPaymentOption(state, notifier, 'card', 'Card', Icons.credit_card),
+            state, notifier, 'gpay', 'GPay', Icons.phone_android),
         if (state.paymentMethod == 'gpay') ...[
           const SizedBox(height: 16),
           TextField(
