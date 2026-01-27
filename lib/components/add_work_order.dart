@@ -674,68 +674,6 @@ class _AddWorkOrderPageMobileState
     );
   }
 
-  // Widget _buildPatientFields() {
-
-  //   return Column(
-  //     children: [
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             flex: 2,
-  //             child: DropdownButtonFormField<String>(
-  //               value: _salutation.isEmpty ? null : _salutation,
-  //               decoration: _inputDecoration('Title'),
-  //               items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
-  //                   .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-  //                   .toList(),
-  //               onChanged: (v) {
-  //                 setState(() {
-  //                   _salutation = v!;
-  //                   _updateGenderFromSalutation();
-  //                 });
-  //               },
-  //               validator: (v) => v == null ? 'Required' : null,
-  //             ),
-  //           ),
-  //           SizedBox(width: AppSpacing.md),
-  //           Expanded(
-  //             flex: 5,
-  //             child: TextFormField(
-  //               controller: _nameController,
-  //               decoration:
-  //                   _inputDecoration('Full Name', icon: Icons.person_outline),
-  //               textCapitalization: TextCapitalization.words,
-  //               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //       SizedBox(height: AppSpacing.md),
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             child: TextFormField(
-  //               controller: _ageController,
-  //               decoration: _inputDecoration('Age', icon: Icons.cake_outlined),
-  //               keyboardType: TextInputType.number,
-  //             ),
-  //           ),
-  //           SizedBox(width: AppSpacing.md),
-  //           Expanded(
-  //             child: DropdownButtonFormField<String>(
-  //               value: _gender,
-  //               decoration: _inputDecoration('Gender'),
-  //               items: ['Male', 'Female', 'Other']
-  //                   .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-  //                   .toList(),
-  //               onChanged: (v) => setState(() => _gender = v!),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
   Widget _buildPatientFields() {
     final bool isMobile = MediaQuery.of(context).size.width <= 800;
 
@@ -921,73 +859,6 @@ class _AddWorkOrderPageMobileState
       ],
     );
   }
-
-  // Widget _buildContactFields() {
-  //   return Column(
-  //     children: [
-  //       TextFormField(
-  //         controller: _mobileController,
-  //         decoration: _inputDecoration('Mobile Number',
-  //             icon: Icons.phone_outlined, prefix: '+91 '),
-  //         keyboardType: TextInputType.phone,
-  //         maxLength: 10,
-  //         validator: (v) => (v!.length != 10) ? 'Invalid' : null,
-  //       ),
-  //       SizedBox(height: AppSpacing.md),
-  //       TextFormField(
-  //         controller: _addressController,
-  //         decoration:
-  //             _inputDecoration('Address', icon: Icons.location_on_outlined),
-  //         maxLines: 3,
-  //         validator: (v) => v!.isEmpty ? 'Required' : null,
-  //       ),
-  //       SizedBox(height: AppSpacing.md),
-  //       Row(
-  //         children: [
-  //           Expanded(
-  //             flex: 3,
-  //             child: TextFormField(
-  //               controller: _emailController,
-  //               decoration:
-  //                   _inputDecoration('Email', icon: Icons.email_outlined),
-  //               keyboardType: TextInputType.emailAddress,
-  //             ),
-  //           ),
-  //           SizedBox(width: AppSpacing.md),
-  //           Expanded(
-  //             flex: 2,
-  //             child: Row(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Expanded(
-  //                   child: TextFormField(
-  //                     controller: _pincodeController,
-  //                     decoration: _inputDecoration('Pincode'),
-  //                     keyboardType: TextInputType.number,
-  //                     maxLength: 6,
-  //                     validator: (v) => v!.length != 6 ? 'Invalid' : null,
-  //                   ),
-  //                 ),
-  //                 SizedBox(width: AppSpacing.xs),
-  //                 Container(
-  //                   decoration: BoxDecoration(
-  //                     color: AppColors.primary.withOpacity(0.1),
-  //                     borderRadius: AppRadius.smAll,
-  //                   ),
-  //                   child: IconButton(
-  //                     icon: Icon(Icons.search, color: AppColors.primary),
-  //                     tooltip: 'Search Pincode',
-  //                     onPressed: () => _showPincodeSearchDialog(),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _buildAdditionalFields() {
     return Column(
@@ -1429,8 +1300,6 @@ class _AddWorkOrderPageMobileState
       final freeText = _freeTextController.text.trim();
 
       if (isEditMode) {
-        // Vue behavior: When editing (not cancelling), reset status to unassigned
-        // and clear technician assignment so manager can reassign
         final String status;
         final String serverStatus;
         final int? assignedId;
@@ -1442,7 +1311,6 @@ class _AddWorkOrderPageMobileState
           assignedId = widget.existingWorkOrder!.assignedId;
           assignedTo = widget.existingWorkOrder!.assignedTo;
         } else {
-          // Reset to unassigned - matching Vue edit_work_order.vue lines 513-516
           status = 'unassigned';
           serverStatus = 'waiting';
           assignedId = null;
@@ -1559,10 +1427,6 @@ class _AddWorkOrderPageMobileState
   }
 
   Future<void> _sendConfirmationSms(WorkOrder workOrder) async {
-    // if (Settings.development) {
-    //   debugPrint('⏭️ Skipping SMS (development mode)');
-    //   return;
-    // }
     if (!_msgSms) {
       debugPrint('⏭️ Skipping SMS (user disabled SMS)');
       return;
@@ -1621,9 +1485,8 @@ class _AddWorkOrderPageMobileState
     if (!mounted) return;
     setState(() => _isLoading = false);
     if (success && mounted) {
-      // Pop first, then show snackbar to avoid rendering on disposed view
       Navigator.of(context).pop('refresh');
-      // Use a slight delay to ensure snackbar shows on the parent page
+
       Future.microtask(() {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1784,8 +1647,8 @@ class _AddWorkOrderPageMobileState
       final dbService = ref.read(postgresServiceProvider);
       final clients = await dbService.getB2BClients();
 
-      debugPrint('🔍 B2B clients response: $clients'); // ADD THIS
-      debugPrint('🔍 B2B clients type: ${clients.runtimeType}'); // ADD THIS
+      debugPrint('🔍 B2B clients response: $clients');
+      debugPrint('🔍 B2B clients type: ${clients.runtimeType}');
       debugPrint(
           '🔍 B2B clients length: ${clients is List ? clients.length : "not a list"}');
 
@@ -1962,7 +1825,6 @@ class _B2BClientDialogState extends ConsumerState<_B2BClientDialog> {
   }
 }
 
-/// Pincode Search Dialog with initial data loading
 class _PincodeSearchDialog extends ConsumerStatefulWidget {
   final TextEditingController searchController;
   final Function(String pincode, String address) onSelected;

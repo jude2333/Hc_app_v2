@@ -1,7 +1,5 @@
 # bucket_definitions:
-#   # ============================================================
-#   # GLOBAL: Price list synced to ALL users (no parameters needed)
-#   # ============================================================
+
 #   global:
 #     data:
 #       - SELECT * FROM price_list WHERE visible = true

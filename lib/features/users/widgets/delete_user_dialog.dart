@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/user_model.dart';
 import '../providers/users_providers.dart';
 
-/// Dialog to confirm user deletion.
 class DeleteUserDialog extends ConsumerStatefulWidget {
   final User user;
 

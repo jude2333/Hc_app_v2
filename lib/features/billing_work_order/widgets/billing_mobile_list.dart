@@ -191,7 +191,6 @@ class _BillingCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      // Use consistent red bordered badge style
                       _buildBadges(),
                     ],
                   ),
@@ -212,7 +211,6 @@ class _BillingCard extends StatelessWidget {
               _StatusChip(order.status),
               const SizedBox(width: 8),
               _ServerStatusChip(order.serverStatus),
-              // Sent status chip
               if (order.sentStatus == 'sent') ...[
                 const SizedBox(width: 8),
                 Container(
@@ -233,7 +231,6 @@ class _BillingCard extends StatelessWidget {
                 ),
               ],
               const Spacer(),
-              // Use calculatedTotal instead of billAmount
               Text(
                 order.formattedCalculatedTotal,
                 style: const TextStyle(
@@ -250,8 +247,6 @@ class _BillingCard extends StatelessWidget {
           _DetailRow('Pincode', order.pincode),
           _DetailRow('Ref By', order.doctorName),
           _DetailRow('Assigned To', order.assignedTo),
-
-          // Prescription files
           if (order.prescriptionPhoto.isNotEmpty)
             _FileRow(
               label: 'Prescription',
@@ -270,13 +265,10 @@ class _BillingCard extends StatelessWidget {
               filePath: order.proformaPath,
               storage: storage,
             ),
-
           if (order.billNumber.isNotEmpty)
             _DetailRow('Bill Number', order.billNumber),
           if (order.labNumber.isNotEmpty)
             _DetailRow('Lab Number', order.labNumber),
-
-          // Test items with min_cost
           if (order.testItems.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Text('Test Items',
@@ -323,7 +315,6 @@ class _BillingCard extends StatelessWidget {
               children: [
                 const Text('Total: ',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                // Use calculatedTotal
                 Text(
                   order.formattedCalculatedTotal,
                   style: const TextStyle(
@@ -335,12 +326,9 @@ class _BillingCard extends StatelessWidget {
               ],
             ),
           ],
-
-          // Action buttons
           const SizedBox(height: 16),
           Row(
             children: [
-              // Bill action
               if (showBillAction)
                 Expanded(
                   child: ElevatedButton.icon(
@@ -358,7 +346,6 @@ class _BillingCard extends StatelessWidget {
                   ),
                 ),
               if (showBillAction && showSendAction) const SizedBox(width: 12),
-              // Send action
               if (showSendAction)
                 Expanded(
                   child: ElevatedButton.icon(
@@ -382,7 +369,6 @@ class _BillingCard extends StatelessWidget {
     );
   }
 
-  /// Build badges in consistent red bordered style (matching NameWithBadges)
   Widget _buildBadges() {
     final flags = <String>[];
     if (order.urgent) flags.add('Urgent');
@@ -485,7 +471,6 @@ class _FileRow extends StatelessWidget {
   void _openFile(BuildContext context) {
     if (filePath.isEmpty) return;
 
-    // Parse multiple files
     final files = filePath.contains(',')
         ? filePath.split(',').map((f) => f.trim()).toList()
         : [filePath];
@@ -501,7 +486,6 @@ class _FileRow extends StatelessWidget {
           if (action == 'view') {
             FileViewer.view(context, s3Path: path);
           } else {
-            // Download using FileService
             final fileService = FileService(
               dio: Dio(),
               storage: storage,

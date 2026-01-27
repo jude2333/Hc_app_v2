@@ -20,7 +20,7 @@ class BackendConnector extends PowerSyncBackendConnector {
   }
 
   String get postgrestBaseUrl {
-    // Use Settings.currentPostgresUrl which respects development flag
+    //  Settings.currentPostgresUrl which respects development flag
     // Docker: http://localhost:3001, Production: https://api.andrsn.in
     return Settings.currentPostgresUrl;
   }
@@ -112,12 +112,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
-  /// Upload local changes to the backend.
-  ///
-  /// This method follows PowerSync's recommended pattern:
-  /// - Uses getNextCrudTransaction() to process transactions one at a time
-  /// - Always completes transactions to prevent stuck CRUD items
-  /// - Handles errors gracefully and allows PowerSync to retry
   @override
   Future<void> uploadData(PowerSyncDatabase database) async {
     debugPrint('[BackendConnector] uploadData()');
@@ -245,38 +239,96 @@ class BackendConnector extends PowerSyncBackendConnector {
 
   // Work Order CRUD
   Future<void> _upsertWorkOrder(String id, Map<String, dynamic> data) async {
-    final url = '$postgrestBaseUrl/hc_patient_visit_detail';
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(data),
-    );
+    final baseUrl = Settings.currentPostgresUrl;
+    final url = '$baseUrl/hc_patient_visit_detail';
 
-    if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('WorkOrder insert failed: ${response.statusCode}');
+    debugPrint('[BackendConnector] Upserting work order: $id');
+
+    // Get auth token for production
+    final token = await storage.getFromSessionAsync('pg_admin');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=minimal',
+    };
+
+    // Add auth if available (required in production)
+    if (token.isNotEmpty && !Settings.development) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[BackendConnector] Work order upserted: $id');
+        return;
+      }
+
+      debugPrint('[BackendConnector] Upsert failed: ${response.statusCode}');
+      debugPrint('[BackendConnector] Response: ${response.body}');
+      throw Exception(
+          'WorkOrder upsert failed: ${response.statusCode} - ${response.body}');
+    } catch (e) {
+      debugPrint('[BackendConnector] Upsert exception: $e');
+      rethrow;
     }
   }
 
   Future<void> _updateWorkOrder(String id, Map<String, dynamic> data) async {
-    final url = '$postgrestBaseUrl/hc_patient_visit_detail?id=eq.$id';
+    final baseUrl = Settings.currentPostgresUrl;
+    final url = '$baseUrl/hc_patient_visit_detail?id=eq.$id';
+
+    final token = await storage.getFromSessionAsync('pg_admin');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    if (token.isNotEmpty && !Settings.development) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
     final response = await http.patch(
       Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode(data),
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
+      debugPrint(
+          '[BackendConnector] Update failed: ${response.statusCode} - ${response.body}');
       throw Exception('WorkOrder update failed: ${response.statusCode}');
     }
+    debugPrint('[BackendConnector] Work order updated: $id');
   }
 
   Future<void> _deleteWorkOrder(String id) async {
-    final url = '$postgrestBaseUrl/hc_patient_visit_detail?doc_id=eq.$id';
-    final response = await http.delete(Uri.parse(url));
+    final baseUrl = Settings.currentPostgresUrl;
+    final url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
+
+    final token = await storage.getFromSessionAsync('pg_admin');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    if (token.isNotEmpty && !Settings.development) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: headers,
+    );
 
     if (response.statusCode != 204 && response.statusCode != 200) {
+      debugPrint(
+          '[BackendConnector] Delete failed: ${response.statusCode} - ${response.body}');
       throw Exception('WorkOrder delete failed: ${response.statusCode}');
     }
+    debugPrint('[BackendConnector] Work order deleted: $id');
   }
 
   // Price List CRUD

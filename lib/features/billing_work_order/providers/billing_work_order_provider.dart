@@ -217,7 +217,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     }
   }
 
-  /// Send order to lab system (matches Vue's send_confirmed_item)
   Future<String> sendOrder(WorkOrder workOrder) async {
     final repo = _getRepository();
     if (repo == null) return 'Error: PowerSync not ready';
@@ -226,7 +225,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       final storage = _ref.read(storageServiceProvider);
       final createdBy = storage.getFromSession('logged_in_emp_id');
 
-      // Parse age safely
       int age = 0;
       try {
         age = int.parse(workOrder.age);
@@ -234,7 +232,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
         age = 0;
       }
 
-      // Build API payload (matching Vue format)
       final data = {
         'patient': {
           'firstName': workOrder.patientName,
@@ -264,14 +261,12 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
 
       debugPrint('[BillingProvider] Sending order: $data');
 
-      // Call repository to send and update status
       final result = await repo.sendOrderToApi(
         workOrder: workOrder,
         payload: data,
       );
 
       if (result == 'SUCCESS') {
-        // Refresh the list
         await refresh();
         return 'OK';
       } else {

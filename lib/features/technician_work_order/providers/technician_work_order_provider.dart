@@ -104,7 +104,6 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return _repo.searchWorkOrders(_workOrders, query);
   }
 
-  /// Update remittance status for a work order
   Future<bool> updateRemittance(
       WorkOrder order, bool remittance, String user) async {
     final timeline = List<dynamic>.from(order.timeLine);
@@ -127,7 +126,6 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
   }
 
-  /// Update GPay reference
   Future<bool> updateGPayRef(
       WorkOrder order, String gpayRef, String user) async {
     final timeline = List<dynamic>.from(order.timeLine);
@@ -146,7 +144,6 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
   }
 
-  /// Update technician remarks
   Future<bool> updateRemarks(
       WorkOrder order, String remarks, String user) async {
     final timeline = List<dynamic>.from(order.timeLine);
@@ -165,7 +162,6 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
   }
 
-  /// Add lab sample photo path
   Future<bool> addLabSamplePhoto(
       WorkOrder order, String photoPath, String user) async {
     final timeline = List<dynamic>.from(order.timeLine);
@@ -188,14 +184,12 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
   }
 
-  /// Get technician's daily orders for a specific date (for daily summary)
   Future<List<Map<String, dynamic>>> getDailyOrders(
       String techId, String dateStr) async {
     await _repo.ensureInitialized();
     return await _repo.getDailyOrders(techId, dateStr);
   }
 
-  /// Get work order by ID from current list
   WorkOrder? getWorkOrderById(String docId) {
     try {
       return _workOrders.firstWhere((wo) => wo.docId == docId);

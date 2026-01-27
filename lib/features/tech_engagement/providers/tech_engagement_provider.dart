@@ -7,8 +7,6 @@ import 'package:anderson_crm_flutter/services/postgresService.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 
-// --- Data Models ---
-
 class TechSummary {
   final String id;
   final String name;
@@ -17,7 +15,7 @@ class TechSummary {
   final int cancelled;
   final int pending;
   final double totalAmount;
-  final double amountCollected; // Accepted
+  final double amountCollected;
   final double cash;
   final double gpay;
   final double hcCharges;
@@ -51,7 +49,7 @@ class AggregateSummary {
   final double totalHcCharges;
   final double totalCollected;
   final double totalReceived;
-  final int totalAccounted; // Excluding Glucose PP
+  final int totalAccounted;
 
   AggregateSummary({
     this.totalAssigned = 0,
@@ -69,11 +67,11 @@ class AggregateSummary {
 
 class TechEngagementState {
   final bool isLoading;
-  final bool isMonthWise; // ✅ Toggle State
+  final bool isMonthWise;
   final DateTime selectedDate;
   final AggregateSummary aggregates;
-  final List<TechSummary> techList; // Full List
-  final List<TechSummary> filteredList; // Search Results
+  final List<TechSummary> techList;
+  final List<TechSummary> filteredList;
 
   TechEngagementState({
     this.isLoading = false,
@@ -103,8 +101,6 @@ class TechEngagementState {
   }
 }
 
-// --- Notifier Logic ---
-
 class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
   final Ref ref;
 
@@ -124,9 +120,7 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
 
       List<Map<String, dynamic>> allOrders = [];
 
-      // 1. Determine Date Range
       if (state.isMonthWise) {
-        // First to Last day of selected month
         final start =
             DateTime(state.selectedDate.year, state.selectedDate.month, 1);
         final end =
@@ -135,16 +129,14 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
         final startStr = DateFormat('yyyy-MM-dd').format(start);
         final endStr = DateFormat('yyyy-MM-dd').format(end);
 
-        // Fetch Parallel
         final results = await Future.wait([
           postgres.getTechnicians(),
           powerSync.getAllWorkOrdersForDateRange(startStr, endStr)
         ]);
         allOrders = results[1] as List<Map<String, dynamic>>;
-        // Technicians processing below...
+
         _processData(results[0] as List, allOrders);
       } else {
-        // Single Date
         final dateStr = DateFormat('yyyy-MM-dd').format(state.selectedDate);
         final results = await Future.wait([
           postgres.getTechnicians(),
@@ -168,7 +160,6 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
 
     List<TechSummary> summaries = [];
 
-    // Aggregates
     int gAssigned = 0, gFinished = 0, gCancelled = 0, gPending = 0;
     double gCash = 0, gGpay = 0, gHc = 0, gTotalColl = 0, gTotalRec = 0;
     int gTotalAccounted = 0;
@@ -192,7 +183,7 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
           final status = order['status']?.toString() ?? '';
           if (status == 'Finished') {
             finished++;
-            // Check Glucose PP Logic (Simplified check)
+
             if (!_isGlucosePPOnly(order)) {
               gTotalAccounted++;
             }
@@ -233,7 +224,6 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
       times.sort();
       final timeTill = times.isNotEmpty ? times.last : '';
 
-      // Only add if active or short list
       if (assigned > 0 || technicians.length < 50) {
         summaries.add(TechSummary(
           id: techId,
@@ -256,7 +246,7 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
     state = state.copyWith(
         isLoading: false,
         techList: summaries,
-        filteredList: summaries, // Init filtered with full
+        filteredList: summaries,
         aggregates: AggregateSummary(
             totalAssigned: gAssigned,
             totalFinished: gFinished,
@@ -270,7 +260,6 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
             totalAccounted: gTotalAccounted));
   }
 
-  // Helper to guess Glucose PP Only (matches Vue logic intent)
   bool _isGlucosePPOnly(Map<String, dynamic> order) {
     try {
       final doc = jsonDecode(order['doc'] ?? '{}');

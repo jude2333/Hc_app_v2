@@ -73,12 +73,10 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
   PriceListRepository get _repo => ref.read(priceListRepositoryProvider);
 
-  /// Load dropdown data (departments, investigations)
   Future<void> loadComboData() async {
     debugPrint('📊 [PriceListNotifier] loadComboData()');
 
     try {
-      // Fetch department and investigation maps in parallel
       final results = await Future.wait([
         _repo.getDepartmentMap(),
         _repo.getInvestigationMap(),
@@ -87,12 +85,10 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final deptMap = results[0];
       final investMap = results[1];
 
-      // Build lists for dropdowns
       final deptNames = deptMap.keys.map(_toTitleCase).toList();
       final investIds = investMap.keys.toList();
       final investNames = investMap.values.toList();
 
-      // Build reverse lookup maps
       final investNameToId = <String, String>{};
       investMap.forEach((id, name) {
         investNameToId[name] = id;
@@ -116,7 +112,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
   }
 
   Future<void> search(String query) async {
-    // Skip duplicate searches
     if (state.currentSearchQuery == query && state.items.isNotEmpty) {
       debugPrint('⏭️ [PriceListNotifier] Skipping duplicate search: $query');
       return;
@@ -165,7 +160,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final result = await _repo.insert(item);
 
       if (result == 'OK') {
-        // Refresh the list
         await search('');
       }
 
@@ -178,7 +172,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
     }
   }
 
-  /// Update an existing test item
   Future<String> updateTest(
       Map<String, dynamic> newValues, PriceListItem oldItem) async {
     debugPrint('🔄 [PriceListNotifier] updateTest(${oldItem.id})');
@@ -191,13 +184,11 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final empName = storage.getFromSession('logged_in_emp_name');
       final empMobile = storage.getFromSession('logged_in_mobile');
 
-      // Build summary for history
       final summary =
           'Test Item Updated: Invest Id:${oldItem.investId}(${oldItem.investName}). '
           'Old Values => Base Cost:${oldItem.baseCost} Min.Cost:${oldItem.minCost} CGHS:${oldItem.cghsPrice} '
           'New Values => Base Cost:${newValues['base_cost']} Min.Cost:${newValues['min_cost']} CGHS:${newValues['cghs_price']}';
 
-      // Add history entry and update values
       final updatedItem = oldItem
           .addHistoryEntry(
             action: 'Updated',
@@ -219,7 +210,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final result = await _repo.update(updatedItem);
 
       if (result == 'OK') {
-        // Refresh with current search query
         await search(state.currentSearchQuery);
       }
 
@@ -232,7 +222,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
     }
   }
 
-  /// Delete a test item (soft delete)
   Future<String> deleteTest(PriceListItem item) async {
     debugPrint('🗑️ [PriceListNotifier] deleteTest(${item.id})');
 
@@ -242,7 +231,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final result = await _repo.softDelete(item.id);
 
       if (result == 'OK') {
-        // Force refresh by clearing current search query first
         final currentQuery = state.currentSearchQuery;
         state = state.copyWith(currentSearchQuery: '___force_refresh___');
         await search(currentQuery);
@@ -283,21 +271,6 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN PROVIDER
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Main provider for price list state management
-///
-/// Usage:
-/// ```dart
-/// // Watch state
-/// final state = ref.watch(priceListProvider);
-///
-/// // Call methods
-/// ref.read(priceListProvider.notifier).search('CT SCAN');
-/// ref.read(priceListProvider.notifier).addTest(formData);
-/// ```
 final priceListProvider =
     StateNotifierProvider<PriceListNotifier, PriceListState>((ref) {
   return PriceListNotifier(ref);

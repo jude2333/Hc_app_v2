@@ -11,8 +11,6 @@ import '../controllers/manager_assignment_controller.dart';
 import 'manager_actions.dart';
 import 'manager_expanded_content.dart';
 
-/// Desktop table view for Manager Work Orders
-/// Extracted from manager_work_order_page.dart for separation of concerns
 class ManagerDesktopView extends ConsumerWidget {
   final List<WorkOrder> workOrders;
 
@@ -322,7 +320,6 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
                 onPressed: () async {
                   Navigator.pop(dialogContext);
 
-                  // Use controller to send messages (matches Vue's ok_msg_dialog)
                   final controller =
                       ref.read(managerAssignmentControllerProvider);
                   try {

@@ -173,7 +173,6 @@ class _ModernTimelineItem extends StatelessWidget {
   });
 
   Color _getAccentColor() {
-    // Different colors for different action types
     final desc = description.toLowerCase();
     if (desc.contains('created')) return AppColors.success;
     if (desc.contains('assigned')) return AppColors.secondary;
@@ -207,12 +206,10 @@ class _ModernTimelineItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeline indicator
           SizedBox(
             width: 48,
             child: Column(
               children: [
-                // Top line
                 if (!isFirst)
                   Container(
                     width: 2,
@@ -228,7 +225,6 @@ class _ModernTimelineItem extends StatelessWidget {
                       ),
                     ),
                   ),
-                // Circle with icon
                 Container(
                   width: 36,
                   height: 36,
@@ -243,7 +239,6 @@ class _ModernTimelineItem extends StatelessWidget {
                     color: accentColor,
                   ),
                 ),
-                // Bottom line
                 if (!isLast)
                   Expanded(
                     child: Container(
@@ -263,7 +258,6 @@ class _ModernTimelineItem extends StatelessWidget {
               ],
             ),
           ),
-          // Content card
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(left: 12, bottom: 20),
@@ -284,7 +278,6 @@ class _ModernTimelineItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Action description
                     Row(
                       children: [
                         Expanded(
@@ -316,18 +309,15 @@ class _ModernTimelineItem extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    // Date and author - use Wrap for mobile
                     Wrap(
                       spacing: 12,
                       runSpacing: 6,
                       children: [
-                        // Date chip
                         _InfoChip(
                           icon: Icons.calendar_today_outlined,
                           label: date,
                           color: AppColors.textSecondary,
                         ),
-                        // Author chip
                         if (author.isNotEmpty)
                           _InfoChip(
                             icon: Icons.person_outline,
@@ -377,7 +367,6 @@ class _InfoChip extends StatelessWidget {
               color: color,
               fontWeight: FontWeight.w500,
             ),
-            // Allow text to wrap to multiple lines
             softWrap: true,
           ),
         ),

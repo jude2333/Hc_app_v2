@@ -1,4 +1,3 @@
-/// Users widgets barrel file for easy importing.
 library;
 
 export 'users_header.dart';

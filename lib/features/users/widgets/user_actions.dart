@@ -13,14 +13,12 @@ import '../providers/users_providers.dart';
 import '../screens/addEditUser.dart';
 import 'delete_user_dialog.dart';
 
-/// Check if current user is a manager.
 bool isManager(WidgetRef ref) {
   final storage = ref.read(storageServiceProvider);
   final mobile = storage.getFromSession("logged_in_mobile");
   return mobile == "9841541542";
 }
 
-/// Navigate to edit user page.
 void editUser(BuildContext context, WidgetRef ref, User user) {
   Navigator.push(
     context,
@@ -35,7 +33,6 @@ void editUser(BuildContext context, WidgetRef ref, User user) {
   });
 }
 
-/// Show delete user confirmation dialog.
 void deleteUser(BuildContext context, WidgetRef ref, User user) {
   showDialog(
     context: context,
@@ -43,7 +40,6 @@ void deleteUser(BuildContext context, WidgetRef ref, User user) {
   );
 }
 
-/// Download ID card file.
 Future<void> downloadIdCard(BuildContext context, WidgetRef ref,
     String idLocation, String fileName) async {
   try {

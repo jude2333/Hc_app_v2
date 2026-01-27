@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// App-wide text styles
 class AppTextStyles {
-  // Headings
   static const TextStyle h1 = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
@@ -22,7 +20,6 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // Body text
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     color: AppColors.textPrimary,
@@ -38,7 +35,6 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // Secondary/Hint text
   static const TextStyle caption = TextStyle(
     fontSize: 12,
     color: AppColors.textSecondary,
@@ -49,7 +45,6 @@ class AppTextStyles {
     color: AppColors.textHint,
   );
 
-  // Special styles
   static const TextStyle buttonText = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w500,

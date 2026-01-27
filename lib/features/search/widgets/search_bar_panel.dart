@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../providers/search_provider.dart';
 
-/// Search bar panel with radio chips, input field, and search button
 class SearchBarPanel extends ConsumerStatefulWidget {
   const SearchBarPanel({super.key});
 
@@ -40,10 +39,8 @@ class _SearchBarPanelState extends ConsumerState<SearchBarPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Radio chips row
         _buildRadioChips(searchType),
         SizedBox(height: AppSpacing.md),
-        // Input field + button row
         Row(
           children: [
             Expanded(child: _buildInputField(searchType, state)),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
+import 'package:anderson_crm_flutter/config/settings.dart';
 import '../repositories/manager_work_order_repository.dart';
 
 class ManagerWorkOrderProvider extends ChangeNotifier {
@@ -146,24 +147,23 @@ final managerWorkOrderProvider =
   return ManagerWorkOrderProvider(repository: repo);
 });
 
-/// Today's date for reference (used for date chip calculations)
-final managerTodayPod = StateProvider<DateTime>((_) => DateTime(2022, 12, 14));
+final managerTodayPod = StateProvider<DateTime>((_) {
+  if (Settings.development) {
+    return DateTime(2022, 12, 14);
+  }
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+});
 
-/// Currently selected date for filtering work orders
 final managerSelectedDatePod =
     StateProvider<DateTime>((ref) => ref.watch(managerTodayPod));
 
-/// Search query for filtering work orders
 final managerSearchPod = StateProvider<String>((_) => '');
 
-/// Sort column for work order list
 final managerSortColumnPod = StateProvider<String>((_) => 'date');
 
-/// Sort direction for work order list
 final managerSortAscendingPod = StateProvider<bool>((_) => false);
 
-/// Filtered and sorted work orders - computed from raw work orders
-/// This memoizes the filtering/sorting logic so it doesn't run on every build
 final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
   final provider = ref.watch(managerWorkOrderProvider);
   final search = ref.watch(managerSearchPod);

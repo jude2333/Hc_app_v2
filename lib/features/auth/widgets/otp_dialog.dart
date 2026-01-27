@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 
-/// Modern OTP verification dialog
 class OtpDialog extends ConsumerStatefulWidget {
   final String mobile;
   final VoidCallback onDismiss;
@@ -84,7 +83,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -144,13 +142,10 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                   ],
                 ),
               ),
-
-              // Content
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    // Mobile display
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
@@ -179,10 +174,7 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
-                    // OTP input
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.1),
@@ -226,8 +218,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                         onFieldSubmitted: (_) => _submit(),
                       ),
                     ),
-
-                    // Error message
                     if (authState.hasError) ...[
                       const SizedBox(height: 12),
                       Row(
@@ -249,10 +239,7 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                         ],
                       ),
                     ],
-
                     const SizedBox(height: 24),
-
-                    // Submit button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -286,14 +273,9 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                               ),
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Resend OTP
                     TextButton(
-                      onPressed: () {
-                        // TODO: Implement resend OTP
-                      },
+                      onPressed: () {},
                       child: Text(
                         "Didn't receive code? Resend",
                         style: TextStyle(
@@ -313,7 +295,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
   }
 }
 
-/// Show OTP dialog helper
 Future<void> showOtpDialog({
   required BuildContext context,
   required String mobile,

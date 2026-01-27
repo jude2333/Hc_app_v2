@@ -4,7 +4,6 @@ import '../providers/notifications_page_provider.dart';
 import 'notification_status_chip.dart';
 import 'notification_expanded.dart';
 
-/// Desktop table view for notifications
 class NotificationDesktopView extends ConsumerWidget {
   final List<Map<String, dynamic>> notifications;
 
@@ -22,7 +21,6 @@ class NotificationDesktopView extends ConsumerWidget {
       elevation: 1,
       child: Column(
         children: [
-          // Table Header
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[200],
@@ -38,8 +36,6 @@ class NotificationDesktopView extends ConsumerWidget {
               ],
             ),
           ),
-
-          // Table Body
           Expanded(
             child: ListView.builder(
               itemCount: notifications.length,

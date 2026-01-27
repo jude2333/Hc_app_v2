@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-/// Search page header with title chip
 class SearchHeader extends StatelessWidget {
   const SearchHeader({super.key});
 

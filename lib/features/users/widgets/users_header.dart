@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/theme.dart';
 
-/// Header widget for the Users page with search and add button.
-/// Responsive: stacks vertically on mobile, horizontal on desktop.
 class UsersHeader extends StatelessWidget {
   final TextEditingController searchController;
   final Function(String) onSearchChanged;
@@ -108,7 +106,6 @@ class UsersHeader extends StatelessWidget {
       );
     }
 
-    // Icon-only button for mobile
     return IconButton(
       icon: const Icon(Icons.person_add_outlined),
       style: IconButton.styleFrom(

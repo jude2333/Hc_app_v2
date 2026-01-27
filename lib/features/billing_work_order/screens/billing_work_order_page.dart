@@ -23,7 +23,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Non-blocking initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(billingWorkOrderProvider.notifier).initialize();
     });
@@ -56,10 +55,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
         backgroundColor: Colors.white,
         elevation: 2,
         surfaceTintColor: Colors.white,
-        // leading: IconButton(
-        //   icon: const Icon(Icons.arrow_back, color: Colors.black87),
-        //   onPressed: () => Navigator.of(context).pop(),
-        // ),
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
@@ -75,15 +70,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
             ),
           ),
         ),
-        // actions: [
-        //   IconButton(
-        //     tooltip: 'Refresh',
-        //     icon: const Icon(Icons.refresh, color: Colors.black87),
-        //     onPressed: state.isLoading
-        //         ? null
-        //         : () => ref.read(billingWorkOrderProvider.notifier).refresh(),
-        //   ),
-        // ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.orange,
@@ -104,9 +90,7 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Unbilled Tab
           _buildTabContent(state, isDesktop),
-          // Billed Tab
           _buildTabContent(state, isDesktop),
         ],
       ),
@@ -118,7 +102,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       return _buildSkeletonLoading();
     }
 
-    // Error state
     if (state.errorMessage != null) {
       return Center(
         child: Column(
@@ -138,7 +121,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       );
     }
 
-    // Empty state
     if (state.orders.isEmpty) {
       return Center(
         child: Column(
@@ -163,7 +145,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       );
     }
 
-    // Content
     if (isDesktop) {
       return BillingDesktopTable(
         orders: state.filteredOrders,
@@ -210,7 +191,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
   }
 
   Future<void> _sendOrder(WorkOrder order) async {
-    // Show loading indicator
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Sending to lab system...'),
@@ -278,7 +258,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
                     ),
                   ),
                 ),
-                // Row skeletons
                 Expanded(
                   child: ListView.builder(
                     itemCount: 8,

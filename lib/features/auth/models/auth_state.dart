@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-/// Represents a user role with id and name
 @immutable
 class UserRole {
   final String id;
@@ -16,14 +15,12 @@ class UserRole {
   }
 }
 
-/// Login flow step
 enum LoginStep {
   enterMobile,
   verifyOtp,
   selectRole,
 }
 
-/// Immutable state for the authentication flow
 @immutable
 class AuthState {
   final String mobile;
@@ -50,22 +47,16 @@ class AuthState {
     this.showOtpDialog = false,
   });
 
-  /// Whether there's an error to display
   bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
 
-  /// Whether mobile number is valid (10 digits)
   bool get isMobileValid => mobile.length == 10;
 
-  /// Whether OTP is valid (6 digits)
   bool get isOtpValid => otp.length == 6;
 
-  /// Whether user has multiple roles
   bool get hasMultipleRoles => roles.length > 1;
 
-  /// Whether role selection is needed
   bool get needsRoleSelection => hasMultipleRoles && selectedRoleId == null;
 
-  /// Create a copy with updated fields
   AuthState copyWith({
     String? mobile,
     String? otp,
@@ -93,6 +84,5 @@ class AuthState {
     );
   }
 
-  /// Initial state
   static const initial = AuthState();
 }

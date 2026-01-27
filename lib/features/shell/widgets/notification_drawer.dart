@@ -58,7 +58,6 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
           Expanded(
             child: Consumer(
               builder: (_, ref, __) {
-                // OPTIMIZATION: Watch the filtered list directly
                 final notifications = ref.watch(unreadListProvider);
                 final isLoading = ref
                     .watch(liveNotificationProvider.select((s) => s.isLoading));

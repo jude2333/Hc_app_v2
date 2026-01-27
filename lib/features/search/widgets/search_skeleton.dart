@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-/// Skeleton loading widget for search results
 class SearchSkeleton extends StatelessWidget {
   final bool isMobile;
 
@@ -68,7 +67,6 @@ class SearchSkeleton extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
-          // Header skeleton
           Container(
             padding: AppPadding.tableCell,
             decoration: BoxDecoration(
@@ -94,7 +92,6 @@ class SearchSkeleton extends StatelessWidget {
               ),
             ),
           ),
-          // Row skeletons
           Expanded(
             child: ListView.builder(
               physics: const NeverScrollableScrollPhysics(),

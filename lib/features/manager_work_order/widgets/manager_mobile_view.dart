@@ -21,12 +21,10 @@ class ManagerMobileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Filter logic moved to provider for better performance
     final filtered = workOrders;
 
     return Column(
       children: [
-        // Search bar
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: TextField(
@@ -36,7 +34,6 @@ class ManagerMobileView extends ConsumerWidget {
               filled: true,
               fillColor: AppColors.surface,
               border: OutlineInputBorder(
-                // borderRadius: BorderRadius.circular(8),
                 borderRadius: AppRadius.mdAll,
                 borderSide: BorderSide.none,
               ),
@@ -46,8 +43,6 @@ class ManagerMobileView extends ConsumerWidget {
             onChanged: onSearchChanged,
           ),
         ),
-
-        // Results count
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
@@ -64,8 +59,6 @@ class ManagerMobileView extends ConsumerWidget {
             ],
           ),
         ),
-
-        // Work order cards
         Expanded(
           child: filtered.isEmpty
               ? _buildEmptyState()
@@ -125,7 +118,6 @@ class ManagerMobileView extends ConsumerWidget {
   }
 }
 
-/// Individual work order card for mobile
 class _MobileWorkOrderCard extends StatefulWidget {
   final WorkOrder workOrder;
   final int index;
@@ -151,7 +143,6 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
       elevation: 0,
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
-        // borderRadius: BorderRadius.circular(8),
         borderRadius: AppRadius.mdAll,
         side: BorderSide(
           color: _isExpanded ? AppColors.primary : AppColors.divider,
@@ -160,7 +151,6 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
       ),
       child: Column(
         children: [
-          // Main card content (always visible)
           InkWell(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
             borderRadius: BorderRadius.circular(16),
@@ -169,10 +159,8 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header row: Index + Name + Expand icon
                   Row(
                     children: [
-                      // Index badge
                       Container(
                         width: 28,
                         height: 28,
@@ -192,7 +180,6 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Patient name + badges
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +209,6 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
                           ],
                         ),
                       ),
-                      // Expand icon
                       AnimatedRotation(
                         turns: _isExpanded ? 0.5 : 0,
                         duration: const Duration(milliseconds: 200),
@@ -233,17 +219,13 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 12),
-
-                  // Status chips row
                   Row(
                     children: [
                       StatusChip(status: wo.status),
                       const SizedBox(width: 8),
                       ServerChip(status: wo.serverStatus),
                       const Spacer(),
-                      // Visit time
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
@@ -270,10 +252,7 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 10),
-
-                  // Assigned to row
                   Row(
                     children: [
                       Icon(Icons.person_outline,
@@ -302,21 +281,17 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
               ),
             ),
           ),
-
-          // Expanded content - conditionally rendered for best performance
           if (_isExpanded)
             RepaintBoundary(
               child: Column(
                 children: [
                   Divider(height: 1, color: AppColors.divider),
-                  // Actions row
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     child: ManagerActions(workOrder: wo),
                   ),
                   Divider(height: 1, color: AppColors.divider),
-                  // Expanded details
                   ManagerExpandedContent(workOrder: wo),
                 ],
               ),

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import '../providers/notifications_page_provider.dart';
 
-/// Expanded content section for a notification
 class NotificationExpanded extends ConsumerWidget {
   final Map<String, dynamic> notification;
 

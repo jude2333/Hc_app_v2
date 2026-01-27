@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Skeleton loading widget for notifications
 class NotificationSkeleton extends StatelessWidget {
   const NotificationSkeleton({super.key});
 

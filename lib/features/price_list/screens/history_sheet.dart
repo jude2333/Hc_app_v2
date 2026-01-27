@@ -17,7 +17,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
   @override
   void initState() {
     super.initState();
-    // Initial load from current state
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateFilteredHistory();
     });
@@ -69,7 +69,6 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
   Widget build(BuildContext context) {
     final state = ref.watch(priceListProvider);
 
-    // Listen for changes and update filtered history when data arrives
     ref.listen<PriceListState>(priceListProvider, (previous, next) {
       if (previous?.globalHistory != next.globalHistory) {
         _updateFilteredHistory();

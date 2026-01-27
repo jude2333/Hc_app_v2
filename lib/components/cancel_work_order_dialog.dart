@@ -74,14 +74,12 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
           customDoc: updatedDocMap);
 
       if (success && mounted) {
-        // Send in-app notification to technician (if assigned)
         if (widget.workOrder.assignedTo.isNotEmpty) {
           await _sendCancellationNotification();
         }
 
         Navigator.of(context).pop(true);
 
-        // Show cancellation notification dialog (mirrors Vue's close_edit_screen with Cancelled action)
         if (widget.workOrder.assignedTo.isNotEmpty) {
           _showCancellationNotificationDialog();
         }
@@ -96,7 +94,6 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
     }
   }
 
-  /// Send in-app notification to technician about cancellation (mirrors Vue's send_cancellation_sms notification part)
   Future<void> _sendCancellationNotification() async {
     try {
       final notificationDb = ref.read(notificationDbProvider);
@@ -126,7 +123,6 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
     }
   }
 
-  /// Show dialog to ask about sending SMS/WhatsApp to patient (mirrors Vue's msg_dialog for Cancelled)
   void _showCancellationNotificationDialog() {
     final wo = widget.workOrder;
     bool sendSms = true;
@@ -198,7 +194,6 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
     );
   }
 
-  /// Send cancellation SMS/WhatsApp (mirrors Vue's send_cancellation_sms)
   Future<void> _sendCancellationMessages(
       {required bool sendSms, required bool sendWhatsApp}) async {
     try {
@@ -224,7 +219,6 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
         'updated_at': Util.getTimeStamp(),
       };
 
-      // Send SMS
       if (sendSms) {
         final smsMsg = SmsTemplate.homeCollectionCancellation(rescheduleUrl);
 
@@ -240,7 +234,6 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
             : '⚠️ SMS failed: $result');
       }
 
-      // Send WhatsApp
       if (sendWhatsApp) {
         final waMessage = Map<String, dynamic>.from(baseMessage);
         waMessage['_id'] =

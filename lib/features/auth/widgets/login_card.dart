@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/auth_state.dart';
 import '../providers/auth_provider.dart';
 
-/// Login card widget with mobile input and actions
 class LoginCard extends ConsumerWidget {
   final VoidCallback onGetOtp;
   final VoidCallback onQuickLogin;
@@ -25,7 +24,6 @@ class LoginCard extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -45,13 +43,10 @@ class LoginCard extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ),
-
-          // Form content
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Mobile input
                 TextFormField(
                   initialValue: authState.mobile,
                   decoration: const InputDecoration(
@@ -65,8 +60,6 @@ class LoginCard extends ConsumerWidget {
                   onChanged: notifier.setMobile,
                   onFieldSubmitted: (_) => onQuickLogin(),
                 ),
-
-                // Role selector (if needed)
                 if (authState.currentStep == LoginStep.selectRole) ...[
                   const SizedBox(height: 16),
                   RoleSelector(
@@ -77,8 +70,6 @@ class LoginCard extends ConsumerWidget {
                     },
                   ),
                 ],
-
-                // Remember checkbox
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -93,8 +84,6 @@ class LoginCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-
-                // Get OTP button
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -126,7 +115,6 @@ class LoginCard extends ConsumerWidget {
   }
 }
 
-/// Role selector dropdown
 class RoleSelector extends StatelessWidget {
   final List<UserRole> roles;
   final String? selectedRoleId;

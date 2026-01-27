@@ -216,13 +216,11 @@ class BillingWorkOrderRepository {
     }
   }
 
-  /// Send order to lab API and update sent_status (matches Vue's send_confirmed_item)
   Future<String> sendOrderToApi({
     required WorkOrder workOrder,
     required Map<String, dynamic> payload,
   }) async {
     try {
-      // POST to lab API
       final dio = Dio();
       final response = await dio.post(
         '/api',
@@ -239,7 +237,6 @@ class BillingWorkOrderRepository {
       if (response.data == 'SUCCESS') {
         debugPrint('[BillingRepo] Order sent successfully');
 
-        // Update status in CouchDB
         final now = DateTime.now().toIso8601String();
         final docDbs =
             await _storage.getSessionItem('doc_dbs') ?? 'work_orders';
@@ -259,7 +256,6 @@ class BillingWorkOrderRepository {
           debugPrint('[BillingRepo] Error updating CouchDB status: $e');
         }
 
-        // Update local DB
         await _db.execute('''
           UPDATE hc_patient_visit_detail
           SET last_updated_at = ?

@@ -60,7 +60,6 @@ class TechMobileView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Row 1: Avatar + Name skeleton
                 Row(
                   children: [
                     Container(
@@ -93,7 +92,6 @@ class TechMobileView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Row 2: Stats skeleton
                 Row(
                   children: List.generate(
                       3,
@@ -124,7 +122,6 @@ class TechMobileView extends StatelessWidget {
                 const SizedBox(height: 12),
                 Divider(height: 1, color: Colors.grey.shade200),
                 const SizedBox(height: 12),
-                // Row 3: Financials skeleton
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -207,7 +204,6 @@ class _TechMobileCardState extends State<TechMobileCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Row 1: Name and Assigned Count
                   Row(
                     children: [
                       Container(
@@ -253,8 +249,6 @@ class _TechMobileCardState extends State<TechMobileCard> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Row 2: Stats Grid
                   Row(
                     children: [
                       _MobileStatCell(
@@ -267,8 +261,6 @@ class _TechMobileCardState extends State<TechMobileCard> {
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
-
-                  // Row 3: Financials
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

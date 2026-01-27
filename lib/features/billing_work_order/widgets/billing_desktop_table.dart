@@ -85,7 +85,6 @@ class BillingDesktopTable extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
               child: Column(
                 children: [
-                  // Header row
                   Container(
                     padding: EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg, vertical: 2),
@@ -139,7 +138,6 @@ class BillingDesktopTable extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // Data rows
                   Expanded(
                     child: ListView.separated(
                       itemCount: filtered.length,
@@ -217,7 +215,6 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
             child: Row(
               children: [
                 _buildCell('${widget.index}', flex: 1),
-                // Name with badges (using shared widget)
                 Expanded(
                   flex: 3,
                   child: NameWithBadges(
@@ -233,7 +230,6 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
                 Expanded(flex: 2, child: StatusChip(status: order.status)),
                 Expanded(
                     flex: 2, child: ServerChip(status: order.serverStatus)),
-                // Bill action
                 if (widget.showBillAction)
                   Expanded(
                     flex: 1,
@@ -246,7 +242,6 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
                           )
                         : const SizedBox(),
                   ),
-                // Send action
                 Expanded(
                   flex: 1,
                   child: _buildSendAction(order),
@@ -282,7 +277,6 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
   }
 
   Widget _buildSendAction(WorkOrder order) {
-    // Already sent - show chip
     if (order.sentStatus == 'sent') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -301,7 +295,6 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
       );
     }
 
-    // Can send - show button
     if (_canSend(order)) {
       return IconButton(
         icon: Icon(Icons.send, color: AppColors.success, size: AppSizes.iconSm),
@@ -341,44 +334,32 @@ class _ExpandedContent extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Basic details
           _DetailRow('Address', order.address),
           _DetailRow('Pincode', order.pincode),
           _DetailRow('Ref By', order.doctorName),
-
-          // Prescription file
           if (order.prescriptionPhoto.isNotEmpty)
             _FileRow(
               label: 'Prescription',
               filePath: order.prescriptionPhoto,
               storage: storage,
             ),
-
-          // Prescription Photo (from process)
           if (order.prescriptionPath.isNotEmpty)
             _FileRow(
               label: 'Prescription Photo',
               filePath: order.prescriptionPath,
               storage: storage,
             ),
-
-          // Proforma Invoice
           if (order.proformaPath.isNotEmpty)
             _FileRow(
               label: 'Proforma Invoice',
               filePath: order.proformaPath,
               storage: storage,
             ),
-
-          // Bill/Lab numbers if billed
           if (order.billNumber.isNotEmpty)
             _DetailRow('Bill Number', order.billNumber),
           if (order.labNumber.isNotEmpty)
             _DetailRow('Lab Number', order.labNumber),
-
           SizedBox(height: AppSpacing.md),
-
-          // Test items table
           if (order.testItems.isNotEmpty) ...[
             Text('Test Items',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -463,16 +444,13 @@ class _FileRow extends StatelessWidget {
   void _openFile(BuildContext context) {
     if (filePath.isEmpty) return;
 
-    // Parse multiple files if comma-separated
     final files = filePath.contains(',')
         ? filePath.split(',').map((f) => f.trim()).toList()
         : [filePath];
 
     if (files.length == 1) {
-      // Single file - open directly
       FileViewer.view(context, s3Path: files.first);
     } else {
-      // Multiple files - show picker
       FilePickerDialog.show(
         context,
         files: files,
@@ -481,7 +459,6 @@ class _FileRow extends StatelessWidget {
           if (action == 'view') {
             FileViewer.view(context, s3Path: selectedPath);
           } else {
-            // Download logic
             final fileService = FileService(
               dio: Dio(),
               storage: storage,
@@ -512,7 +489,6 @@ class _TestItemsTable extends StatelessWidget {
         5: FlexColumnWidth(1),
       },
       children: [
-        // Header row
         TableRow(
           decoration: BoxDecoration(color: AppColors.primaryLight),
           children: const [
@@ -524,7 +500,6 @@ class _TestItemsTable extends StatelessWidget {
             _TableHeader('Min Cost'),
           ],
         ),
-        // Data rows
         ...testItems.map((item) {
           final map = item as Map<String, dynamic>;
           return TableRow(

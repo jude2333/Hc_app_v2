@@ -1,4 +1,3 @@
-// Barrel export for search feature
 export 'screens/search_page.dart';
 export 'providers/search_provider.dart';
 export 'widgets/search_header.dart';

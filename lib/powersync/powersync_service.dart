@@ -70,7 +70,6 @@ class PowerSyncService {
     }
   }
 
-  // Returns List<Map> so Isolate can parse it
   Stream<List<Map<String, dynamic>>> watchWorkOrdersByDate(
       DateTime selectedDate) {
     final dateStr = selectedDate.toIso8601String().split('T')[0];
@@ -79,12 +78,10 @@ class PowerSyncService {
       'SELECT * FROM hc_patient_visit_detail WHERE visible = 1 AND visit_date = ? ORDER BY visit_time ASC',
       parameters: [dateStr],
     ).map((rows) {
-      // Convert SqliteRow to Map<String, dynamic>
       return rows.map((r) => Map<String, dynamic>.from(r)).toList();
     });
   }
 
-  // Watch work orders for 7-day range (start date + 6 days = "6+ Days" chip)
   Stream<List<Map<String, dynamic>>> watchWorkOrdersFromDate(
       DateTime startDate) {
     final startStr = startDate.toIso8601String().split('T')[0];
@@ -99,7 +96,6 @@ class PowerSyncService {
     });
   }
 
-  //  Returns List<Map> so Isolate can parse it
   Stream<List<Map<String, dynamic>>> watchTechnicianWorkOrders(String techId) {
     return db.watch(
       '''
@@ -284,8 +280,6 @@ class PowerSyncService {
     });
   }
 
-  // cancel work order
-
   Stream<List<Map<String, dynamic>>> watchCancelledWorkOrdersByDate(
       DateTime date) {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
@@ -305,7 +299,6 @@ class PowerSyncService {
     await Future.delayed(const Duration(seconds: 3));
   }
 
-// This is used to calculate aggregates for ALL technicians.
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(
       String dateStr) async {
     final results = await db.getAll(
@@ -315,11 +308,9 @@ class PowerSyncService {
       ''',
       [dateStr],
     );
-    // Return as modifiable list
+
     return results.map((r) => Map<String, dynamic>.from(r)).toList();
   }
-
-  // 2. Manager Actions: Toggle Remittance Acceptance
 
   Future<void> toggleRemittanceAcceptance(
       String id, bool status, String user) async {
@@ -330,24 +321,20 @@ class PowerSyncService {
     final now = DateTime.now().toIso8601String();
 
     await db.writeTransaction((tx) async {
-      // 1. Get current doc to modify JSON fields
       final result = await tx
           .get('SELECT doc FROM hc_patient_visit_detail WHERE id = ?', [id]);
       if (result == null) return;
 
       final docMap = jsonDecode(result['doc'] as String);
 
-      // 2. Update JSON fields
       docMap['accept_remittance'] = status;
 
-      // 3. Update Timeline
       List<dynamic> timeline = List.from(docMap['time_line'] ?? []);
       timeline.add(logEntry);
       docMap['time_line'] = timeline;
 
       docMap['updated_at'] = now;
 
-      // 4. Update Database
       await tx.execute(
         '''
         UPDATE hc_patient_visit_detail 

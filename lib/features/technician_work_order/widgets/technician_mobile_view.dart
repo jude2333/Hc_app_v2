@@ -73,7 +73,6 @@ class _TechnicianMobileCard extends ConsumerStatefulWidget {
 class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
   bool _isExpanded = false;
 
-  /// Check if work order status allows editing
   bool _checkEditableStatus() {
     final status = widget.workOrder.status.toLowerCase();
     return status != 'na' && status != 'finished' && status != 'cancelled';
@@ -93,7 +92,6 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with name and badges
           Padding(
             padding: EdgeInsets.all(AppSpacing.md),
             child: Row(
@@ -152,11 +150,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
               ],
             ),
           ),
-
-          // Simple table rows
           _buildInfoTable(wo),
-
-          // Actions row
           Container(
             padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md, vertical: AppSpacing.sm),
@@ -217,8 +211,6 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
               ],
             ),
           ),
-
-          // Expanded content (work items only, not address info which is in View More)
           if (_isExpanded)
             RepaintBoundary(
               child: TechnicianExpandedContent(workOrder: wo),
@@ -438,7 +430,6 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
     });
   }
 
-  /// View test items in a dialog - matching Vue behavior
   void _viewTests(dynamic testItems) {
     showDialog(
       context: context,
@@ -462,7 +453,6 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
     );
   }
 
-  /// Show View More dialog with address/pincode/additional info - matching Vue behavior
   void _showViewMoreDialog() {
     final wo = widget.workOrder;
     showDialog(

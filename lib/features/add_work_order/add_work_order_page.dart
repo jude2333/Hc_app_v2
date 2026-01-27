@@ -12,7 +12,6 @@ import '../../../../models/work_order.dart';
 import 'controllers/add_work_order_controller.dart';
 import 'providers.dart';
 
-// Components
 import 'widgets/patient_details_section.dart';
 import 'widgets/appointment_section.dart';
 import 'widgets/contact_info_section.dart';
@@ -24,7 +23,6 @@ import 'dialogs/pincode_search_dialog.dart';
 import 'dialogs/b2b_client_dialog.dart';
 import 'dialogs/settings_dialog.dart';
 
-// Import providers needed for data loading
 import '../../../../services/postgresService.dart';
 import '../../../../config/settings.dart';
 
@@ -46,7 +44,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
 
-  // Text Controllers
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   late TextEditingController _mobileController;
@@ -57,7 +54,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   late TextEditingController _freeTextController;
   late TextEditingController _cancellationReasonController;
 
-  // Form State
   String _salutation = 'Mr';
   String _gender = 'Male';
   String _collectionDate = '';
@@ -68,7 +64,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   bool _isVip = false;
   bool _isUrgent = false;
 
-  // Credit: 0=None, 1=Credit, 2=Trial
   int _credit = 0;
   String _creditSelect = 'None';
 
@@ -76,21 +71,17 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   int? _selectedB2BClientId;
   String? _selectedB2BClientName;
 
-  // Notification Settings
   bool _sendSms = true;
   bool _sendWhatsapp = true;
   bool _sendEmail = true;
 
-  // Cancellation
   bool _isCancelled = false;
 
-  // State
   bool _isInitialized = false;
   bool _hasAttemptedValidation = false;
 
   final _imagePicker = ImagePicker();
 
-  // Date dropdown options
   List<String> _suitableDates = [];
 
   bool get isEditMode => widget.existingWorkOrder != null;
@@ -172,7 +163,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   void _loadData(WorkOrder wo, {required bool isCopy}) {
-    // Parse Name
     final nameParts = wo.patientName.split('. ');
     _salutation = nameParts.length > 1 ? nameParts[0] : 'Mr';
     _nameController.text = nameParts.length > 1 ? nameParts[1] : wo.patientName;
@@ -216,7 +206,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
       _prescriptionPath = wo.prescriptionPath;
     }
 
-    // Settings
     if (wo.settings != null) {
       _sendSms = wo.settings!['send_sms'] == 1;
       _sendWhatsapp = wo.settings!['send_whatsapp'] == 1;
@@ -241,7 +230,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     super.dispose();
   }
 
-  // Helper: Title Case
   String _toTitleCase(String text) {
     if (text.isEmpty) return text;
     return text.split(' ').map((word) {
@@ -250,7 +238,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     }).join(' ');
   }
 
-  // Helper: Update gender from salutation
   void _updateGenderFromSalutation(String salutation) {
     setState(() {
       _salutation = salutation;
@@ -378,7 +365,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     if (result != null && result is Map) {
       setState(() {
         _selectedB2BClientId = result['id'];
-        // Include client master name like legacy
+
         final clientMaster = result['client_master'];
         final clientName =
             clientMaster != null ? clientMaster['client_name'] ?? '' : '';

@@ -46,7 +46,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 600;
 
-    // Listen for state changes
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.showOtpDialog && !_dialogShowing) {
         _dialogShowing = true;
@@ -69,15 +68,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         height: size.height,
         width: size.width,
         decoration: const BoxDecoration(
-          // iOS-style dark gradient background for liquid glass effect
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0A4D68), // Deep teal (top)
-              Color(0xFF088395), // Anderson teal
-              Color(0xFF05BFDB), // Bright teal/cyan
-              Color(0xFF00FFCA), // Vibrant mint accent (bottom)
+              Color(0xFF0A4D68),
+              Color(0xFF088395),
+              Color(0xFF05BFDB),
+              Color(0xFF00FFCA),
             ],
             stops: [0.0, 0.35, 0.7, 1.0],
           ),
@@ -86,7 +84,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           focusNode: FocusNode(),
           onKeyEvent: (KeyEvent event) {
             if (event is KeyDownEvent) {
-              // Both Enter and Escape trigger quick login (for dev convenience)
               if (event.logicalKey == LogicalKeyboardKey.enter ||
                   event.logicalKey == LogicalKeyboardKey.escape) {
                 notifier.quickLogin();
@@ -100,21 +97,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo/Brand section
                     _buildBrandSection(),
-
                     const SizedBox(height: 40),
-
-                    // Login card
                     Container(
                       width: isDesktop ? 420 : double.infinity,
                       constraints: const BoxConstraints(maxWidth: 420),
                       child: _buildLoginCard(authState, notifier),
                     ),
-
                     const SizedBox(height: 24),
-
-                    // Footer
                     _buildFooter(),
                   ],
                 ),
@@ -129,7 +119,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildBrandSection() {
     return Column(
       children: [
-        // Logo container with glow effect
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -138,8 +127,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFFF7941D), // Anderson Orange
-                Color(0xFFE07D0A), // Darker orange
+                Color(0xFFF7941D),
+                Color(0xFFE07D0A),
               ],
             ),
             boxShadow: [
@@ -172,7 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           style: TextStyle(
             fontSize: 14,
             fontStyle: FontStyle.italic,
-            color: Color(0xFFF7941D), // Anderson Orange
+            color: Color(0xFFF7941D),
             letterSpacing: 0.5,
           ),
         ),
@@ -194,14 +183,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        // Blur creates the liquid distortion effect
         filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            // Fully transparent - no background, just blur
             color: Colors.transparent,
-            // Subtle luminous border to define the glass edge
             border: Border.all(
               color: Colors.white.withOpacity(0.3),
               width: 1.0,
@@ -209,7 +195,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           child: Stack(
             children: [
-              // Top edge highlight (like light hitting liquid surface)
               Positioned(
                 top: 0,
                 left: 0,
@@ -229,13 +214,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-              // Main content
               Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Welcome text
                     const Text(
                       'Welcome back',
                       style: TextStyle(
@@ -254,31 +237,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-
-                    // Error message
                     if (authState.hasError)
                       _buildErrorBanner(authState.errorMessage ?? ''),
-
-                    // Mobile input
                     _buildMobileInput(authState, notifier),
-
                     const SizedBox(height: 20),
-
-                    // Role selector (if needed)
                     if (authState.currentStep == LoginStep.selectRole)
                       _buildRoleSelector(authState, notifier),
-
-                    // Remember checkbox
                     _buildRememberCheckbox(authState, notifier),
-
                     const SizedBox(height: 24),
-
-                    // Login button
                     _buildLoginButton(authState, notifier),
-
                     const SizedBox(height: 16),
-
-                    // Get OTP button
                     _buildOtpButton(authState, notifier),
                   ],
                 ),
@@ -454,7 +422,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             onChanged: (value) => notifier.setRememberMobile(value ?? false),
             side: BorderSide(color: Colors.white.withOpacity(0.5)),
             checkColor: Colors.white,
-            activeColor: const Color(0xFFF7941D), // Anderson Orange
+            activeColor: const Color(0xFFF7941D),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
@@ -479,7 +447,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: ElevatedButton(
         onPressed: authState.isLoading ? null : notifier.quickLogin,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF7941D), // Anderson Orange
+          backgroundColor: const Color(0xFFF7941D),
           foregroundColor: Colors.white,
           disabledBackgroundColor: const Color(0xFFF7941D).withOpacity(0.5),
           elevation: 4,
@@ -516,8 +484,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: OutlinedButton(
         onPressed: authState.isLoading ? null : notifier.sendOtp,
         style: OutlinedButton.styleFrom(
-          side:
-              const BorderSide(color: Color(0xFF00669B)), // Anderson Teal Blue
+          side: const BorderSide(color: Color(0xFF00669B)),
           foregroundColor: const Color(0xFF00669B),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -533,7 +500,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF00669B), // Anderson Teal Blue
+                color: Color(0xFF00669B),
               ),
             ),
           ],

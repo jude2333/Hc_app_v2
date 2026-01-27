@@ -47,12 +47,10 @@ class _TechnicianWorkOrderPageState
         provider.loadTechnicianWorkOrders(techId);
       }
 
-      // Check for Sugar Test (Glucose PP) prompt - matching Vue behavior
       _checkSugarTestPrompt(storage);
     });
   }
 
-  /// Check if there's a pending sugar test prompt and show dialog
   void _checkSugarTestPrompt(dynamic storage) {
     final sugarTestId = storage.getFromSession('sugar_tests')?.toString() ?? '';
     if (sugarTestId.isNotEmpty && mounted) {
@@ -60,7 +58,6 @@ class _TechnicianWorkOrderPageState
     }
   }
 
-  /// Show dialog asking if user wants to book Glucose(PP) test
   void _showSugarTestDialog(String docId) {
     showDialog(
       context: context,
@@ -72,7 +69,6 @@ class _TechnicianWorkOrderPageState
         actions: [
           TextButton(
             onPressed: () {
-              // Clear session value and close dialog
               ref.read(storageServiceProvider).setSession('sugar_tests', '');
               Navigator.pop(ctx);
             },
@@ -81,9 +77,9 @@ class _TechnicianWorkOrderPageState
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              // Clear session value
+
               ref.read(storageServiceProvider).setSession('sugar_tests', '');
-              // Fetch the work order and navigate to copy with cleared time
+
               await _handleSugarTestCopy(docId);
             },
             style: ElevatedButton.styleFrom(
@@ -96,14 +92,12 @@ class _TechnicianWorkOrderPageState
     );
   }
 
-  /// Handle copying work order for Glucose PP test
   Future<void> _handleSugarTestCopy(String docId) async {
     final provider = ref.read(technicianWorkOrderProvider);
     final workOrder = provider.getWorkOrderById(docId);
     if (workOrder != null && mounted) {
-      // Create copy with cleared appointment time to match Vue behavior
       final workOrderForCopy = workOrder.copyWith(visitTime: '');
-      // Navigate to add work order page with copyFrom
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -193,7 +187,6 @@ class _TechnicianWorkOrderPageState
       );
     }
 
-    // Responsive layout: Mobile cards for < 800px, Desktop table for >= 800px
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 800;

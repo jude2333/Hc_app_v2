@@ -9,7 +9,6 @@ import '../../../services/dbHandler_service.dart';
 import '../../../services/cronJob_service.dart';
 import '../../../providers/notification_provider.dart';
 
-// New Features Imports
 import '../providers/shell_providers.dart';
 import '../widgets/main_app_bar.dart';
 import '../widgets/app_drawer.dart';
@@ -95,9 +94,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
   }
 
-  void _setupRealtimeListener() {
-    // Logic moved to LiveNotificationController - stub kept for compatibility with legacy flow
-  }
+  void _setupRealtimeListener() {}
 
   Future<void> _loadNotificationsSafely() async {
     if (!mounted) return;
@@ -106,7 +103,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       if (today.isEmpty || !_isValidDateFormat(today)) {
         ref.read(appNotifierProvider.notifier).setToday(Util.getTodayString());
       }
-      // Trigger initial load via the new provider
+
       await ref.read(liveNotificationProvider.notifier).loadNotifications();
     } catch (e) {
       debugPrint('Error loading notifications: $e');
@@ -158,7 +155,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     ref.listen<Map<String, dynamic>?>(latestNotificationTriggerProvider,
         (previous, next) {
       if (next != null) {
-        // Show the Snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,

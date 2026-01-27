@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/postgresService.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 
-// Debounce timer provider for search
 final _debounceTimerProvider = StateProvider<DateTime?>((ref) => null);
 
 class TenantSelectorSheet extends ConsumerStatefulWidget {
@@ -71,10 +70,8 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
   }
 
   void _debounceSearch(String query) {
-    // Update the debounce timer
     ref.read(_debounceTimerProvider.notifier).state = DateTime.now();
 
-    // Wait 500ms before executing search
     Future.delayed(const Duration(milliseconds: 500), () {
       final lastUpdate = ref.read(_debounceTimerProvider);
       if (lastUpdate != null &&
@@ -88,7 +85,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
     final storage = ref.read(storageServiceProvider);
     final currentTenantId = storage.getFromSession('logged_in_tenant_id');
 
-    // Check if already logged into this tenant
     if (tenantId == currentTenantId) {
       _showSnackbar('You are already logged in to $tenantName');
       Navigator.of(context).pop();
@@ -111,24 +107,14 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
         });
 
         if (result == 200) {
-          // Success - reinitialize the app
-          // final dbHandler = ref.read(dbHandlerServiceProvider);
-          // await dbHandler.init();
-
-          // Update current tenant name
           final newTenantName = storage.getFromSession('logged_in_tenant_name');
 
           _showSnackbar('Successfully switched to $newTenantName');
 
-          // Close the sheet and trigger a full reload
           Navigator.of(context).pop();
 
-          // Reload the current page to reflect changes
           Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              // You might want to trigger a navigation or state refresh here
-              // For now, we'll just show a message
-            }
+            if (mounted) {}
           });
         } else {
           _showSnackbar('Failed to change tenant: $result');
@@ -166,7 +152,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
       ),
       child: Column(
         children: [
-          // Header with search
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -222,8 +207,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
               ],
             ),
           ),
-
-          // Current tenant alert
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -248,8 +231,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
               ],
             ),
           ),
-
-          // Table header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -289,8 +270,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
               ],
             ),
           ),
-
-          // Tenant list
           Expanded(
             child: _isLoading
                 ? const Center(
@@ -375,8 +354,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
                         },
                       ),
           ),
-
-          // Loading overlay when changing tenant
           if (_isChangingTenant)
             Positioned.fill(
               child: Container(
@@ -402,7 +379,6 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
   }
 }
 
-// Helper function to show the tenant selector
 void showTenantSelector(BuildContext context) {
   showModalBottomSheet(
     context: context,

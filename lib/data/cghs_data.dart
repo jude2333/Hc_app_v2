@@ -9,10 +9,8 @@ class CghsData {
 
   HashMap<int, int>? _cghsMap;
 
-  // Get method to retrieve value by investigation ID
   int? get(int investId) {
     try {
-      // Initialize the map if it's null
       _cghsMap ??= _createMap();
 
       return _cghsMap![investId] ?? 0;

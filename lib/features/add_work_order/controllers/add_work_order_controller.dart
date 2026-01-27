@@ -21,7 +21,7 @@ final addWorkOrderControllerProvider =
 class AddWorkOrderController extends StateNotifier<bool> {
   final Ref ref;
 
-  AddWorkOrderController(this.ref) : super(false); // State is isLoading
+  AddWorkOrderController(this.ref) : super(false);
 
   void setLoading(bool loading) {
     state = loading;
@@ -143,7 +143,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
             .read(workOrderProvider)
             .updateWorkOrder(updatedOrder, customDoc: customDoc);
 
-        // Send cancellation notifications if work order was just cancelled
         if (success && isCancelled && existingWorkOrder.status != 'cancelled') {
           await _sendCancellationNotifications(
             workOrder: existingWorkOrder,
@@ -155,7 +154,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
         setLoading(false);
         return {'success': success, 'message': 'Work Order Updated'};
       } else {
-        // Create New or Copy
         final workOrder = WorkOrder.fromFormData(
           patientName: patientName,
           mobile: mobile,
@@ -272,8 +270,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
     }
   }
 
-  /// Send cancellation SMS/WhatsApp to patient and in-app notification to technician
-  /// Matches Vue's send_cancellation_sms() function (desktop_view.vue L859-930)
   Future<void> _sendCancellationNotifications({
     required WorkOrder workOrder,
     required bool sendSms,
@@ -284,7 +280,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
       final comCenter = ref.read(comCenterProvider);
       final notificationCenter = ref.read(notificationCenterServiceProvider);
 
-      // 1. Send in-app notification to technician (if assigned)
       if (workOrder.assignedTo.isNotEmpty) {
         final appointmentDate =
             DateFormat('dd-MM-yyyy').format(workOrder.visitDate);
@@ -319,7 +314,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
         }
       }
 
-      // 2. Send SMS/WhatsApp to patient
       final rescheduleUrl = '${Settings.msgUrl}reschedule';
 
       final baseMessage = {
@@ -338,7 +332,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
         'updated_at': Util.getTimeStamp(),
       };
 
-      // Send SMS
       if (sendSms) {
         final smsMessage = Map<String, dynamic>.from(baseMessage);
         smsMessage['_id'] =
@@ -355,7 +348,6 @@ class AddWorkOrderController extends StateNotifier<bool> {
         }
       }
 
-      // Send WhatsApp
       if (sendWhatsapp) {
         final waMessage = Map<String, dynamic>.from(baseMessage);
         waMessage['_id'] =

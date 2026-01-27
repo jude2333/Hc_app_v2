@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
+import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
 import 'search_expanded_content.dart';
 import 'package:anderson_crm_flutter/features/theme/app_text_styles.dart';
 
-/// Desktop virtual table for search results (matching manager_work_order style)
 class SearchDesktopTable extends ConsumerWidget {
   final List<Map<String, dynamic>> results;
 
@@ -16,7 +17,6 @@ class SearchDesktopTable extends ConsumerWidget {
     final sortCol = ref.watch(sortColumnProvider);
     final sortAsc = ref.watch(sortAscendingProvider);
 
-    // Sort results
     List<Map<String, dynamic>> sorted = List.from(results);
     sorted.sort((a, b) {
       int cmp = 0;
@@ -62,7 +62,6 @@ class SearchDesktopTable extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
-          // Header row
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
@@ -111,11 +110,11 @@ class SearchDesktopTable extends ConsumerWidget {
                 ),
                 const _HeaderCell('Server Status', flex: 3),
                 const _HeaderCell('Assigned To', flex: 4),
+                const _HeaderCell('Actions', flex: 2),
                 const SizedBox(width: 40),
               ],
             ),
           ),
-          // Body rows
           Expanded(
             child: ListView.separated(
               itemCount: sorted.length,
@@ -196,6 +195,23 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
                     ),
                   ),
                   _buildCell('${item['assigned_to'] ?? ''}', flex: 4),
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.content_copy,
+                              size: AppSizes.iconSm - 2,
+                              color: AppColors.textHint),
+                          onPressed: () => _copyWorkOrder(context),
+                          tooltip: 'Copy',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
                   SizedBox(
                     width: 40,
                     child: Icon(
@@ -227,6 +243,26 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
         child: Text(text, overflow: TextOverflow.ellipsis),
       ),
     );
+  }
+
+  void _copyWorkOrder(BuildContext context) {
+    try {
+      final workOrder = WorkOrder.fromDocMap(widget.item);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddWorkOrderPage(copyFrom: workOrder),
+          fullscreenDialog: true,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error copying work order: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
@@ -260,9 +296,7 @@ class _NameWithBadges extends StatelessWidget {
                   border: Border.all(color: AppColors.error, width: 1),
                   borderRadius: BorderRadius.circular(3),
                 ),
-                child: Text(b,
-                    // style: TextStyle(fontSize: 8, color: AppColors.error)),
-                    style: AppTextStyles.nameBadges),
+                child: Text(b, style: AppTextStyles.nameBadges),
               )),
         ],
       ],

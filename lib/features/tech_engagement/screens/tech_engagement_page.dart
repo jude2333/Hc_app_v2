@@ -72,20 +72,13 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
           children: [
-            // 1. Controls Row (Date + Toggle)
             _buildControlsRow(state, notifier, isMobile),
             const SizedBox(height: 12),
-
-            // 2. Aggregates Card
             if (!state.isLoading)
               _buildAggregatesCard(state.aggregates, isMobile),
             const SizedBox(height: 12),
-
-            // 3. Search Bar
             _buildSearchBar(notifier),
             const SizedBox(height: 12),
-
-            // 4. Main Content (Responsive)
             Expanded(
               child: isMobile
                   ? TechMobileView(
@@ -107,7 +100,6 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
       TechEngagementNotifier notifier, bool isMobile) {
     return Row(
       children: [
-        // Date Picker Button
         InkWell(
           onTap: () async {
             final picked = await showDatePicker(
@@ -144,8 +136,6 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
           ),
         ),
         SizedBox(width: isMobile ? 8 : 16),
-
-        // Month Toggle
         Row(
           children: [
             Transform.scale(
@@ -175,7 +165,6 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
       ),
       child: Column(
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -192,7 +181,6 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
               ),
             ),
           ),
-          // Stats Row (Scrollable on mobile)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -222,7 +210,6 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
               ],
             ),
           ),
-          // Total Excluding
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(

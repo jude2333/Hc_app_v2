@@ -716,4 +716,120 @@ class WorkOrder {
         ? DateTime.tryParse(val) ?? DateTime.now()
         : DateTime.now();
   }
+
+  /// Factory to create WorkOrder from a parsed doc map (e.g., from search results)
+  /// This handles the format where the doc fields are at the top level,
+  /// unlike fromRow which expects a database row with a separate 'doc' JSON string
+  factory WorkOrder.fromDocMap(Map<String, dynamic> docMap) {
+    // Parse appointment_date which is in dd-MM-yyyy format
+    DateTime visitDate = DateTime.now();
+    final dateStr = docMap['appointment_date']?.toString() ?? '';
+    if (dateStr.isNotEmpty) {
+      try {
+        final parts = dateStr.split('-');
+        if (parts.length == 3) {
+          if (parts[0].length == 4) {
+            // yyyy-MM-dd format
+            visitDate = DateTime(
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+              int.parse(parts[2]),
+            );
+          } else {
+            // dd-MM-yyyy format
+            visitDate = DateTime(
+              int.parse(parts[2]),
+              int.parse(parts[1]),
+              int.parse(parts[0]),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Error parsing date in fromDocMap: $e');
+      }
+    }
+
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    final docId = docMap['_id']?.toString() ??
+        'search_copy:${DateTime.now().millisecondsSinceEpoch}';
+
+    // Parse numeric fields
+    int? b2bClientId;
+    final b2bVal = docMap['b2b_client_id'];
+    if (b2bVal != null && b2bVal != 0 && b2bVal != '') {
+      b2bClientId = int.tryParse(b2bVal.toString());
+    }
+
+    int? assignedId;
+    final assignedVal = docMap['assigned_id'];
+    if (assignedVal != null && assignedVal != 0 && assignedVal != '') {
+      assignedId = int.tryParse(assignedVal.toString());
+    }
+
+    int? managerId;
+    final managerVal = docMap['manager_id'];
+    if (managerVal != null && managerVal != '' && managerVal != 0) {
+      managerId = int.tryParse(managerVal.toString());
+    }
+
+    int? tenantId;
+    final tenantVal = docMap['tenant_id'];
+    if (tenantVal != null && tenantVal != '' && tenantVal != 0) {
+      tenantId = int.tryParse(tenantVal.toString());
+    }
+
+    // Parse amounts
+    double billAmount = 0.0;
+    final totalVal = docMap['total'];
+    if (totalVal != null) {
+      billAmount = double.tryParse(totalVal.toString()) ?? 0.0;
+    }
+
+    double receivedAmount = 0.0;
+    final receivedVal = docMap['amount_received'];
+    if (receivedVal != null) {
+      receivedAmount = double.tryParse(receivedVal.toString()) ?? 0.0;
+    }
+
+    double discountAmount = 0.0;
+    final discountVal = docMap['discount'];
+    if (discountVal != null) {
+      discountAmount = double.tryParse(discountVal.toString()) ?? 0.0;
+    }
+
+    // Build a proper docMap with all required fields
+    final fullDocMap = Map<String, dynamic>.from(docMap);
+
+    return WorkOrder(
+      id: id,
+      tenantId: tenantId,
+      hcpmId: null,
+      docId: docId,
+      patientName: docMap['name']?.toString() ?? '',
+      visitDate: visitDate,
+      visitTime: docMap['appointment_time']?.toString() ?? '',
+      doctorName: docMap['doctor_name']?.toString() ?? '',
+      proId: null,
+      managerId: managerId,
+      managerName: docMap['manager_name']?.toString() ?? '',
+      assignedId: assignedId,
+      assignedTo: docMap['assigned_to']?.toString() ?? '',
+      b2bClientId: b2bClientId,
+      b2bClientName: docMap['b2b_client_name']?.toString() ?? '',
+      status: docMap['status']?.toString() ?? 'unassigned',
+      serverStatus: docMap['server_status']?.toString() ?? 'waiting',
+      billAmount: billAmount,
+      receivedAmount: receivedAmount,
+      discountAmount: discountAmount,
+      doc: jsonEncode(fullDocMap),
+      parsedDocMap: Map.unmodifiable(fullDocMap),
+      billNumber: docMap['bill_number']?.toString() ?? '',
+      labNumber: docMap['lab_number']?.toString() ?? '',
+      visible: true,
+      createdBy: docMap['manager_name']?.toString() ?? '',
+      createdAt: DateTime.now(),
+      lastUpdatedBy: docMap['manager_name']?.toString() ?? '',
+      lastUpdatedAt: DateTime.now(),
+    );
+  }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Table widget to display allocated areas for a user.
 class AllocatedAreasTable extends StatelessWidget {
   final List<dynamic> areas;
 

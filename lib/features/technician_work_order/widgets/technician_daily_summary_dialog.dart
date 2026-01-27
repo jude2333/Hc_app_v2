@@ -1,7 +1,3 @@
-// Technician Daily Summary Dialog
-// Matches Vue's tech_engagement.vue - shows technician's own daily summary
-// Uses feature-first architecture: Provider → Repository → PowerSyncService
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,27 +7,22 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 
-// --- State Provider for Selected Date ---
 final _selectedDateProvider = StateProvider<DateTime>(
   (ref) => Settings.development ? DateTime(2022, 12, 14) : DateTime.now(),
 );
 
-// --- Provider for Technician Daily Summary Data ---
-// Uses TechnicianWorkOrderProvider → Repository → PowerSyncService
 final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,
     ({String techId, String dateStr})>((ref, params) async {
   final provider = ref.read(technicianWorkOrderProvider);
 
-  // Get orders for technician on specific date via provider
   final orders = await provider.getDailyOrders(params.techId, params.dateStr);
 
-  // Calculate summary stats (matching Vue logic)
   int totalAssigned = 0;
   int totalFinished = 0;
   int totalCancelled = 0;
   int totalPending = 0;
   double totalAmount = 0;
-  double amountCollected = 0; // Remitted (handed over)
+  double amountCollected = 0;
   double amountAccepted = 0;
   List<String> times = [];
 
@@ -47,27 +38,22 @@ final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,
       totalPending++;
     }
 
-    // Parse doc JSON for additional fields
     final doc = jsonDecode(order['doc']?.toString() ?? '{}');
 
-    // Time tracking
     final visitTime = order['visit_time']?.toString() ?? '';
     if (visitTime.isNotEmpty) {
       times.add(visitTime);
     }
 
-    // Amount tracking
     final amountReceived =
         double.tryParse(order['received_amount']?.toString() ?? '0') ?? 0;
     if (amountReceived > 0) {
       totalAmount += amountReceived;
 
-      // Remittance = handed over by technician
       if (doc['remittance'] == true) {
         amountCollected += amountReceived;
       }
 
-      // Accepted = manager accepted the remittance
       if (doc['accept_remittance'] == true) {
         amountAccepted += amountReceived;
       }
@@ -93,15 +79,13 @@ final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,
 class TechnicianDailySummaryDialog extends ConsumerWidget {
   const TechnicianDailySummaryDialog({super.key});
 
-  /// Generate suitable dates list matching Vue logic:
-  /// Tomorrow (+1), Today (0), Yesterday (-1), ... up to (-5)
   List<DateTime> _getSuitableDates() {
     final baseDate =
         Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
     return [
-      baseDate.add(const Duration(days: 1)), // Tomorrow
-      baseDate, // Today
-      baseDate.subtract(const Duration(days: 1)), // Yesterday
+      baseDate.add(const Duration(days: 1)),
+      baseDate,
+      baseDate.subtract(const Duration(days: 1)),
       baseDate.subtract(const Duration(days: 2)),
       baseDate.subtract(const Duration(days: 3)),
       baseDate.subtract(const Duration(days: 4)),
@@ -156,7 +140,6 @@ class TechnicianDailySummaryDialog extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // Date selector
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -186,8 +169,6 @@ class TechnicianDailySummaryDialog extends ConsumerWidget {
               ],
             ),
           ),
-
-          // Summary content
           Expanded(
             child: summaryAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),

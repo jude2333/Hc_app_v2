@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
+
 import 'dart:html' as html;
-// ignore: avoid_web_libraries_in_flutter
+
 import 'dart:ui_web' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -353,20 +353,16 @@ class ManagerExpandedContent extends StatelessWidget {
     );
   }
 
-  /// View or download a file using the file picker dialog
   void _viewFile(BuildContext context, String path) {
     if (path.isEmpty) return;
 
-    // Parse multiple files if comma-separated
     final files = path.contains(',')
         ? path.split(',').map((f) => f.trim()).toList()
         : [path];
 
     if (files.length == 1) {
-      // Single file - open directly
       _openFileViewer(context, files.first);
     } else {
-      // Multiple files - show picker
       FilePickerDialog.show(
         context,
         files: files,
@@ -385,7 +381,6 @@ class ManagerExpandedContent extends StatelessWidget {
   void _openFileViewer(BuildContext context, String path) async {
     final messenger = ScaffoldMessenger.of(context);
 
-    // Show loading
     messenger.showSnackBar(
       SnackBar(
         content: Row(
@@ -405,18 +400,11 @@ class ManagerExpandedContent extends StatelessWidget {
     );
 
     try {
-      // Build the S3 URL for network image/PDF
-      // Note: bucket and key can be used with FileService for actual S3 download
-      // final (bucket, key) = FileService.parseS3Path(path);
-
-      // For images, we can use a signed URL approach or proxy URL
-      // For now, we'll construct a proxy URL through the node server
       final fileName = FileService.getFileName(path);
 
       messenger.hideCurrentSnackBar();
 
       if (FileService.isPdf(path)) {
-        // For PDFs - open full screen PDF viewer
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -427,8 +415,6 @@ class ManagerExpandedContent extends StatelessWidget {
           ),
         );
       } else if (FileService.isImage(path)) {
-        // For images - show full screen viewer with network image
-        // We'll construct a URL that goes through our backend proxy
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -460,7 +446,6 @@ class ManagerExpandedContent extends StatelessWidget {
         ),
       ),
     );
-    // TODO: Implement actual download using FileService.downloadAndOpen(context, path);
   }
 
   String _getName(dynamic name) {
@@ -476,11 +461,6 @@ class ManagerExpandedContent extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// COMPACT CHIP WIDGETS (matching status chip style)
-// ============================================================================
-
-/// Bordered chip (outline only) - like Status chip
 class _BorderedChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -504,7 +484,6 @@ class _BorderedChip extends StatelessWidget {
   }
 }
 
-/// Filled chip (background color) - like Server Status chip
 class _FilledChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -528,7 +507,6 @@ class _FilledChip extends StatelessWidget {
   }
 }
 
-/// Label chip (for section headers)
 class _LabelChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -553,7 +531,6 @@ class _LabelChip extends StatelessWidget {
   }
 }
 
-/// Clickable action chip
 class _ActionLinkChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -594,7 +571,6 @@ class _ActionLinkChip extends StatelessWidget {
   }
 }
 
-/// Full screen image viewer that loads from S3
 class _FullScreenImageViewer extends ConsumerStatefulWidget {
   final String s3Path;
   final String title;
@@ -623,12 +599,10 @@ class _FullScreenImageViewerState
 
   Future<void> _loadImage() async {
     try {
-      // Use S3FileService to download the image
       final s3Service = ref.read(s3FileServiceProvider);
       final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
       if (bytes.length < 1000) {
-        // Small response likely indicates an error
         throw Exception('Invalid response from server');
       }
 
@@ -729,8 +703,6 @@ class _FullScreenImageViewerState
   }
 }
 
-/// Full screen PDF viewer that loads from S3
-/// Uses web-compatible approach for Chrome/web platform
 class _FullScreenPdfViewer extends ConsumerStatefulWidget {
   final String s3Path;
   final String title;
@@ -762,16 +734,12 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
 
   @override
   void dispose() {
-    // Clean up blob URL if created
-    if (_blobUrl != null && kIsWeb) {
-      // Web cleanup happens automatically
-    }
+    if (_blobUrl != null && kIsWeb) {}
     super.dispose();
   }
 
   Future<void> _loadPdf() async {
     try {
-      // Use S3FileService to download the PDF
       final s3Service = ref.read(s3FileServiceProvider);
       final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
@@ -780,14 +748,12 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
       }
 
       if (kIsWeb) {
-        // For web, create a blob URL and use iframe
         _pdfBytes = bytes;
         _blobUrl = _createBlobUrl(bytes);
         setState(() {
           _isLoading = false;
         });
       } else {
-        // For mobile, save to temp file
         final dir = await getTemporaryDirectory();
         final fileName = FileService.getFileName(widget.s3Path);
         final file = File('${dir.path}/$fileName');
@@ -808,7 +774,6 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
 
   String _createBlobUrl(Uint8List bytes) {
     if (kIsWeb) {
-      // Use dart:html for web
       final blob = html.Blob([bytes], 'application/pdf');
       return html.Url.createObjectUrlFromBlob(blob);
     }
@@ -847,7 +812,6 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
 
   void _downloadPdf() {
     if (kIsWeb && _pdfBytes != null) {
-      // Trigger download on web
       final blob = html.Blob([_pdfBytes!], 'application/pdf');
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
@@ -906,10 +870,7 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
       );
     }
 
-    // Web: Use iframe with blob URL
     if (kIsWeb && _blobUrl != null) {
-      // Register view factory for web
-      // ignore: undefined_prefixed_name
       ui.platformViewRegistry.registerViewFactory(
         'pdf-viewer-${widget.s3Path.hashCode}',
         (int viewId) => html.IFrameElement()
@@ -924,7 +885,6 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
       );
     }
 
-    // Mobile: Use PDFView
     if (_localPdfPath != null) {
       return PDFView(
         filePath: _localPdfPath!,

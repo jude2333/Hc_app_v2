@@ -8,7 +8,6 @@ import '../widgets/search_skeleton.dart';
 import '../widgets/search_mobile_view.dart';
 import '../widgets/search_desktop_table.dart';
 
-/// Main search page with responsive design and performance optimizations
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
@@ -20,7 +19,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   @override
   void initState() {
     super.initState();
-    // Non-blocking initialization - clear previous results
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(searchProvider.notifier).clearResults();
     });
@@ -36,15 +35,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           const SearchHeader(),
-
-          // Search bar panel
           const SearchBarPanel(),
-
           SizedBox(height: AppSpacing.md),
-
-          // Content area
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -57,12 +50,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _buildContent(SearchState state, bool isMobile) {
-    // Loading state - show skeleton
     if (state.isLoading) {
       return SearchSkeleton(isMobile: isMobile);
     }
 
-    // Error state
     if (state.error != null && state.results.isEmpty) {
       return _buildMessageState(
         icon: Icons.info_outline,
@@ -73,12 +64,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       );
     }
 
-    // Empty state - no search yet
     if (state.results.isEmpty) {
       return _buildEmptyState();
     }
 
-    // Results
     return isMobile
         ? SearchMobileView(results: state.results)
         : SearchDesktopTable(results: state.results);

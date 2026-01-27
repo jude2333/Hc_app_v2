@@ -21,12 +21,10 @@ class _EditWorkOrderDialogState extends ConsumerState<EditWorkOrderDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
 
-  // Controllers
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   late TextEditingController _mobileController;
 
-  // State
   String _salutation = 'Mr';
   String _gender = 'Male';
 
@@ -126,7 +124,6 @@ class _EditWorkOrderDialogState extends ConsumerState<EditWorkOrderDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // Responsive Calculation
     final width = MediaQuery.of(context).size.width;
     final isWeb = width > 600;
 

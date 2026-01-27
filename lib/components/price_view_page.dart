@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/features/price_list/price_list.dart';
 
-// Shared Widgets
 import '../features/core/widgets/common/common_widgets.dart';
 
 class PriceViewPage extends ConsumerWidget {
@@ -103,7 +102,6 @@ class PriceViewPage extends ConsumerWidget {
     );
   }
 
-  // ---------------- MOBILE VIEW (Refactored to match Manager Layout) ----------------
   Widget _buildMobileList(BuildContext context, List<PriceListItem> items) {
     if (items.isEmpty) {
       return const Center(
@@ -164,7 +162,6 @@ class PriceViewPage extends ConsumerWidget {
     );
   }
 
-  // ---------------- DESKTOP VIEW (Optimized Virtual Table) ----------------
   Widget _buildDesktopVirtualTable(
       BuildContext context, List<PriceListItem> items) {
     return Padding(
@@ -175,7 +172,6 @@ class PriceViewPage extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -197,8 +193,6 @@ class PriceViewPage extends ConsumerWidget {
               ),
             ),
             const Divider(height: 1),
-
-            // Virtual List
             Expanded(
               child: ListView.separated(
                 itemCount: items.length,
@@ -217,7 +211,6 @@ class PriceViewPage extends ConsumerWidget {
   }
 }
 
-// Optimized Row Widget
 class _DesktopExpandableRow extends StatefulWidget {
   final PriceListItem item;
   final NumberFormat formatter;
@@ -380,7 +373,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header: Dept Chip + Name
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -415,12 +407,9 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Prices Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Base Price (Key info)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -441,7 +430,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                         ],
                       ),
-                      // Min Price
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -462,7 +450,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                         ],
                       ),
-                      // CGHS
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

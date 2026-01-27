@@ -268,7 +268,6 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
       );
     }
 
-    // Desktop skeleton
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
@@ -581,10 +580,6 @@ class _ExpandedDetails extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// Mobile View Classes
-// ============================================================================
-
 class ManagerPriceMobileView extends StatelessWidget {
   final List<PriceListItem> items;
   final NumberFormat formatter;
@@ -714,7 +709,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header: Dept Chip + Name
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -749,12 +743,9 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Prices Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Base Price (Key info)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -775,7 +766,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                         ],
                       ),
-                      // Min Price
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -796,7 +786,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                         ],
                       ),
-                      // CGHS
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -817,7 +806,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                         ],
                       ),
-                      // Expand Arrow
                       AnimatedRotation(
                         turns: _isExpanded ? 0.5 : 0,
                         duration: const Duration(milliseconds: 200),
@@ -832,13 +820,10 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
               ),
             ),
           ),
-
-          // Actions and Expanded Details
           if (_isExpanded)
             Column(
               children: [
                 const Divider(height: 1),
-                // Actions (Edit/Delete)
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -868,7 +853,6 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                   ),
                 ),
                 const Divider(height: 1),
-                // Reuse generic expanded details
                 _ExpandedDetails(history: item.history, itemId: item.investId),
               ],
             ),

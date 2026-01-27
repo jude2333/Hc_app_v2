@@ -9,14 +9,12 @@ import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 import '../models/auth_state.dart';
 
-/// Repository for authentication-related API and database operations
 class AuthRepository {
   final PostgresService _postgresService;
   final Ref _ref;
 
   AuthRepository(this._postgresService, this._ref);
 
-  /// Send OTP to the given mobile number
   Future<void> sendOtp(String mobile) async {
     try {
       final data = {'mobile': mobile};
@@ -35,8 +33,6 @@ class AuthRepository {
     }
   }
 
-  /// Verify OTP for the given mobile number
-  /// Returns true if OTP matches
   Future<bool> verifyOtp(String mobile, String otp) async {
     try {
       final data = {
@@ -62,8 +58,6 @@ class AuthRepository {
     }
   }
 
-  /// Login with mobile number
-  /// Returns result code from database
   Future<String> login(String mobile) async {
     try {
       final result = await _postgresService.login(mobile, "");
@@ -75,7 +69,6 @@ class AuthRepository {
     }
   }
 
-  /// Fetch role names for the given role IDs
   Future<List<UserRole>> fetchRoles(List<String> roleIds) async {
     try {
       List<UserRole> roles = [];
@@ -96,7 +89,6 @@ class AuthRepository {
     }
   }
 
-  /// Get role IDs from session storage
   List<String> getRoleIdsFromSession() {
     final storage = _ref.read(storageServiceProvider);
     final roleIdsStr = storage.getFromSession("final_role");
@@ -108,7 +100,6 @@ class AuthRepository {
     return roleIdsStr.split(',');
   }
 
-  /// Save selected role to session
   Future<void> saveSelectedRole(String roleId, String roleName) async {
     final storage = _ref.read(storageServiceProvider);
     await storage.setSession("role_id", roleId);
@@ -116,26 +107,22 @@ class AuthRepository {
     debugPrint("[AuthRepository] Saved role: $roleId -> $roleName");
   }
 
-  /// Get remembered mobile from local storage
   String getRememberedMobile() {
     final storage = _ref.read(storageServiceProvider);
     return storage.getFromLocalStorage("LOGGED_IN_MOBILE");
   }
 
-  /// Save or clear remembered mobile
   Future<void> setRememberMobile(String mobile, bool remember) async {
     final storage = _ref.read(storageServiceProvider);
     await storage.setLocalStorage("LOGGED_IN_MOBILE", remember ? mobile : "");
     debugPrint("[AuthRepository] Remember mobile: $remember");
   }
 
-  /// Reload storage caches after login
   Future<void> reloadStorageCaches() async {
     final storage = _ref.read(storageServiceProvider);
     await storage.reloadCaches();
   }
 
-  /// Write login log entry
   Future<void> writeLoginLog() async {
     try {
       final storage = _ref.read(storageServiceProvider);
@@ -170,7 +157,6 @@ class AuthRepository {
   }
 }
 
-/// Provider for AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final postgresService = ref.read(postgresServiceProvider);
   return AuthRepository(postgresService, ref);

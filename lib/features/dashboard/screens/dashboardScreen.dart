@@ -285,7 +285,6 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-// Skeleton Loading Widgets
 class _SkeletonDashboard extends StatefulWidget {
   const _SkeletonDashboard();
 
@@ -339,7 +338,7 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
         bottom: 16,
       ),
       width: double.infinity,
-      height: 120, // Approximate height of header
+      height: 120,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
@@ -393,7 +392,6 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
         padding: const EdgeInsets.all(20),
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          // Stat Cards Row
           Row(
             children: [
               Expanded(
@@ -406,7 +404,6 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
             ],
           ),
           const SizedBox(height: 16),
-          // Another Stat Cards Row
           Row(
             children: [
               Expanded(
@@ -419,10 +416,8 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
             ],
           ),
           const SizedBox(height: 24),
-          // Chart Placeholder
           _SkeletonBox(width: double.infinity, height: 250, borderRadius: 16),
           const SizedBox(height: 24),
-          // List Placeholder
           _SkeletonBox(width: double.infinity, height: 60, borderRadius: 8),
           const SizedBox(height: 12),
           _SkeletonBox(width: double.infinity, height: 60, borderRadius: 8),

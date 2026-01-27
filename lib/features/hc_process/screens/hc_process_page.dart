@@ -24,14 +24,12 @@ class HCProcessPage extends ConsumerStatefulWidget {
 }
 
 class _HCProcessPageState extends ConsumerState<HCProcessPage> {
-  // Defer heavy UI build to prevent navigation jank
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Schedule initialization after the first frame to allow smooth navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
@@ -112,7 +110,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Show lightweight loading screen during navigation transition
     if (!_isInitialized) {
       return _buildLoadingScaffold();
     }
@@ -271,7 +268,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
       backgroundColor: AppColors.backgroundLight,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          // Modern gradient AppBar
           SliverAppBar(
             expandedHeight: 140,
             pinned: true,
@@ -372,10 +368,7 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
         body: SingleChildScrollView(
           child: Column(
             children: [
-              // Progress indicator
               _buildProgressIndicator(state.currentStep),
-
-              // Stepper content
               Theme(
                 data: Theme.of(context).copyWith(
                   colorScheme: ColorScheme.light(

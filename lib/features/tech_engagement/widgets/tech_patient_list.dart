@@ -17,7 +17,6 @@ class TechPatientList extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 900) {
-            // Mobile/Tablet: Scrollable
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SizedBox(
@@ -28,7 +27,6 @@ class TechPatientList extends StatelessWidget {
               ),
             );
           } else {
-            // Desktop: Full Width
             return Column(
               children: _buildTableContent(orders),
             );
@@ -40,7 +38,6 @@ class TechPatientList extends StatelessWidget {
 
   List<Widget> _buildTableContent(List<Map<String, dynamic>> orders) {
     return [
-      // Inner Header - Light Orange
       Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
@@ -62,7 +59,6 @@ class TechPatientList extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 4),
-      // Patient Rows
       ...orders.map((order) => TechPatientRow(order: order)).toList(),
     ];
   }
@@ -74,8 +70,7 @@ class TechPatientRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state =
-        ref.watch(techEngagementProvider); // Watch state for monthWise
+    final state = ref.watch(techEngagementProvider);
     final doc = jsonDecode(order['doc'] ?? '{}');
     final accepted = doc['accept_remittance'] == true;
     final amount =
@@ -86,7 +81,6 @@ class TechPatientRow extends ConsumerWidget {
     final status = order['status'] ?? '';
     final gpayRef = doc['gpay_ref']?.toString() ?? '';
 
-    // Date/Time Logic from Vue: get_date_or_time
     String timeOrDate = order['visit_time']?.toString() ?? '';
     if (state.isMonthWise) {
       final visitDate =
@@ -112,17 +106,14 @@ class TechPatientRow extends ConsumerWidget {
           TechDataCell(doc['age']?.toString() ?? '', flex: 1),
           TechDataCell(doc['mobile']?.toString() ?? '', flex: 2),
           TechDataCell(timeOrDate, flex: 1),
-          // Status Chip (Compact)
           Expanded(
             flex: 1,
             child: Center(
               child: EngagementStatusChip(status: status),
             ),
           ),
-
           TechDataCell(hcCharges, flex: 1),
           TechDataCell("${amount.toInt()}", flex: 1),
-          // Remittance Toggle (Full Logic)
           Expanded(
             flex: 1,
             child: Center(

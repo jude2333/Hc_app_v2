@@ -244,17 +244,13 @@ class AppDrawer extends ConsumerWidget {
             onPressed: () {
               Navigator.pop(context);
 
-              // 1. STOP SYNC LOOP
               ref.read(dbHandlerProvider).stopSync();
 
-              // 2. Clear Session
               ref.read(storageServiceProvider).clearSession();
 
-              // 3. Reset State
               ref.invalidate(liveNotificationProvider);
               ref.read(signedInProvider.notifier).state = false;
 
-              // 4. Navigate
               context.go('/login');
             },
             child: const Text('Logout', style: TextStyle(color: Colors.red)),

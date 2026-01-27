@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/shell_providers.dart';
-// `unreadCountsProvider` (plural) was just a proxy. I can access `unreadCountProvider` directly.
 
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 

@@ -103,7 +103,6 @@ class _AssignTechnicianDialogState
           final woTimeStr =
               "${DateFormat('dd-MM-yyyy').format(wo.visitDate)} ${wo.visitTime}";
 
-          // Parse both times
           final currentDateTime = _parseAppTime(currentTimeStr);
           final woDateTime = _parseAppTime(woTimeStr);
 
@@ -111,7 +110,6 @@ class _AssignTechnicianDialogState
             final diffMinutes =
                 woDateTime.difference(currentDateTime).inMinutes.abs();
 
-            // Check for exact same time
             if (diffMinutes == 0) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -123,7 +121,6 @@ class _AssignTechnicianDialogState
               return false;
             }
 
-            // Check for within 1 minute (Vue: if(mins >= -1 && mins <= 1))
             if (diffMinutes == 1) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -137,7 +134,7 @@ class _AssignTechnicianDialogState
           }
         } catch (e) {
           debugPrint('Error parsing time for validation: $e');
-          // Fall back to string comparison
+
           if (appointmentTime == wo.visitTime) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -154,10 +151,8 @@ class _AssignTechnicianDialogState
     return true;
   }
 
-  /// Parse appointment time string (dd-MM-yyyy HH:mm)
   DateTime? _parseAppTime(String timeStr) {
     try {
-      // Try common time formats
       final formats = [
         DateFormat('dd-MM-yyyy HH:mm'),
         DateFormat('dd-MM-yyyy H:mm'),
@@ -180,7 +175,6 @@ class _AssignTechnicianDialogState
     final techniciansAsync = ref
         .watch(techniciansProvider(_searchQuery.isEmpty ? null : _searchQuery));
 
-    // Get current work orders for validation from the provider
     final allWorkOrders = ref.watch(managerWorkOrderProvider).workOrders;
 
     return Dialog(

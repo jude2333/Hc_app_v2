@@ -5,7 +5,6 @@ import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 
-// Shared Widgets
 import '../features/core/widgets/common/common_widgets.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
@@ -62,7 +61,6 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
       ),
       body: Column(
         children: [
-          // 1. Date Selector
           Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
@@ -82,7 +80,7 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
                     child: DropdownButton<DateTime>(
                       value: _suitableDates.contains(selectedDate)
                           ? selectedDate
-                          : _suitableDates[1], // Fallback to today
+                          : _suitableDates[1],
                       icon: const Icon(Icons.calendar_today,
                           size: 18, color: Colors.red),
                       items: _suitableDates.map((date) {
@@ -103,8 +101,6 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
               ],
             ),
           ),
-
-          // 2. Content
           Expanded(
             child: asyncOrders.when(
               loading: () => const Center(
@@ -170,7 +166,7 @@ class VirtualCancelledTable extends StatelessWidget {
                 FlexHeaderCell('Time', flex: 2),
                 FlexHeaderCell('Status', flex: 3),
                 FlexHeaderCell('Assigned To', flex: 4),
-                SizedBox(width: 40), // Icon space
+                SizedBox(width: 40),
               ],
             ),
           ),
@@ -237,8 +233,6 @@ class _CancelledExpandableRowState extends State<_CancelledExpandableRow> {
                   FlexDataCell(wo.visitTime, flex: 2),
                   FlexDataCell(wo.status, flex: 3, color: Colors.red),
                   FlexDataCell(wo.assignedTo, flex: 4),
-
-                  // Expand Icon
                   SizedBox(
                     width: 40,
                     child: Icon(
@@ -277,7 +271,6 @@ class _ExpandedContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Details Table
           Table(
             columnWidths: const {
               0: FlexColumnWidth(2),
@@ -303,9 +296,7 @@ class _ExpandedContent extends StatelessWidget {
               ]),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Row(
             children: [
               const Text("Cancellation Reason: ",
@@ -373,7 +364,6 @@ class CancelledMobileView extends ConsumerWidget {
 
     return Column(
       children: [
-        // Results count
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
@@ -389,8 +379,6 @@ class CancelledMobileView extends ConsumerWidget {
             ],
           ),
         ),
-
-        // Work order cards
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -441,7 +429,6 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
       ),
       child: Column(
         children: [
-          // Main card content (always visible)
           InkWell(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
             borderRadius: BorderRadius.circular(16),
@@ -450,10 +437,8 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header row: Index + Name + Expand icon
                   Row(
                     children: [
-                      // Index badge
                       Container(
                         width: 28,
                         height: 28,
@@ -473,7 +458,6 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Patient name + badges
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,7 +487,6 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
                           ],
                         ),
                       ),
-                      // Expand icon
                       AnimatedRotation(
                         turns: _isExpanded ? 0.5 : 0,
                         duration: const Duration(milliseconds: 200),
@@ -514,10 +497,7 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 12),
-
-                  // Status chips row
                   Row(
                     children: [
                       Container(
@@ -538,7 +518,6 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
                       const SizedBox(width: 8),
                       ServerChip(status: wo.serverStatus),
                       const Spacer(),
-                      // Visit time
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
@@ -569,14 +548,11 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
               ),
             ),
           ),
-
-          // Expanded content
           if (_isExpanded)
             RepaintBoundary(
               child: Column(
                 children: [
                   Divider(height: 1, color: AppColors.divider),
-                  // Expanded details
                   _ExpandedContent(workOrder: wo),
                 ],
               ),

@@ -80,7 +80,6 @@ class UsersDesktopTable extends ConsumerWidget {
   Widget _buildLoadingState() {
     return Column(
       children: [
-        // Skeleton header
         Container(
           padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -101,7 +100,6 @@ class UsersDesktopTable extends ConsumerWidget {
                     )),
           ),
         ),
-        // Skeleton rows
         Expanded(
           child: ListView.builder(
             itemCount: 8,
@@ -222,7 +220,6 @@ class UsersTableContent extends StatelessWidget {
   }
 }
 
-// Helper widgets for Skeleton Loading
 class _SkeletonTableRow extends StatefulWidget {
   @override
   State<_SkeletonTableRow> createState() => _SkeletonTableRowState();

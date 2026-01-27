@@ -5,7 +5,6 @@ import '../data/user_model.dart';
 import 'allocated_areas_table.dart';
 import 'user_actions.dart';
 
-/// A single row in the users desktop table.
 class UserTableRow extends ConsumerStatefulWidget {
   final User user;
   final int index;

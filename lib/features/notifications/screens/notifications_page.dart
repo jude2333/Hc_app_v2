@@ -18,7 +18,6 @@ class NotificationsPage extends ConsumerWidget {
     final state = ref.watch(liveNotificationProvider);
     final searchQuery = ref.watch(searchQueryProvider);
 
-    // Filter notifications based on search query
     List<Map<String, dynamic>> filteredNotifications = state.notifications;
     if (searchQuery.isNotEmpty) {
       filteredNotifications = Util.search(
@@ -31,15 +30,9 @@ class NotificationsPage extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           const NotificationHeader(),
-
-          // Search Bar
           const NotificationSearch(),
-
           const SizedBox(height: 16),
-
-          // Content
           Expanded(
             child: _buildContent(
               context,
@@ -63,12 +56,10 @@ class NotificationsPage extends ConsumerWidget {
     String? errorMessage,
     List<Map<String, dynamic>> notifications,
   ) {
-    // Show skeleton during initial load
     if (isLoading && notifications.isEmpty) {
       return const NotificationSkeleton();
     }
 
-    // Show error state
     if (errorMessage != null) {
       return Center(
         child: Column(
@@ -90,7 +81,6 @@ class NotificationsPage extends ConsumerWidget {
       );
     }
 
-    // Show empty state
     if (notifications.isEmpty) {
       return const Center(
         child: Column(
@@ -104,7 +94,6 @@ class NotificationsPage extends ConsumerWidget {
       );
     }
 
-    // Show appropriate view based on screen size
     return isMobile
         ? NotificationMobileView(notifications: notifications)
         : NotificationDesktopView(notifications: notifications);

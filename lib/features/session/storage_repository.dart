@@ -19,23 +19,20 @@ class StorageRepository {
   final _changeController = StreamController<void>.broadcast();
   Stream<void> get onStorageChanged => _changeController.stream;
 
-  /// Encrypts data with a random IV and returns base64 string with IV prepended
   String _encryptData(String data) {
     final iv = encrypt.IV.fromSecureRandom(16);
     final encrypted = _encrypter.encrypt(data, iv: iv);
-    // Prepend IV to encrypted data (IV is 16 bytes, encrypted data follows)
+
     final combined = iv.bytes + encrypted.bytes;
     return base64.encode(combined);
   }
 
-  /// Decrypts data by extracting IV from the first 16 bytes
   String _decryptData(String encryptedData) {
     final combined = base64.decode(encryptedData);
     if (combined.length < 16) {
       throw const FormatException('Invalid encrypted data: too short');
     }
 
-    // Extract IV (first 16 bytes) and encrypted data (remaining bytes)
     final iv = encrypt.IV(combined.sublist(0, 16));
     final encryptedBytes = combined.sublist(16);
     final encrypted = encrypt.Encrypted(encryptedBytes);
@@ -60,7 +57,7 @@ class StorageRepository {
         }
       } catch (e) {
         debugPrint("Error loading session: $e");
-        // Clear corrupted session data and start fresh
+
         await prefs.remove(_sessionKey);
         return {};
       }
@@ -110,7 +107,7 @@ class StorageRepository {
         }
       } catch (e) {
         debugPrint("Error loading local storage: $e");
-        // Clear corrupted local storage and start fresh
+
         await prefs.remove(_localKey);
         return {};
       }

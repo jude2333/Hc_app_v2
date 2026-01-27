@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
+
 import 'dart:html' as html;
-// ignore: avoid_web_libraries_in_flutter
+
 import 'dart:ui_web' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -11,9 +11,11 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+import 'package:anderson_crm_flutter/components/time_line_page.dart';
+import 'package:anderson_crm_flutter/models/work_order.dart';
 
-/// Expanded content for search result details
 class SearchExpandedContent extends StatelessWidget {
   final Map<String, dynamic> item;
 
@@ -32,16 +34,23 @@ class SearchExpandedContent extends StatelessWidget {
         children: [
           _buildInfoTable(context),
           SizedBox(height: AppSpacing.md),
-          if (item['pres_photo'] != null) _buildPrescriptionSection(context),
+          if (_hasPrescription()) _buildPrescriptionSection(context),
           if (item['status'] == 'cancelled') _buildCancellationSection(),
-          _buildProcessSteps(),
+          _buildProcessSteps(context),
           SizedBox(height: AppSpacing.md),
           if (item['remarks'] != null) _buildRemarksSection(),
           if (item['server_status'] == 'Billed') _buildBillInfo(),
           if (item['report_path'] != null) _buildReportSection(context),
+          SizedBox(height: AppSpacing.md),
+          _buildTimelineButton(context),
         ],
       ),
     );
+  }
+
+  bool _hasPrescription() {
+    final presPhoto = item['pres_photo'];
+    return presPhoto != null && presPhoto.toString().isNotEmpty;
   }
 
   Widget _buildInfoTable(BuildContext context) {
@@ -58,20 +67,20 @@ class SearchExpandedContent extends StatelessWidget {
         TableRow(
           decoration: BoxDecoration(color: AppColors.surfaceAlt),
           children: const [
-            _TableHeader('Address'),
-            _TableHeader('Pincode'),
-            _TableHeader('Additional Info'),
-            _TableHeader('Ref. By'),
-            _TableHeader('Email'),
+            WOTableHeader('Address'),
+            WOTableHeader('Pincode'),
+            WOTableHeader('Additional Info'),
+            WOTableHeader('Ref. By'),
+            WOTableHeader('Email'),
           ],
         ),
         TableRow(
           children: [
-            _TableCell('${item['address'] ?? ''}'),
-            _TableCell('${item['pincode'] ?? ''}'),
-            _TableCell('${item['free_text'] ?? ''}'),
-            _TableCell(_getRefBy()),
-            _TableCell('${item['email'] ?? ''}'),
+            WOTableCell('${item['address'] ?? ''}'),
+            WOTableCell('${item['pincode'] ?? ''}'),
+            WOTableCell('${item['free_text'] ?? ''}'),
+            WOTableCell(_getRefBy()),
+            WOTableCell('${item['email'] ?? ''}'),
           ],
         ),
       ],
@@ -79,14 +88,46 @@ class SearchExpandedContent extends StatelessWidget {
   }
 
   String _getRefBy() {
-    if (item['b2b_client_id'] != null) {
+    final b2bId = item['b2b_client_id'];
+    if (b2bId != null && b2bId != 0 && b2bId != '') {
       return 'B2B: ${item['b2b_client_name'] ?? ''}';
     }
-    return 'Dr. ${item['doctor_name'] ?? ''}';
+    final doctor = item['doctor_name']?.toString() ?? '';
+    if (doctor.isNotEmpty) {
+      return 'Dr. $doctor';
+    }
+    return 'Not Specified';
+  }
+
+  Widget _buildTimelineButton(BuildContext context) {
+    return _ActionLinkChip(
+      label: 'Time Line',
+      color: AppColors.secondary,
+      onTap: () {
+        try {
+          final workOrder = WorkOrder.fromDocMap(item);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TimeLinePage(workOrder: workOrder),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading timeline: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
   }
 
   Widget _buildPrescriptionSection(BuildContext context) {
     final path = item['pres_photo']?.toString() ?? '';
+    if (path.isEmpty) return const SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Wrap(
@@ -115,8 +156,11 @@ class SearchExpandedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildProcessSteps() {
+  Widget _buildProcessSteps(BuildContext context) {
     final process = item['process'] as Map<String, dynamic>? ?? {};
+    bool isStepDone(String? key) =>
+        process[key] != null && process[key].toString().isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -129,47 +173,147 @@ class SearchExpandedContent extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppSpacing.xs),
-        _buildStep('Step-1', process['first_step'], 'Delay'),
-        _buildStep('Step-2', process['second_step'], 'Proforma'),
-        _buildStep('Step-3', process['third_step'], 'Bill'),
-        _buildStep('Step-4', process['fourth_step'], 'OTP'),
-        _buildStep('Step-5', process['fifth_step'], 'Photos'),
+        _buildGenericStep(
+          'Step-1',
+          isStepDone('first_step')
+              ? 'Delay: ${process['first_step']}'
+              : 'Pending / No Delay',
+          isDone: isStepDone('first_step'),
+        ),
+        SizedBox(height: AppSpacing.xs),
+        _buildProformaStep(context, process['second_step']),
+        SizedBox(height: AppSpacing.xs),
+        _buildGenericStep(
+          'Step-3',
+          isStepDone('third_step')
+              ? 'Bill: ${process['third_step']}'
+              : 'Pending',
+          isDone: isStepDone('third_step'),
+        ),
+        SizedBox(height: AppSpacing.xs),
+        _buildGenericStep(
+          'Step-4',
+          isStepDone('fourth_step')
+              ? 'OTP: ${process['fourth_step']}'
+              : 'Pending',
+          isDone: isStepDone('fourth_step'),
+        ),
+        SizedBox(height: AppSpacing.xs),
+        _buildPrescriptionPhotoStep(context, process['fifth_step']),
       ],
     );
   }
 
-  Widget _buildStep(String label, dynamic value, String context) {
-    final isDone = value != null && value.toString().isNotEmpty;
-    return Padding(
-      padding: EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Row(
-        children: [
-          _BorderedChip(
-            label: label,
-            color: isDone ? AppColors.primary : AppColors.textHint,
+  Widget _buildGenericStep(String label, String content,
+      {bool isDone = false}) {
+    return Row(
+      children: [
+        _BorderedChip(
+          label: label,
+          color: isDone ? AppColors.primary : AppColors.textHint,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(
+          child: isDone
+              ? _FilledChip(label: content, color: AppColors.success)
+              : Text(
+                  content,
+                  style: TextStyle(fontSize: 11, color: AppColors.textHint),
+                  overflow: TextOverflow.ellipsis,
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProformaStep(BuildContext context, dynamic stepData) {
+    final isDone = stepData != null && stepData.toString().isNotEmpty;
+    String statusText = 'Pending';
+
+    if (isDone) {
+      final b2bId = item['b2b_client_id'];
+      final credit = item['credit'];
+
+      if (b2bId != null && b2bId != 0 && b2bId != '') {
+        statusText = 'Not Sent (B2B)';
+      } else if (credit == 1) {
+        statusText = 'Not Sent (Credit)';
+      } else if (credit == 2) {
+        statusText = 'Not Sent (Trial)';
+      } else {
+        statusText = 'Sent';
+      }
+    }
+
+    return Row(
+      children: [
+        _BorderedChip(
+          label: 'Step-2',
+          color: isDone ? AppColors.primary : AppColors.textHint,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          'Proforma:',
+          style: TextStyle(
+            fontSize: 11,
+            color: isDone ? AppColors.textPrimary : AppColors.textHint,
           ),
-          SizedBox(width: AppSpacing.sm),
-          Flexible(
-            child: isDone
-                ? _FilledChip(
-                    label: '$context: $value',
-                    color: AppColors.success,
-                  )
-                : Text(
-                    'Pending',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textHint,
-                    ),
-                  ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        if (isDone) ...[
+          _FilledChip(
+            label: statusText,
+            color: statusText == 'Sent' ? AppColors.success : AppColors.error,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          _ActionLinkChip(
+            label: 'View PDF',
+            color: AppColors.secondary,
+            onTap: () => _viewFile(context, stepData.toString()),
           ),
         ],
-      ),
+        if (!isDone)
+          Text('Pending',
+              style: TextStyle(fontSize: 11, color: AppColors.textHint)),
+      ],
+    );
+  }
+
+  Widget _buildPrescriptionPhotoStep(BuildContext context, dynamic stepData) {
+    final isDone = stepData != null && stepData.toString().isNotEmpty;
+    final path = stepData?.toString() ?? '';
+
+    return Row(
+      children: [
+        _BorderedChip(
+          label: 'Step-5',
+          color: isDone ? AppColors.primary : AppColors.textHint,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          'Photos:',
+          style: TextStyle(
+            fontSize: 11,
+            color: isDone ? AppColors.textPrimary : AppColors.textHint,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        if (isDone)
+          _ActionLinkChip(
+            label: _getPrescriptionFileNames(path),
+            color: AppColors.secondary,
+            onTap: () => _viewFile(context, path),
+          ),
+        if (!isDone)
+          Text('Pending',
+              style: TextStyle(fontSize: 11, color: AppColors.textHint)),
+      ],
     );
   }
 
   Widget _buildRemarksSection() {
     final remarks = item['remarks']?.toString() ?? '';
+    final hasRemarks = remarks.trim().isNotEmpty;
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
@@ -179,8 +323,11 @@ class SearchExpandedContent extends StatelessWidget {
           SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              remarks,
-              style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+              hasRemarks ? remarks : 'No Remarks',
+              style: TextStyle(
+                fontSize: 12,
+                color: hasRemarks ? AppColors.textPrimary : AppColors.textHint,
+              ),
             ),
           ),
         ],
@@ -209,16 +356,14 @@ class SearchExpandedContent extends StatelessWidget {
   }
 
   Widget _buildReportSection(BuildContext context) {
+    final status = '${item['report_status'] ?? ''}';
     final reportPath = item['report_path']?.toString() ?? '';
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.xs,
       children: [
         _LabelChip(label: 'Lab Result', color: AppColors.primary),
-        _FilledChip(
-          label: '${item['report_status'] ?? ''}',
-          color: AppColors.success,
-        ),
+        _FilledChip(label: status, color: AppColors.success),
         _ActionLinkChip(
           label: 'Report PDF',
           color: AppColors.secondary,
@@ -234,20 +379,22 @@ class SearchExpandedContent extends StatelessWidget {
     return n.contains('/') ? n.substring(n.lastIndexOf('/') + 1) : n;
   }
 
-  /// View or download a file using the file picker dialog
+  String _getPrescriptionFileNames(String name) {
+    if (name.isEmpty) return '';
+    List<String> a = name.contains(',') ? name.split(',') : [name];
+    return a.length > 1 ? '${a.length} files' : _getName(name);
+  }
+
   void _viewFile(BuildContext context, String path) {
     if (path.isEmpty) return;
 
-    // Parse multiple files if comma-separated
     final files = path.contains(',')
         ? path.split(',').map((f) => f.trim()).toList()
         : [path];
 
     if (files.length == 1) {
-      // Single file - open directly
       _openFileViewer(context, files.first);
     } else {
-      // Multiple files - show picker
       FilePickerDialog.show(
         context,
         files: files,
@@ -266,7 +413,6 @@ class SearchExpandedContent extends StatelessWidget {
   void _openFileViewer(BuildContext context, String path) async {
     final messenger = ScaffoldMessenger.of(context);
 
-    // Show loading
     messenger.showSnackBar(
       SnackBar(
         content: Row(
@@ -290,7 +436,6 @@ class SearchExpandedContent extends StatelessWidget {
       messenger.hideCurrentSnackBar();
 
       if (FileService.isPdf(path)) {
-        // For PDFs - open full screen PDF viewer
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -301,7 +446,6 @@ class SearchExpandedContent extends StatelessWidget {
           ),
         );
       } else if (FileService.isImage(path)) {
-        // For images - show full screen viewer
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -336,11 +480,6 @@ class SearchExpandedContent extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// COMPACT CHIP WIDGETS (matching status chip style)
-// ============================================================================
-
-/// Bordered chip (outline only) - like Status chip
 class _BorderedChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -364,7 +503,6 @@ class _BorderedChip extends StatelessWidget {
   }
 }
 
-/// Filled chip (background color) - like Server Status chip
 class _FilledChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -389,7 +527,6 @@ class _FilledChip extends StatelessWidget {
   }
 }
 
-/// Label chip (for section headers)
 class _LabelChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -414,7 +551,6 @@ class _LabelChip extends StatelessWidget {
   }
 }
 
-/// Clickable action chip
 class _ActionLinkChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -455,36 +591,6 @@ class _ActionLinkChip extends StatelessWidget {
   }
 }
 
-class _TableHeader extends StatelessWidget {
-  final String text;
-  const _TableHeader(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(AppSpacing.sm),
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-      ),
-    );
-  }
-}
-
-class _TableCell extends StatelessWidget {
-  final String text;
-  const _TableCell(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(AppSpacing.sm),
-      child: Text(text, style: const TextStyle(fontSize: 12)),
-    );
-  }
-}
-
-/// Full screen image viewer that loads from S3
 class _FullScreenImageViewer extends ConsumerStatefulWidget {
   final String s3Path;
   final String title;
@@ -540,6 +646,16 @@ class _FullScreenImageViewerState
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: Text(widget.title, style: const TextStyle(fontSize: 14)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Downloading ${widget.title}...')),
+              );
+            },
+          ),
+        ],
       ),
       body: _buildBody(),
     );
@@ -561,13 +677,31 @@ class _FullScreenImageViewerState
 
     if (_error != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_error!, style: TextStyle(color: Colors.grey)),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.image_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'Image Preview',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.s3Path,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Go Back'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -577,7 +711,9 @@ class _FullScreenImageViewerState
         panEnabled: true,
         minScale: 0.5,
         maxScale: 4.0,
-        child: Center(child: Image.memory(_imageBytes!)),
+        child: Center(
+          child: Image.memory(_imageBytes!),
+        ),
       );
     }
 
@@ -587,7 +723,6 @@ class _FullScreenImageViewerState
   }
 }
 
-/// Full screen PDF viewer that loads from S3
 class _FullScreenPdfViewer extends ConsumerStatefulWidget {
   final String s3Path;
   final String title;
@@ -617,6 +752,12 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
     _loadPdf();
   }
 
+  @override
+  void dispose() {
+    if (_blobUrl != null && kIsWeb) {}
+    super.dispose();
+  }
+
   Future<void> _loadPdf() async {
     try {
       final s3Service = ref.read(s3FileServiceProvider);
@@ -628,14 +769,16 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
 
       if (kIsWeb) {
         _pdfBytes = bytes;
-        final blob = html.Blob([bytes], 'application/pdf');
-        _blobUrl = html.Url.createObjectUrlFromBlob(blob);
-        setState(() => _isLoading = false);
+        _blobUrl = _createBlobUrl(bytes);
+        setState(() {
+          _isLoading = false;
+        });
       } else {
         final dir = await getTemporaryDirectory();
         final fileName = FileService.getFileName(widget.s3Path);
         final file = File('${dir.path}/$fileName');
         await file.writeAsBytes(bytes);
+
         setState(() {
           _localPdfPath = file.path;
           _isLoading = false;
@@ -649,6 +792,14 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
     }
   }
 
+  String _createBlobUrl(Uint8List bytes) {
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], 'application/pdf');
+      return html.Url.createObjectUrlFromBlob(blob);
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -656,7 +807,27 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
       appBar: AppBar(
         backgroundColor: Colors.grey.shade900,
         foregroundColor: Colors.white,
-        title: Text(widget.title, style: const TextStyle(fontSize: 14)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.title, style: const TextStyle(fontSize: 14)),
+            if (_totalPages > 0 && !kIsWeb)
+              Text(
+                'Page ${_currentPage + 1} of $_totalPages',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+              ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Downloading ${widget.title}...')),
+              );
+            },
+          ),
+        ],
       ),
       body: _buildBody(),
     );
@@ -678,19 +849,36 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
 
     if (_error != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_error!, style: TextStyle(color: Colors.grey)),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.picture_as_pdf, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text(
+                'PDF Preview',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.s3Path,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Go Back'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (kIsWeb && _blobUrl != null) {
-      // ignore: undefined_prefixed_name
       ui.platformViewRegistry.registerViewFactory(
         'pdf-viewer-${widget.s3Path.hashCode}',
         (int viewId) => html.IFrameElement()

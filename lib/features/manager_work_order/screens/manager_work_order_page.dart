@@ -27,7 +27,6 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
   void initState() {
     super.initState();
 
-    // Waits for first frame then defers heavy work for navigation animation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (!mounted) return;
@@ -53,7 +52,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
       final off = entry.value;
       final date = today.add(Duration(days: off));
       String label;
-      bool isFuturePlus = idx == 0; // First chip is "6+ Days"
+      bool isFuturePlus = idx == 0;
 
       if (isFuturePlus) {
         label = '6+ Days\n${DateFormat('MM-dd').format(date)}';
@@ -231,7 +230,6 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
       );
     }
 
-    // Mobile view with cards
     if (isMobile) {
       return ManagerMobileView(
         workOrders: ref.watch(managerFilteredWorkOrdersPod),
@@ -241,7 +239,6 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
       );
     }
 
-    // Desktop view with table - uses separated ManagerDesktopView widget
     return Padding(
       padding:
           EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, 0),
@@ -349,8 +346,6 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
   }
 }
 
-// Helper classes for date chips
-
 class _DateChipProps {
   final DateTime date;
   final String label;
@@ -375,7 +370,6 @@ class _ModernDateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Parse the label to get display text
     final lines = label.split('\n');
     final hasTitle = lines.length > 1;
     final title = hasTitle ? lines[0] : null;

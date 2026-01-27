@@ -3,14 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 
-/// Isolate-safe JSON parsing function
 List<Map<String, dynamic>> _parseResults(List<dynamic> rawData) {
   final List<Map<String, dynamic>> results = [];
 
   for (final item in rawData) {
     try {
       if (item is Map<String, dynamic>) {
-        // For Mobile search: nested structure with hc_patient_visit_detail
         if (item.containsKey('hc_patient_visit_detail')) {
           final visits = item['hc_patient_visit_detail'] as List?;
           if (visits != null) {
@@ -21,14 +19,10 @@ List<Map<String, dynamic>> _parseResults(List<dynamic> rawData) {
               }
             }
           }
-        }
-        // For Date/Name search: flat structure with doc column
-        else if (item.containsKey('doc')) {
+        } else if (item.containsKey('doc')) {
           final parsed = _parseDocString(item['doc'].toString());
           if (parsed != null) results.add(parsed);
-        }
-        // Already parsed map
-        else {
+        } else {
           results.add(Map<String, dynamic>.from(item));
         }
       }
@@ -37,7 +31,6 @@ List<Map<String, dynamic>> _parseResults(List<dynamic> rawData) {
     }
   }
 
-  // Sort by appointment date (newest first)
   results.sort((a, b) {
     try {
       final dateA = _parseDate(a['appointment_date']?.toString() ?? '');
@@ -53,13 +46,8 @@ List<Map<String, dynamic>> _parseResults(List<dynamic> rawData) {
 
 Map<String, dynamic>? _parseDocString(String docStr) {
   try {
-    // Handle JSON string
     if (docStr.startsWith('{')) {
-      // Simple JSON parsing - the postgres driver returns it as string
-      return Map<String, dynamic>.from(
-          // Using dart:convert would require import, so we handle in the caller
-          {} // Placeholder - actual parsing happens in service
-          );
+      return Map<String, dynamic>.from({});
     }
   } catch (e) {
     debugPrint('Error parsing doc string: $e');
@@ -69,15 +57,12 @@ Map<String, dynamic>? _parseDocString(String docStr) {
 
 DateTime _parseDate(String dateStr) {
   try {
-    // Handle "DD-MM-YYYY" format
     final parts = dateStr.split('-');
     if (parts.length == 3) {
       if (parts[0].length == 4) {
-        // YYYY-MM-DD format
         return DateTime(
             int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
       } else {
-        // DD-MM-YYYY format
         return DateTime(
             int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
       }
@@ -88,12 +73,11 @@ DateTime _parseDate(String dateStr) {
   return DateTime(1970);
 }
 
-/// Search state
 class SearchState {
   final List<Map<String, dynamic>> results;
   final bool isLoading;
   final String? error;
-  final String searchType; // Mobile, Date, Name
+  final String searchType;
   final String query;
   final DateTime? selectedDate;
 
@@ -125,7 +109,6 @@ class SearchState {
   }
 }
 
-/// Search controller with performance optimizations
 class SearchController extends StateNotifier<SearchState> {
   final Ref ref;
   Timer? _debounceTimer;
@@ -159,7 +142,6 @@ class SearchController extends StateNotifier<SearchState> {
     }
   }
 
-  /// Debounced search - waits 500ms after last input
   void debounceSearch() {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
@@ -167,13 +149,11 @@ class SearchController extends StateNotifier<SearchState> {
     });
   }
 
-  /// Perform search with isolate-based parsing
   Future<void> search() async {
     final type = state.searchType;
     final query = state.query;
     final date = state.selectedDate;
 
-    // Validation
     if (type == 'Mobile') {
       if (query.length != 10) {
         state = state.copyWith(
@@ -193,7 +173,6 @@ class SearchController extends StateNotifier<SearchState> {
       return;
     }
 
-    // Start loading (non-blocking UI update)
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -202,13 +181,11 @@ class SearchController extends StateNotifier<SearchState> {
           ? '${date!.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}'
           : query;
 
-      // Fetch from PostgreSQL
       final rawResults =
           await postgresService.searchPatients(searchQuery, type);
 
       if (!mounted) return;
 
-      // Parse results in isolate for heavy JSON processing
       final parsedResults = await compute(_parseResultsWrapper, rawResults);
 
       if (!mounted) return;
@@ -241,7 +218,6 @@ class SearchController extends StateNotifier<SearchState> {
   }
 }
 
-/// Wrapper for compute isolate
 List<Map<String, dynamic>> _parseResultsWrapper(dynamic rawData) {
   if (rawData is List) {
     return _parseResults(rawData);
@@ -249,13 +225,11 @@ List<Map<String, dynamic>> _parseResultsWrapper(dynamic rawData) {
   return [];
 }
 
-/// Main provider
 final searchProvider =
     StateNotifierProvider<SearchController, SearchState>((ref) {
   return SearchController(ref);
 });
 
-/// Derived providers for UI optimization
 final searchResultsProvider = Provider<List<Map<String, dynamic>>>((ref) {
   return ref.watch(searchProvider).results;
 });
@@ -268,9 +242,7 @@ final searchErrorProvider = Provider<String?>((ref) {
   return ref.watch(searchProvider.select((s) => s.error));
 });
 
-/// Expanded rows state (page-local)
 final expandedRowsProvider = StateProvider<Set<String>>((ref) => {});
 
-/// Sort state
 final sortColumnProvider = StateProvider<String>((ref) => 'date');
 final sortAscendingProvider = StateProvider<bool>((ref) => false);

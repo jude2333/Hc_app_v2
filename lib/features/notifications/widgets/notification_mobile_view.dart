@@ -5,7 +5,6 @@ import '../providers/notifications_page_provider.dart';
 import 'notification_status_chip.dart';
 import 'notification_expanded.dart';
 
-/// Mobile view for notifications list
 class NotificationMobileView extends ConsumerWidget {
   final List<Map<String, dynamic>> notifications;
 

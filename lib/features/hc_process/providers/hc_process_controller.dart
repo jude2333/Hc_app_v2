@@ -145,7 +145,7 @@ class HCProcessController {
 
           if (difference.inMinutes > -30) {
             _notifier.setDelayReason("On Time");
-            // Defer the async work to prevent blocking navigation
+
             Future.microtask(() => afterFirstStep());
             return;
           }

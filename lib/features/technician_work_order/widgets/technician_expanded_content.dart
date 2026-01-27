@@ -58,7 +58,6 @@ class _TechnicianExpandedContentState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Address/Pincode/Additional Info/Ref By moved to View More dialog
           if (!isCancelled) ...[
             _buildActionRow('Test Items', testItems != null ? 'View' : 'Nil',
                 showAction: testItems != null,
@@ -239,7 +238,6 @@ class _TechnicianExpandedContentState
     return AppColors.textSecondary;
   }
 
-  /// Build report status row with status_in_number prefix (matching Vue behavior)
   Widget _buildReportStatusRow(WorkOrder wo, String reportStatus) {
     final statusInNumber = wo.parsedDoc['status_in_number']?.toString() ?? '';
     final displayText = statusInNumber.isNotEmpty

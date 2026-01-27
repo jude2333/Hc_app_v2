@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
+import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
 import 'search_expanded_content.dart';
 
-/// Mobile card view for search results
 class SearchMobileView extends ConsumerWidget {
   final List<Map<String, dynamic>> results;
 
@@ -81,7 +82,6 @@ class _SearchResultCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
-          // Main content
           InkWell(
             onTap: onToggle,
             borderRadius: isExpanded
@@ -111,7 +111,6 @@ class _SearchResultCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name row with index
                   Row(
                     children: [
                       Container(
@@ -149,6 +148,18 @@ class _SearchResultCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.content_copy,
+                          size: AppSizes.iconSm - 2,
+                          color: AppColors.textHint,
+                        ),
+                        onPressed: () => _copyWorkOrder(context),
+                        tooltip: 'Copy',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      SizedBox(width: AppSpacing.sm),
                       Icon(
                         isExpanded ? Icons.expand_less : Icons.expand_more,
                         color: AppColors.textHint,
@@ -156,7 +167,6 @@ class _SearchResultCard extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: AppSpacing.md),
-                  // Info row
                   Row(
                     children: [
                       Icon(Icons.phone, size: 14, color: AppColors.textHint),
@@ -178,7 +188,6 @@ class _SearchResultCard extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: AppSpacing.sm),
-                  // Status chips
                   Row(
                     children: [
                       _StatusChip(status: status),
@@ -203,7 +212,6 @@ class _SearchResultCard extends StatelessWidget {
               ),
             ),
           ),
-          // Expanded content
           if (isExpanded) SearchExpandedContent(item: item),
         ],
       ),
@@ -237,6 +245,26 @@ class _SearchResultCard extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+
+  void _copyWorkOrder(BuildContext context) {
+    try {
+      final workOrder = WorkOrder.fromDocMap(item);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddWorkOrderPage(copyFrom: workOrder),
+          fullscreenDialog: true,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error copying work order: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
