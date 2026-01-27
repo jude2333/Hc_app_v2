@@ -48,7 +48,7 @@ class ManagerDesktopView extends ConsumerWidget {
                 Expanded(
                   child: workOrders.isEmpty
                       ? Center(
-                          child: Text('No Data Available due to filtering',
+                          child: Text('No Data Available',
                               style: TextStyle(color: AppColors.textSecondary)))
                       : ListView.separated(
                           itemCount: workOrders.length,

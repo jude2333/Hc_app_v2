@@ -1,3 +1,4 @@
+# PowerSync Self-Hosted Configuration
 # Based on official PowerSync docs: https://docs.powersync.com/self-hosting
 
 # Database Replication Settings
@@ -8,7 +9,7 @@ replication:
       sslmode: disable
       publication_name: powersync
 
-# Sync Bucket Storage (MongoDB)
+# Sync Bucket Storage mongodb
 storage:
   type: mongodb
   uri: mongodb://mongo:27017/powersync_anderson?replicaSet=rs0
@@ -35,7 +36,7 @@ sync_rules:
         
 
 
-# Client Authentication - Inline JWKS (your existing RSA public key)
+# Client Authentication - Inline JWKS
 client_auth:
   jwks:
     keys:

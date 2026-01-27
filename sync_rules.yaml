@@ -12,8 +12,8 @@ bucket_definitions:
       - SELECT * FROM hc_patient_visit_detail 
         WHERE assigned_id = bucket.emp_id
           AND visible = true
-          AND visit_date >= CURRENT_DATE - INTERVAL '7 days'
-          AND visit_date <= CURRENT_DATE + INTERVAL '7 days'
+          # AND visit_date >= CURRENT_DATE - INTERVAL '7 days'
+          # AND visit_date <= CURRENT_DATE + INTERVAL '7 days'
 
   # MANAGER: All work orders for their tenant
   manager_work_orders:
@@ -33,5 +33,6 @@ bucket_definitions:
         WHERE tenant_id = bucket.tenant_id
           AND visible = true
           AND status = 'Finished'
+          AND server_status = 'Received'
           AND visit_date >= CURRENT_DATE - INTERVAL '7 days'
           AND visit_date <= CURRENT_DATE + INTERVAL '7 days'

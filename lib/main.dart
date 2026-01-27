@@ -11,7 +11,7 @@ void main() async {
 
   try {
     // Initialize Hive
-    await Hive.initFlutter();
+    // await Hive.initFlutter();
 
     // Initialize encryption (if needed)
     // await Util.initEncryption();

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../models/auth_state.dart';
 import '../widgets/otp_dialog.dart';
+import '../../theme/app_colors.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -71,11 +72,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            // colors: [
+            //   Color(0xFF0A4D68),
+            //   Color(0xFF088395),
+            //   Color(0xFF05BFDB),
+            //   Color(0xFF00FFCA),
+            // ],
             colors: [
-              Color(0xFF0A4D68),
-              Color(0xFF088395),
-              Color(0xFF05BFDB),
-              Color(0xFF00FFCA),
+              AppColors.textSecondary,
+              AppColors.textSecondary,
+              AppColors.textSecondary,
+              AppColors.textSecondary,
             ],
             stops: [0.0, 0.35, 0.7, 1.0],
           ),

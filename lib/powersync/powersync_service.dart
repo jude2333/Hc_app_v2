@@ -200,7 +200,7 @@ class PowerSyncService {
       );
       return true;
     } catch (e) {
-      debugPrint('❌ UPDATE failed: $e');
+      debugPrint(' UPDATE failed: $e');
       return false;
     }
   }
