@@ -5,12 +5,10 @@ class NotificationCenterService {
 
   NotificationCenterService(this._notificationCenter);
 
-  /// Send generic notification
   Future<String> sendNotification(Map<String, dynamic> notification) async {
     return await _notificationCenter.sendNotification(notification);
   }
 
-  /// Send work order completed notification
   Future<String> sendWorkOrderCompleted({
     required String appointmentDate,
     required String appointmentTime,
@@ -39,24 +37,6 @@ class NotificationCenterService {
     );
   }
 
-  /// Send custom notification
-  // Future<String> sendCustom({
-  //   required String toId,
-  //   required String toName,
-  //   required String msgHeader,
-  //   required String msgBody,
-  //   Map<String, dynamic>? msgAttachment,
-  // }) async {
-  //   return await _notificationCenter.sendCustomNotification(
-  //     toId: toId,
-  //     toName: toName,
-  //     msgHeader: msgHeader,
-  //     msgBody: msgBody,
-  //     msgAttachment: msgAttachment,
-  //   );
-  // }
-
-  /// Refresh token
   Future<void> refreshToken() async {
     await _notificationCenter.refreshToken();
   }

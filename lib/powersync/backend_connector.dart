@@ -20,8 +20,6 @@ class BackendConnector extends PowerSyncBackendConnector {
   }
 
   String get postgrestBaseUrl {
-    //  Settings.currentPostgresUrl which respects development flag
-    // Docker: http://localhost:3001, Production: https://api.andrsn.in
     return Settings.currentPostgresUrl;
   }
 
@@ -116,7 +114,6 @@ class BackendConnector extends PowerSyncBackendConnector {
   Future<void> uploadData(PowerSyncDatabase database) async {
     debugPrint('[BackendConnector] uploadData()');
 
-    // Process all pending transactions using PowerSync's recommended pattern
     while (true) {
       CrudTransaction? transaction;
 
@@ -143,14 +140,7 @@ class BackendConnector extends PowerSyncBackendConnector {
       } catch (e) {
         debugPrint('[BackendConnector] Upload error: $e');
 
-        // If we have a transaction, we should NOT complete it on error
-        // This allows PowerSync to retry the transaction later
-        // However, if it's a permanent failure, we may want to complete it
-        // to prevent blocking the queue
-
         if (_isPermanentError(e)) {
-          // For permanent errors (e.g., validation failures), complete the transaction
-          // to prevent blocking the upload queue
           if (transaction != null) {
             try {
               await transaction.complete();
@@ -166,11 +156,9 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
-  /// Determine if an error is permanent (should not be retried)
   bool _isPermanentError(dynamic error) {
     final errorStr = error.toString().toLowerCase();
-    // Consider 4xx HTTP errors (except 429) as permanent
-    // Also consider validation errors as permanent
+
     return errorStr.contains('400') ||
         errorStr.contains('401') ||
         errorStr.contains('403') ||
@@ -244,14 +232,12 @@ class BackendConnector extends PowerSyncBackendConnector {
 
     debugPrint('[BackendConnector] Upserting work order: $id');
 
-    // Get auth token for production
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates,return=minimal',
     };
 
-    // Add auth if available (required in production)
     if (token.isNotEmpty && !Settings.development) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -331,9 +317,7 @@ class BackendConnector extends PowerSyncBackendConnector {
     debugPrint('[BackendConnector] Work order deleted: $id');
   }
 
-  // Price List CRUD
   Future<void> _upsertPriceList(String id, Map<String, dynamic> data) async {
-    // Use Settings for production URL
     final baseUrl = Settings.currentPostgresUrl;
     final url = '$baseUrl/price_list';
 
@@ -342,15 +326,12 @@ class BackendConnector extends PowerSyncBackendConnector {
 
     debugPrint('[BackendConnector] Upserting price_list: $id');
 
-    // Get auth token for production
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
-      // PostgREST upsert: ON CONFLICT (id) DO UPDATE
       'Prefer': 'resolution=merge-duplicates,return=minimal',
     };
 
-    // Add auth if available (required in production)
     if (token.isNotEmpty && !Settings.development) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -367,7 +348,6 @@ class BackendConnector extends PowerSyncBackendConnector {
         return;
       }
 
-      // Log detailed error for debugging
       debugPrint('[BackendConnector] Upsert failed: ${response.statusCode}');
       debugPrint('[BackendConnector] Response: ${response.body}');
       throw Exception(
@@ -422,7 +402,7 @@ class BackendConnector extends PowerSyncBackendConnector {
     final response = await http.patch(
       Uri.parse(url),
       headers: headers,
-      body: jsonEncode({'visible': 0}), // Use 0 for integer column
+      body: jsonEncode({'visible': 0}), // 0 for integer column
     );
 
     if (response.statusCode != 204 && response.statusCode != 200) {

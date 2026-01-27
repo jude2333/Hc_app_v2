@@ -8,7 +8,6 @@ import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/core/util.dart';
 
-/// Centralized S3 file service for uploads and downloads
 class S3FileService {
   final Ref _ref;
   final Dio _dio = Dio();
@@ -20,8 +19,6 @@ class S3FileService {
     return storage.getFromSession('pg_admin');
   }
 
-  /// Upload a file to S3
-  /// Returns the file location path on success, or throws on error
   Future<String> uploadFile({
     required Uint8List bytes,
     required String fileName,
@@ -49,18 +46,17 @@ class S3FileService {
       );
 
       if (response.statusCode == 200 && response.data == 'OK') {
-        debugPrint('✅ S3 Upload success: $fileLocation');
+        debugPrint(' S3 Upload success: $fileLocation');
         return fileLocation;
       } else {
         throw Exception('Upload failed: ${response.data}');
       }
     } catch (e) {
-      debugPrint('❌ S3 Upload error: $e');
+      debugPrint(' S3 Upload error: $e');
       rethrow;
     }
   }
 
-  /// Upload a file from XFile (image picker result)
   Future<String> uploadXFile({
     required XFile file,
     required String folderPath,
@@ -78,7 +74,6 @@ class S3FileService {
     );
   }
 
-  /// Upload lab sample photo
   Future<String> uploadLabSamplePhoto({
     required XFile file,
     Uint8List? webBytes,
@@ -92,14 +87,11 @@ class S3FileService {
     );
   }
 
-  /// Download a file from S3
-  /// Returns the file bytes on success
   Future<Uint8List> downloadFile({
     required String filePath,
     String bucketName = 'homecollection',
   }) async {
     try {
-      // Parse bucket and key from path if format is "bucket/key"
       String bucket = bucketName;
       String key = filePath;
 
@@ -128,25 +120,21 @@ class S3FileService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        debugPrint('✅ S3 Download success: $key');
+        debugPrint(' S3 Download success: $key');
         return Uint8List.fromList(response.data!);
       } else {
         throw Exception('Download failed: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ S3 Download error: $e');
+      debugPrint(' S3 Download error: $e');
       rethrow;
     }
   }
 
-  /// Get a signed URL for viewing a file (useful for images/PDFs)
   String getViewUrl(String filePath) {
-    // For viewing, we can construct a direct URL or use an API endpoint
-    // In this case, return the path for now - actual implementation may vary
     return filePath;
   }
 
-  /// Extract filename from a path
   static String getFileName(String path) {
     if (path.contains('/')) {
       return path.substring(path.lastIndexOf('/') + 1);

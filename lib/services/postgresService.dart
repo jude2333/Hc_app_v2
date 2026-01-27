@@ -7,7 +7,6 @@ class PostgresService {
 
   PostgresService(this._db);
 
-  // Authentication methods
   Future<String> login(String mobile, String password) async {
     return await _db.login(mobile, password);
   }
@@ -20,7 +19,6 @@ class PostgresService {
     return await _db.appLogin();
   }
 
-  // User management methods
   Future<dynamic> getUserWithMobile(String mobile) async {
     return await _db.getUserWithMobile(mobile);
   }
@@ -50,7 +48,6 @@ class PostgresService {
     return await _db.searchEmployee(str);
   }
 
-  // Role and department methods
   Future<dynamic> getRoleList([String? search]) async {
     return await _db.getRoleList(search);
   }
@@ -67,7 +64,6 @@ class PostgresService {
     return await _db.getDeptList(search);
   }
 
-  // Tenant management methods
   Future<dynamic> getTenantList([String? search]) async {
     return await _db.getTenantList(search);
   }
@@ -84,7 +80,6 @@ class PostgresService {
     return await _db.changeTenant(modId);
   }
 
-  // Technician methods
   Future<dynamic> getTechnicians([String? search]) async {
     return await _db.getTechnicians(search);
   }
@@ -94,8 +89,6 @@ class PostgresService {
     return await _db.upsertAllocatedAreas(empId, areas);
   }
 
-  /// Get technician details by emp_id - returns mobile and id_card_location
-  /// Matches Vue's technician_details lookup for SMS/WhatsApp sending
   Future<Map<String, String>> getTechnicianById(String empId) async {
     try {
       final result = await _db.getUserDetails(empId);
@@ -106,13 +99,10 @@ class PostgresService {
           'name': result['name']?.toString() ?? '',
         };
       }
-    } catch (e) {
-      // Ignore errors, return empty
-    }
+    } catch (e) {}
     return {'mobile': '', 'id_card_location': '', 'name': ''};
   }
 
-  // Client methods
   Future<dynamic> getAllClients() async {
     return await _db.getAllClients();
   }
@@ -121,18 +111,15 @@ class PostgresService {
     return await _db.getB2BClients();
   }
 
-  // Patient search methods
   Future<dynamic> searchPatients(String str, String mode) async {
     return await _db.searchPatients(str, mode);
   }
 
-  // Utility methods
   String? getDashboardTenantName(String? str) {
     return _db.getDashboardTenantName(str);
   }
 }
 
-// Provider for the database service
 final postgresServiceProvider = Provider<PostgresService>((ref) {
   final db = ref.watch(postgresDbProvider);
   return PostgresService(db);

@@ -717,9 +717,6 @@ class WorkOrder {
         : DateTime.now();
   }
 
-  /// Factory to create WorkOrder from a parsed doc map (e.g., from search results)
-  /// This handles the format where the doc fields are at the top level,
-  /// unlike fromRow which expects a database row with a separate 'doc' JSON string
   factory WorkOrder.fromDocMap(Map<String, dynamic> docMap) {
     // Parse appointment_date which is in dd-MM-yyyy format
     DateTime visitDate = DateTime.now();

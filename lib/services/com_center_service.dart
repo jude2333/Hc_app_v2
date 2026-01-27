@@ -1,5 +1,3 @@
-// FILE: lib/services/com_center_service.dart
-
 import 'package:anderson_crm_flutter/database/com_center.dart';
 
 class ComCenterService {

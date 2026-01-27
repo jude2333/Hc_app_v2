@@ -5,13 +5,11 @@ import 'package:powersync/powersync.dart';
 import '../models/temp_upload.dart';
 import '../powersync/powersync_service.dart';
 
-/// Repository for managing offline photo uploads via PowerSync
 class TempUploadRepository {
   final PowerSyncDatabase db;
 
   TempUploadRepository(this.db);
 
-  /// Save a photo for offline upload
   Future<TempUpload> saveOfflinePhoto({
     required String workOrderId,
     required String fileName,
@@ -54,7 +52,6 @@ class TempUploadRepository {
     return upload;
   }
 
-  /// Get all pending uploads
   Future<List<TempUpload>> getPendingUploads() async {
     final results = await db.getAll('''
       SELECT * FROM temp_uploads 
@@ -64,7 +61,6 @@ class TempUploadRepository {
     return results.map((row) => TempUpload.fromRow(row)).toList();
   }
 
-  /// Get uploads for a specific work order
   Future<List<TempUpload>> getUploadsForWorkOrder(String workOrderId) async {
     final results = await db.getAll('''
       SELECT * FROM temp_uploads 
@@ -74,7 +70,6 @@ class TempUploadRepository {
     return results.map((row) => TempUpload.fromRow(row)).toList();
   }
 
-  /// Watch pending uploads count
   Stream<int> watchPendingCount() {
     return db.watch(
         'SELECT COUNT(*) as count FROM temp_uploads WHERE status = ?',
@@ -84,7 +79,6 @@ class TempUploadRepository {
     });
   }
 
-  /// Watch all uploads for a work order
   Stream<List<TempUpload>> watchUploadsForWorkOrder(String workOrderId) {
     return db.watch(
       'SELECT * FROM temp_uploads WHERE work_order_id = ? ORDER BY created_at ASC',
@@ -92,7 +86,6 @@ class TempUploadRepository {
     ).map((results) => results.map((row) => TempUpload.fromRow(row)).toList());
   }
 
-  /// Update upload status
   Future<void> updateStatus(String id, String status,
       {String? errorMessage}) async {
     if (status == 'completed') {
@@ -110,18 +103,15 @@ class TempUploadRepository {
     }
   }
 
-  /// Delete an upload
   Future<void> delete(String id) async {
     await db.execute('DELETE FROM temp_uploads WHERE id = ?', [id]);
   }
 
-  /// Delete completed uploads older than specified days
   Future<int> cleanupOldUploads({int olderThanDays = 1}) async {
     final cutoffDate = DateTime.now()
         .subtract(Duration(days: olderThanDays))
         .toIso8601String();
 
-    // Count first since execute() doesn't return affected rows in PowerSync
     final countResult = await db.getAll('''
       SELECT COUNT(*) as count FROM temp_uploads 
       WHERE status = 'completed' AND uploaded_at < ?
@@ -138,7 +128,6 @@ class TempUploadRepository {
   }
 }
 
-/// Provider for TempUploadRepository
 final tempUploadRepositoryProvider = Provider<TempUploadRepository>((ref) {
   final powerSync = ref.watch(powerSyncServiceProvider);
   return TempUploadRepository(powerSync.db);

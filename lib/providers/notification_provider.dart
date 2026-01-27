@@ -42,41 +42,31 @@ class LiveNotificationController extends StateNotifier<NotificationState>
   bool _isRealtimeSetup = false;
 
   LiveNotificationController(this.ref) : super(const NotificationState()) {
-    // 2. Start observing App Lifecycle immediately upon creation
     WidgetsBinding.instance.addObserver(this);
-    // ✅ OPTIMIZATION: Don't await _init - let it run in background
+
     _init();
   }
 
   @override
   void dispose() {
-    // 3. Stop observing when the provider is finally killed (e.g. app restart)
     WidgetsBinding.instance.removeObserver(this);
     _subscription?.cancel();
     super.dispose();
   }
 
-  // App lifecycle - sync runs continuously in background
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // No action needed - sync continues uninterrupted
-  }
+  void didChangeAppLifecycleState(AppLifecycleState state) {}
 
-  // ✅ OPTIMIZATION: Non-blocking init - sets loading state immediately
   Future<void> _init() async {
-    // Set loading state immediately so UI can show skeleton
     if (!mounted) return;
     state = state.copyWith(isLoading: true);
 
-    // ✅ Use scheduleMicrotask to let the UI render first
     Future.microtask(() async {
       await loadNotifications();
     });
   }
 
-  // ✅ OPTIMIZATION: Separated realtime setup from data loading
   Future<void> loadNotifications() async {
-    // Only set loading if not already loading (avoids flicker on refresh)
     if (!state.isLoading) {
       state = state.copyWith(isLoading: true, error: null);
     }
@@ -94,9 +84,7 @@ class LiveNotificationController extends StateNotifier<NotificationState>
       if (mounted) {
         state = state.copyWith(notifications: list, isLoading: false);
 
-        // ✅ OPTIMIZATION: Setup realtime AFTER data is loaded and UI has rendered
         if (!_isRealtimeSetup) {
-          // Defer realtime setup to avoid blocking
           Future.microtask(() => _setupRealtimeListener());
         }
       }
@@ -202,12 +190,6 @@ class LiveNotificationController extends StateNotifier<NotificationState>
       await loadNotifications();
     }
   }
-
-  // @override
-  // void dispose() {
-  //   _subscription?.cancel();
-  //   super.dispose();
-  // }
 }
 
 final liveNotificationProvider =
@@ -222,7 +204,6 @@ final unreadCountProvider = Provider<int>((ref) {
   return state.notifications.where((n) => n['status'] == 'New').length;
 });
 
-// Optimized List for Drawer
 final unreadListProvider = Provider<List<Map<String, dynamic>>>((ref) {
   final state = ref.watch(liveNotificationProvider);
   return state.notifications.where((n) => n['status'] == 'New').toList();

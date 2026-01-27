@@ -67,15 +67,15 @@ class NotificationDB {
 
   Future<Dio> getServerDB(String name) async {
     String? dbName = _dbHandler.resolveName(name);
-    debugPrint("🔍 getServerDB('$name') resolved to: '$dbName'");
+    debugPrint(" getServerDB('$name') resolved to: '$dbName'");
 
     if (dbName == null) {
-      debugPrint("❌ Could not resolve database name for '$name'");
+      debugPrint(" Could not resolve database name for '$name'");
       return Dio();
     }
 
     String baseUrl = "https://db-2.andrsn.in/$dbName";
-    debugPrint("📡 CouchDB URL: $baseUrl");
+    debugPrint(" CouchDB URL: $baseUrl");
 
     String username = "webuser";
     String password = "cka0t20iwlxf";
@@ -132,7 +132,7 @@ class NotificationDB {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      debugPrint("📤 Creating in-app notification: $notificationId");
+      debugPrint(" Creating in-app notification: $notificationId");
       debugPrint("   To: $toName (ID: $toId)");
 
       // Save to remote CouchDB
@@ -143,14 +143,14 @@ class NotificationDB {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint("✅ In-app notification created successfully");
+        debugPrint(" In-app notification created successfully");
         return "OK";
       } else {
-        debugPrint("❌ Failed to create notification: ${response.statusCode}");
+        debugPrint(" Failed to create notification: ${response.statusCode}");
         return "ERROR: ${response.statusMessage}";
       }
     } catch (e) {
-      debugPrint("❌ Error creating notification: $e");
+      debugPrint(" Error creating notification: $e");
       return "ERROR: $e";
     }
   }
@@ -322,10 +322,10 @@ class NotificationDB {
         });
       }
 
-      debugPrint("✅ Loaded ${allItems.length} notifications via Isolate.");
+      debugPrint(" Loaded ${allItems.length} notifications via Isolate.");
       return allItems;
     } catch (e) {
-      debugPrint("❌ Error fetching remote notifications IN LISTREMOTEDATA: $e");
+      debugPrint(" Error fetching remote notifications IN LISTREMOTEDATA: $e");
       return [];
     }
   }
@@ -398,10 +398,10 @@ class NotificationDB {
           data: doc,
         );
 
-        debugPrint("📤 Update response status: ${response.statusCode}");
+        debugPrint(" Update response status: ${response.statusCode}");
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          debugPrint("✅ Updated notification doc successfully.");
+          debugPrint(" Updated notification doc successfully.");
           doc['_rev'] = response.data['rev'];
           debugPrint("📌 New rev: ${doc['_rev']}");
 
@@ -415,15 +415,15 @@ class NotificationDB {
 
           return "OK";
         } else {
-          debugPrint("❌ Update failed with status: ${response.statusCode}");
+          debugPrint(" Update failed with status: ${response.statusCode}");
           return "ERROR: ${response.statusMessage ?? 'Update failed'}";
         }
       } catch (err) {
-        debugPrint("❌ Error updating notification document: $err");
+        debugPrint(" Error updating notification document: $err");
         return "ERROR: $err";
       }
     } catch (err) {
-      debugPrint("❌ Error getting notification database: $err");
+      debugPrint(" Error getting notification database: $err");
       return "ERROR: $err";
     }
   }
@@ -436,10 +436,10 @@ class NotificationDB {
         doc['status'] = 'Seen';
         doc['updated_at'] = DateTime.now().toIso8601String();
         await doUpdate2(doc);
-        debugPrint('✅ Successfully marked $docId as seen.');
+        debugPrint(' Successfully marked $docId as seen.');
       }
     } catch (e) {
-      debugPrint('❌ Failed to mark $docId as seen: $e');
+      debugPrint(' Failed to mark $docId as seen: $e');
     }
   }
 
@@ -461,11 +461,11 @@ class NotificationDB {
   }
 
   Future<Map<String, dynamic>?> getWithIdRemote(String id) async {
-    debugPrint("🔍 Remote Fetch data > getWithIdRemote() > $id");
+    debugPrint(" Remote Fetch data > getWithIdRemote() > $id");
 
     String? name = _dbHandler.resolveName("hc_notifications");
     if (name == null) {
-      debugPrint("❌ Could not resolve notifications database name");
+      debugPrint(" Could not resolve notifications database name");
       return null;
     }
 
@@ -482,7 +482,7 @@ class NotificationDB {
           doc['updated'] = updated;
         }
 
-        debugPrint("✅ Found remote notification: $id");
+        debugPrint(" Found remote notification: $id");
         return doc;
       } else {
         debugPrint(
@@ -490,7 +490,7 @@ class NotificationDB {
         return null;
       }
     } catch (e) {
-      debugPrint("❌ Error fetching remote notification IN getWithIdRemote: $e");
+      debugPrint(" Error fetching remote notification IN getWithIdRemote: $e");
       return null;
     }
   }

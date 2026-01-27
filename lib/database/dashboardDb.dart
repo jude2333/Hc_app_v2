@@ -20,16 +20,16 @@ class DashboardDB {
     try {
       String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
       if (tenant == null || tenant.isEmpty) {
-        debugPrint("❌ Dashboard tenant name not found in session");
+        debugPrint(" Dashboard tenant name not found in session");
         return null;
       }
 
       String fullDocId = "${tenant}_$docId";
-      debugPrint("📄 Fetching dashboard document: $fullDocId");
+      debugPrint(" Fetching dashboard document: $fullDocId");
 
       String? dbName = _dbHandler.resolveName("dashboard");
       if (dbName == null) {
-        debugPrint("❌ Could not resolve dashboard database name");
+        debugPrint(" Could not resolve dashboard database name");
         return null;
       }
 
@@ -39,17 +39,17 @@ class DashboardDB {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> doc = Map<String, dynamic>.from(response.data);
-        debugPrint("✅ Successfully fetched dashboard document: $fullDocId");
+        debugPrint(" Successfully fetched dashboard document: $fullDocId");
         return doc;
       } else {
-        debugPrint("❌ Failed to fetch document: ${response.statusCode}");
+        debugPrint(" Failed to fetch document: ${response.statusCode}");
         return null;
       }
     } catch (e) {
-      debugPrint("❌ Error fetching dashboard document '$docId': $e");
+      debugPrint(" Error fetching dashboard document '$docId': $e");
       if (e is DioException) {
         if (e.response?.statusCode == 404) {
-          debugPrint("📭 Document not found: $docId");
+          debugPrint(" Document not found: $docId");
         } else {
           debugPrint("Response: ${e.response?.data}");
         }
@@ -62,16 +62,16 @@ class DashboardDB {
     try {
       String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
       if (tenant == null || tenant.isEmpty) {
-        debugPrint("❌ Dashboard tenant name not found in session");
+        debugPrint(" Dashboard tenant name not found in session");
         return [];
       }
 
       List<String> fullDocIds = docIds.map((id) => "${tenant}_$id").toList();
-      debugPrint("📄 Fetching ${fullDocIds.length} dashboard documents");
+      debugPrint(" Fetching ${fullDocIds.length} dashboard documents");
 
       String? dbName = _dbHandler.resolveName("dashboard");
       if (dbName == null) {
-        debugPrint("❌ Could not resolve dashboard database name");
+        debugPrint(" Could not resolve dashboard database name");
         return [];
       }
 
@@ -95,14 +95,14 @@ class DashboardDB {
           }
         }
 
-        debugPrint("✅ Successfully fetched ${docs.length} dashboard documents");
+        debugPrint(" Successfully fetched ${docs.length} dashboard documents");
         return docs;
       } else {
-        debugPrint("❌ Failed to fetch documents: ${response.statusCode}");
+        debugPrint(" Failed to fetch documents: ${response.statusCode}");
         return [];
       }
     } catch (e) {
-      debugPrint("❌ Error fetching multiple dashboard documents: $e");
+      debugPrint(" Error fetching multiple dashboard documents: $e");
       return [];
     }
   }
@@ -111,11 +111,11 @@ class DashboardDB {
     try {
       String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
       if (tenant == null || tenant.isEmpty) {
-        debugPrint("❌ Dashboard tenant name not found in session");
+        debugPrint(" Dashboard tenant name not found in session");
         return [];
       }
 
-      debugPrint("📄 Fetching all dashboard documents for tenant: $tenant");
+      debugPrint(" Fetching all dashboard documents for tenant: $tenant");
 
       String? dbName = _dbHandler.resolveName("dashboard");
       if (dbName == null) {
@@ -144,14 +144,14 @@ class DashboardDB {
           }
         }
 
-        debugPrint("✅ Successfully fetched ${docs.length} dashboard documents");
+        debugPrint(" Successfully fetched ${docs.length} dashboard documents");
         return docs;
       } else {
-        debugPrint("❌ Failed to fetch all documents: ${response.statusCode}");
+        debugPrint(" Failed to fetch all documents: ${response.statusCode}");
         return [];
       }
     } catch (e) {
-      debugPrint("❌ Error fetching all dashboard documents: $e");
+      debugPrint(" Error fetching all dashboard documents: $e");
       return [];
     }
   }
@@ -160,18 +160,18 @@ class DashboardDB {
     try {
       String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
       if (tenant == null || tenant.isEmpty) {
-        debugPrint("❌ Dashboard tenant name not found in session");
+        debugPrint(" Dashboard tenant name not found in session");
         return "ERROR: Tenant name not found";
       }
 
       String fullDocId = "${tenant}_$docId";
       doc['_id'] = fullDocId;
 
-      debugPrint("📝 Updating dashboard document: $fullDocId");
+      debugPrint(" Updating dashboard document: $fullDocId");
 
       String? dbName = _dbHandler.resolveName("dashboard");
       if (dbName == null) {
-        debugPrint("❌ Could not resolve dashboard database name");
+        debugPrint(" Could not resolve dashboard database name");
         return "ERROR: Database name not resolved";
       }
 
@@ -181,10 +181,10 @@ class DashboardDB {
         Response getResponse = await remoteDb.get("/$fullDocId");
         if (getResponse.statusCode == 200) {
           doc['_rev'] = getResponse.data['_rev'];
-          debugPrint("📌 Got current rev: ${doc['_rev']}");
+          debugPrint(" Got current rev: ${doc['_rev']}");
         }
       } catch (e) {
-        debugPrint("📄 Document doesn't exist yet, creating new one");
+        debugPrint(" Document doesn't exist yet, creating new one");
       }
 
       Response response = await remoteDb.put(
@@ -193,14 +193,14 @@ class DashboardDB {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint("✅ Successfully updated dashboard document: $fullDocId");
+        debugPrint(" Successfully updated dashboard document: $fullDocId");
         return "OK";
       } else {
-        debugPrint("❌ Failed to update document: ${response.statusCode}");
+        debugPrint(" Failed to update document: ${response.statusCode}");
         return "ERROR: ${response.statusMessage ?? 'Update failed'}";
       }
     } catch (e) {
-      debugPrint("❌ Error updating dashboard document '$docId': $e");
+      debugPrint(" Error updating dashboard document '$docId': $e");
       if (e is DioException) {
         debugPrint("Response: ${e.response?.data}");
         if (e.response?.statusCode == 409) {
@@ -215,16 +215,16 @@ class DashboardDB {
     try {
       String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
       if (tenant == null || tenant.isEmpty) {
-        debugPrint("❌ Dashboard tenant name not found in session");
+        debugPrint(" Dashboard tenant name not found in session");
         return "ERROR: Tenant name not found";
       }
 
       String fullDocId = "${tenant}_$docId";
-      debugPrint("🗑️ Deleting dashboard document: $fullDocId");
+      debugPrint(" Deleting dashboard document: $fullDocId");
 
       String? dbName = _dbHandler.resolveName("dashboard");
       if (dbName == null) {
-        debugPrint("❌ Could not resolve dashboard database name");
+        debugPrint(" Could not resolve dashboard database name");
         return "ERROR: Database name not resolved";
       }
 
@@ -232,7 +232,7 @@ class DashboardDB {
 
       Response getResponse = await remoteDb.get("/$fullDocId");
       if (getResponse.statusCode != 200) {
-        debugPrint("❌ Document not found: $fullDocId");
+        debugPrint(" Document not found: $fullDocId");
         return "ERROR: Document not found";
       }
 
@@ -244,14 +244,14 @@ class DashboardDB {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        debugPrint("✅ Successfully deleted dashboard document: $fullDocId");
+        debugPrint(" Successfully deleted dashboard document: $fullDocId");
         return "OK";
       } else {
-        debugPrint("❌ Failed to delete document: ${response.statusCode}");
+        debugPrint(" Failed to delete document: ${response.statusCode}");
         return "ERROR: ${response.statusMessage ?? 'Delete failed'}";
       }
     } catch (e) {
-      debugPrint("❌ Error deleting dashboard document '$docId': $e");
+      debugPrint(" Error deleting dashboard document '$docId': $e");
       if (e is DioException) {
         debugPrint("Response: ${e.response?.data}");
       }
@@ -271,7 +271,7 @@ class DashboardDB {
 
       return allDocs;
     } catch (e) {
-      debugPrint("❌ Error querying dashboard documents: $e");
+      debugPrint(" Error querying dashboard documents: $e");
       return [];
     }
   }

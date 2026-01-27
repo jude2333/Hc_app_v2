@@ -7,7 +7,6 @@ import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 
-/// Isolate function for parsing work orders (runs in background)
 List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   return rows.map((row) {
     final data = row as Map<String, dynamic>;
@@ -15,7 +14,6 @@ List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   }).toList();
 }
 
-/// Isolate function for filtering work orders using pre-computed searchableText
 List<WorkOrder> _filterWorkOrdersIsolate(_FilterParams params) {
   if (params.query.isEmpty) return params.orders;
   final term = params.query.toLowerCase();
@@ -25,16 +23,12 @@ List<WorkOrder> _filterWorkOrdersIsolate(_FilterParams params) {
   }).toList();
 }
 
-/// Helper class to pass multiple params to isolate
 class _FilterParams {
   final List<WorkOrder> orders;
   final String query;
   const _FilterParams(this.orders, this.query);
 }
 
-/// Shared repository for work order data operations.
-/// Contains all performance optimizations: isolates, non-blocking init, caching.
-/// Used by both ManagerWorkOrderProvider and TechnicianWorkOrderProvider.
 class WorkOrderRepository {
   final PowerSyncService _powerSync = PowerSyncService.instance;
   final StorageService storage;
@@ -49,7 +43,6 @@ class WorkOrderRepository {
     debugPrint('🏭 WorkOrderRepository CONSTRUCTOR called');
   }
 
-  // Getters
   bool get isInitializing => _isInitializing;
   bool get isConnected => _syncStatus?.connected ?? false;
   bool get isSyncing =>
@@ -57,7 +50,6 @@ class WorkOrderRepository {
   bool get hasPendingUploads => _syncStatus?.uploading ?? false;
   SyncStatus? get syncStatus => _syncStatus;
 
-  /// Non-blocking initialization with tracking
   Future<void> initialize() async {
     if (!_isInitializing) return;
     if (_initCompleter != null) {
@@ -78,7 +70,6 @@ class WorkOrderRepository {
     try {
       await _powerSync.initialize(storage);
 
-      // Sync Status Subscription
       _statusSubscription = _powerSync.watchStatus().listen((status) {
         _syncStatus = status;
       });
@@ -92,21 +83,18 @@ class WorkOrderRepository {
     }
   }
 
-  /// Ensure initialization is complete before data operations
   Future<void> ensureInitialized() async {
     if (_isInitializing && _initCompleter != null) {
       await _initCompleter!.future;
     }
   }
 
-  /// Watch work orders by date with isolate-based parsing
   Stream<List<WorkOrder>> watchWorkOrdersByDate(DateTime date) {
     return _powerSync.watchWorkOrdersByDate(date).asyncMap((rawRows) async {
       return await compute(_parseWorkOrdersIsolate, rawRows);
     });
   }
 
-  /// Watch technician work orders with isolate-based parsing
   Stream<List<WorkOrder>> watchTechnicianWorkOrders(String techId) {
     return _powerSync
         .watchTechnicianWorkOrders(techId)
@@ -114,8 +102,6 @@ class WorkOrderRepository {
       return await compute(_parseWorkOrdersIsolate, rawRows);
     });
   }
-
-  // ==================== CRUD OPERATIONS ====================
 
   Future<bool> createWorkOrder(WorkOrder order) async {
     try {
@@ -157,9 +143,6 @@ class WorkOrderRepository {
     }
   }
 
-  // ==================== SEARCH ====================
-
-  /// Isolate-based search using pre-computed searchableText
   Future<List<WorkOrder>> searchWorkOrdersAsync(
       List<WorkOrder> orders, String query) async {
     if (query.isEmpty) return orders;
@@ -167,7 +150,6 @@ class WorkOrderRepository {
         _filterWorkOrdersIsolate, _FilterParams(orders, query));
   }
 
-  /// Sync version for small lists
   List<WorkOrder> searchWorkOrders(List<WorkOrder> orders, String query) {
     if (query.isEmpty) return orders;
     final q = query.toLowerCase();
@@ -178,8 +160,6 @@ class WorkOrderRepository {
     _statusSubscription?.cancel();
   }
 }
-
-// ==================== PROVIDERS ====================
 
 final workOrderRepositoryProvider = Provider<WorkOrderRepository>((ref) {
   final storage = ref.read(storageServiceProvider);

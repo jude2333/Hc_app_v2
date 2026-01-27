@@ -6,9 +6,7 @@ import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
 import 'pdf_viewer_page.dart';
 import 'image_viewer_page.dart';
 
-/// A utility class for viewing files (PDF, images) with auto-detection
 class FileViewer {
-  /// View a file - automatically detects type and opens appropriate viewer
   static Future<void> view(
     BuildContext context, {
     required String s3Path,
@@ -32,7 +30,6 @@ class FileViewer {
         imageUrl: imageUrl,
       );
     } else {
-      // Unknown file type - show message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
@@ -42,7 +39,6 @@ class FileViewer {
   }
 }
 
-/// Dialog showing list of files with View/Download options
 class FilePickerDialog extends StatelessWidget {
   final List<String> files;
   final String title;
@@ -55,7 +51,6 @@ class FilePickerDialog extends StatelessWidget {
     this.onAction,
   });
 
-  /// Show the file picker dialog
   static Future<void> show(
     BuildContext context, {
     required List<String> files,
@@ -79,7 +74,6 @@ class FilePickerDialog extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -111,8 +105,6 @@ class FilePickerDialog extends StatelessWidget {
               ],
             ),
           ),
-
-          // File list
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 300),
             child: ListView.separated(
@@ -136,8 +128,6 @@ class FilePickerDialog extends StatelessWidget {
               },
             ),
           ),
-
-          // Footer
           Padding(
             padding: const EdgeInsets.all(16),
             child: SizedBox(
@@ -181,7 +171,6 @@ class _FileItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // File name with icon
           Row(
             children: [
               Icon(
@@ -205,7 +194,6 @@ class _FileItem extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // Action buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

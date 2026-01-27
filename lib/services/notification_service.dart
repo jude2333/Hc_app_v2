@@ -18,15 +18,9 @@ class NotificationDBService {
   NotificationDB get _db => ref.read(notificationDbProvider);
   StorageService get _storage => ref.read(storageServiceProvider);
 
-  // static final Function _debouncedUpdateStore = Util.debounce(() {}, 500);
+  void handleChanges() {}
 
-  void handleChanges() {
-    // NotificationDB.handleChanges(ref); // No longer needed
-  }
-
-  void updateStore() {
-    // NotificationDB.updateStore(ref); // No longer needed
-  }
+  void updateStore() {}
 
   Future<List<Map<String, dynamic>>> getNotificationsList(String status) async {
     String today = ref.read(appNotifierProvider).today;

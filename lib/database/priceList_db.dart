@@ -208,25 +208,25 @@ class PriceListDB {
       Response response = await remoteDb.put('/$docId', data: doc);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Document inserted successfully: $docId');
+        debugPrint(' Document inserted successfully: $docId');
         return 'OK';
       } else if (response.statusCode == 409) {
-        debugPrint('⚠️ Document conflict (409), resolving...');
+        debugPrint(' Document conflict (409), resolving...');
         return await _resolveConflictAndRetry(remoteDb, docId, doc);
       } else {
-        debugPrint('❌ Failed to insert: ${response.statusCode}');
+        debugPrint(' Failed to insert: ${response.statusCode}');
         return 'Error: ${response.statusMessage}';
       }
     } catch (err) {
-      debugPrint('❌ Error inserting document: $err');
+      debugPrint(' Error inserting document: $err');
       return 'Error: $err';
     }
   }
 
-  /// ✅ Converted to remote
+  ///  Converted to remote
   Future<String> deleteOne(String docId) async {
     try {
-      debugPrint('🗑️ Deleting price list item from remote: $docId');
+      debugPrint(' Deleting price list item from remote: $docId');
 
       String? name = _dbHandler.resolveName('price_list');
       if (name == null) {
@@ -255,22 +255,22 @@ class PriceListDB {
 
       if (deleteResponse.statusCode == 200 ||
           deleteResponse.statusCode == 204) {
-        debugPrint('✅ Document deleted successfully: $docId');
+        debugPrint(' Document deleted successfully: $docId');
         return 'OK';
       } else {
-        debugPrint('❌ Failed to delete: ${deleteResponse.statusCode}');
+        debugPrint(' Failed to delete: ${deleteResponse.statusCode}');
         return 'Error: ${deleteResponse.statusMessage}';
       }
     } catch (err) {
-      debugPrint('❌ Error deleting document: $err');
+      debugPrint(' Error deleting document: $err');
       return 'Error: $err';
     }
   }
 
-  /// ✅ Converted to remote
+  ///  Converted to remote
   Future<Map<String, dynamic>?> getOne(String docId) async {
     try {
-      debugPrint('📥 Getting price list item from remote: $docId');
+      debugPrint(' Getting price list item from remote: $docId');
 
       String? name = _dbHandler.resolveName('price_list');
       if (name == null) {
@@ -287,24 +287,24 @@ class PriceListDB {
       Response response = await remoteDb.get('/$docId');
 
       if (response.statusCode == 200) {
-        debugPrint('✅ Document retrieved successfully: $docId');
+        debugPrint(' Document retrieved successfully: $docId');
         return Map<String, dynamic>.from(response.data);
       } else if (response.statusCode == 404) {
-        debugPrint('⚠️ Document not found: $docId');
+        debugPrint(' Document not found: $docId');
         return null;
       } else {
-        debugPrint('❌ Failed to get document: ${response.statusCode}');
+        debugPrint(' Failed to get document: ${response.statusCode}');
         return null;
       }
     } catch (err) {
-      debugPrint('❌ Error getting document: $err');
+      debugPrint(' Error getting document: $err');
       return null;
     }
   }
 
   Future<String> update(Map<String, dynamic> newDoc) async {
     try {
-      debugPrint('🔄 Updating price list item in remote...');
+      debugPrint(' Updating price list item in remote...');
 
       String docId = newDoc['_id'] ?? '';
       if (docId.isEmpty) {
@@ -334,17 +334,17 @@ class PriceListDB {
       Response response = await remoteDb.put('/$docId', data: newDoc);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Document updated successfully: $docId');
+        debugPrint(' Document updated successfully: $docId');
         return 'OK';
       } else if (response.statusCode == 409) {
-        debugPrint('⚠️ Document conflict (409), resolving...');
+        debugPrint(' Document conflict (409), resolving...');
         return await _resolveConflictAndRetry(remoteDb, docId, newDoc);
       } else {
-        debugPrint('❌ Failed to update: ${response.statusCode}');
+        debugPrint(' Failed to update: ${response.statusCode}');
         return 'Error: ${response.statusMessage}';
       }
     } catch (err) {
-      debugPrint('❌ Error updating document: $err');
+      debugPrint(' Error updating document: $err');
       return 'Error: $err';
     }
   }
@@ -363,9 +363,9 @@ class PriceListDB {
         return 'Error: Remote DB connection is null';
       }
 
-      // ✅ Both maps use STRING keys (match Vue)
+      //  Both maps use STRING keys (match Vue)
       Map<String, String> deptMap = {};
-      Map<String, String> investMap = {}; // ✅ Changed from Map<int, String>
+      Map<String, String> investMap = {}; //  Changed from Map<int, String>
 
       Response response = await remoteDb.get(
         '/_all_docs',
@@ -392,7 +392,7 @@ class PriceListDB {
               deptMap[deptName] = deptId;
             }
 
-            // Investigation - ✅ Keep as STRING (match Vue)
+            // Investigation -  Keep as STRING (match Vue)
             String investId = item['invest_id']?.toString() ?? '';
             String investName = item['invest_name']?.toString() ?? '';
 
@@ -416,17 +416,17 @@ class PriceListDB {
       await _storage.saveSessionItem('dept_names', deptJson);
       await _storage.saveSessionItem('invest_names', investJson);
 
-      debugPrint('✅ Combo data set successfully');
+      debugPrint(' Combo data set successfully');
       debugPrint('   Departments: ${deptMap.length}');
       debugPrint('   Investigations: ${investMap.length}');
 
-      // ✅ Only print first 100 chars
+      //  Only print first 100 chars
       debugPrint('Dept JSON: ${deptJson.substring(0, 100)}...');
       debugPrint('Invest JSON: ${investJson.substring(0, 100)}...');
 
       return 'OK';
     } catch (err, stackTrace) {
-      debugPrint('❌ Error setting combo data: $err');
+      debugPrint(' Error setting combo data: $err');
       return 'Error: $err';
     }
   }
@@ -436,7 +436,7 @@ class PriceListDB {
       debugPrint('📜 Getting price list history from remote...');
       return await getOne('price_list:history');
     } catch (err) {
-      debugPrint('❌ Error getting history: $err');
+      debugPrint(' Error getting history: $err');
       return null;
     }
   }
@@ -474,14 +474,14 @@ class PriceListDB {
         return await insertNew(doc);
       }
     } catch (err) {
-      debugPrint('❌ Error inserting history: $err');
+      debugPrint(' Error inserting history: $err');
       return 'Error: $err';
     }
   }
 
   Future<String> importData() async {
     try {
-      debugPrint('📦 Importing CGHS data to remote...');
+      debugPrint(' Importing CGHS data to remote...');
 
       String? name = _dbHandler.resolveName('price_list');
       if (name == null) {
@@ -522,17 +522,17 @@ class PriceListDB {
                     '$line ${item['cghs_price']} ${item['invest_name']}');
                 line++;
               } else {
-                debugPrint('⚠️ Failed to update item $line: $result');
+                debugPrint(' Failed to update item $line: $result');
               }
             }
           }
         }
       }
 
-      debugPrint('✅ CGHS data import completed. Updated $line items.');
+      debugPrint(' CGHS data import completed. Updated $line items.');
       return 'OK';
     } catch (err) {
-      debugPrint('❌ Error importing data: $err');
+      debugPrint(' Error importing data: $err');
       return 'Error: $err';
     }
   }
@@ -543,7 +543,7 @@ class PriceListDB {
     Map<String, dynamic> localDoc,
   ) async {
     try {
-      debugPrint('🔄 Fetching remote document: $docId');
+      debugPrint(' Fetching remote document: $docId');
 
       Response getResponse = await remoteDb.get('/$docId');
 
@@ -558,7 +558,7 @@ class PriceListDB {
 
         if (retryResponse.statusCode == 200 ||
             retryResponse.statusCode == 201) {
-          debugPrint('✅ Document updated after conflict resolution');
+          debugPrint(' Document updated after conflict resolution');
           return 'OK';
         } else {
           return 'Error: Conflict resolution failed';
@@ -570,7 +570,7 @@ class PriceListDB {
 
         if (createResponse.statusCode == 200 ||
             createResponse.statusCode == 201) {
-          debugPrint('✅ Document created successfully');
+          debugPrint(' Document created successfully');
           return 'OK';
         } else {
           return 'Error: Failed to create document';
@@ -579,7 +579,7 @@ class PriceListDB {
         return 'Error: Could not resolve conflict';
       }
     } catch (error) {
-      debugPrint('❌ Error in conflict resolution: $error');
+      debugPrint(' Error in conflict resolution: $error');
       return 'Error: $error';
     }
   }

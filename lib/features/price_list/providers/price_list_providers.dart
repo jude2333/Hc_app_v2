@@ -74,7 +74,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
   PriceListRepository get _repo => ref.read(priceListRepositoryProvider);
 
   Future<void> loadComboData() async {
-    debugPrint('📊 [PriceListNotifier] loadComboData()');
+    debugPrint(' [PriceListNotifier] loadComboData()');
 
     try {
       final results = await Future.wait([
@@ -104,16 +104,16 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       );
 
       debugPrint(
-          '✅ [PriceListNotifier] Loaded ${deptNames.length} depts, ${investIds.length} investigations');
+          ' [PriceListNotifier] Loaded ${deptNames.length} depts, ${investIds.length} investigations');
     } catch (e) {
-      debugPrint('❌ [PriceListNotifier] loadComboData error: $e');
+      debugPrint(' [PriceListNotifier] loadComboData error: $e');
       state = state.copyWith(errorMessage: 'Failed to load combo data: $e');
     }
   }
 
   Future<void> search(String query) async {
     if (state.currentSearchQuery == query && state.items.isNotEmpty) {
-      debugPrint('⏭️ [PriceListNotifier] Skipping duplicate search: $query');
+      debugPrint(' [PriceListNotifier] Skipping duplicate search: $query');
       return;
     }
 
@@ -124,16 +124,16 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       state =
           state.copyWith(items: items, isLoading: false, errorMessage: null);
       debugPrint(
-          '✅ [PriceListNotifier] Search complete: ${items.length} results');
+          ' [PriceListNotifier] Search complete: ${items.length} results');
     } catch (e) {
-      debugPrint('❌ [PriceListNotifier] search error: $e');
+      debugPrint(' [PriceListNotifier] search error: $e');
       state =
           state.copyWith(isLoading: false, errorMessage: 'Search failed: $e');
     }
   }
 
   Future<String> addTest(Map<String, dynamic> formData) async {
-    debugPrint('➕ [PriceListNotifier] addTest()');
+    debugPrint(' [PriceListNotifier] addTest()');
 
     try {
       state = state.copyWith(isLoading: true);
@@ -165,7 +165,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
       return result;
     } catch (e) {
-      debugPrint('❌ [PriceListNotifier] addTest error: $e');
+      debugPrint(' [PriceListNotifier] addTest error: $e');
       return 'Error: $e';
     } finally {
       state = state.copyWith(isLoading: false);
@@ -174,7 +174,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
   Future<String> updateTest(
       Map<String, dynamic> newValues, PriceListItem oldItem) async {
-    debugPrint('🔄 [PriceListNotifier] updateTest(${oldItem.id})');
+    debugPrint(' [PriceListNotifier] updateTest(${oldItem.id})');
 
     try {
       state = state.copyWith(isLoading: true);
@@ -215,7 +215,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
       return result;
     } catch (e) {
-      debugPrint('❌ [PriceListNotifier] updateTest error: $e');
+      debugPrint(' [PriceListNotifier] updateTest error: $e');
       return 'Error: $e';
     } finally {
       state = state.copyWith(isLoading: false);
@@ -223,7 +223,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
   }
 
   Future<String> deleteTest(PriceListItem item) async {
-    debugPrint('🗑️ [PriceListNotifier] deleteTest(${item.id})');
+    debugPrint(' [PriceListNotifier] deleteTest(${item.id})');
 
     try {
       state = state.copyWith(isLoading: true);
@@ -234,12 +234,12 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
         final currentQuery = state.currentSearchQuery;
         state = state.copyWith(currentSearchQuery: '___force_refresh___');
         await search(currentQuery);
-        debugPrint('✅ [PriceListNotifier] Delete successful, list refreshed');
+        debugPrint(' [PriceListNotifier] Delete successful, list refreshed');
       }
 
       return result;
     } catch (e) {
-      debugPrint('❌ [PriceListNotifier] deleteTest error: $e');
+      debugPrint(' [PriceListNotifier] deleteTest error: $e');
       return 'Error: $e';
     } finally {
       state = state.copyWith(isLoading: false);
@@ -247,7 +247,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
   }
 
   Future<void> loadGlobalHistory() async {
-    debugPrint('📜 [PriceListNotifier] loadGlobalHistory()');
+    debugPrint(' [PriceListNotifier] loadGlobalHistory()');
 
     state = state.copyWith(isLoading: true);
 
@@ -255,9 +255,9 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final history = await _repo.getGlobalHistory(limit: 200);
       state = state.copyWith(globalHistory: history, isLoading: false);
       debugPrint(
-          '✅ [PriceListNotifier] Loaded ${history.length} history entries');
+          ' [PriceListNotifier] Loaded ${history.length} history entries');
     } catch (e) {
-      debugPrint('❌ [PriceListNotifier] loadGlobalHistory error: $e');
+      debugPrint(' [PriceListNotifier] loadGlobalHistory error: $e');
       state = state.copyWith(
           isLoading: false, errorMessage: 'Failed to load history: $e');
     }

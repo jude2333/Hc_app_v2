@@ -45,7 +45,7 @@ class DBHandler {
   });
 
   void stopSync() {
-    debugPrint("🛑 Stopping CouchDB Sync...");
+    debugPrint(" Stopping CouchDB Sync...");
     _isSyncActive = false;
   }
 
@@ -340,7 +340,7 @@ class DBHandler {
           continue;
         }
 
-        debugPrint("⚠️ Connection interrupted: $e");
+        debugPrint(" Connection interrupted: $e");
 
         if (_isSyncActive) {
           await Future.delayed(const Duration(seconds: 5));
@@ -350,7 +350,7 @@ class DBHandler {
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
-    debugPrint("🛑 Sync Loop Terminated.");
+    debugPrint(" Sync Loop Terminated.");
   }
 
   void _startFilteredSync(String dbName, String filterField, int filterValue) {
@@ -609,7 +609,7 @@ class DBHandler {
         });
       }
     } catch (e) {
-      debugPrint("❌ Error in _notifyChange: $e");
+      debugPrint(" Error in _notifyChange: $e");
     }
   }
 
@@ -738,11 +738,11 @@ class DBHandler {
       String dbName, String docId, Map<String, dynamic> doc) async {
     String? resolvedName = resolveName(dbName);
     if (resolvedName == null || !_dbMap.containsKey(resolvedName)) {
-      debugPrint("❌ putDocument failed: database not found for $dbName");
+      debugPrint(" putDocument failed: database not found for $dbName");
       return;
     }
 
-    debugPrint("📝 Putting document: $docId in $resolvedName");
+    debugPrint(" Putting document: $docId in $resolvedName");
 
     try {
       doc['_local_modified'] = true;
@@ -755,7 +755,7 @@ class DBHandler {
 
       _notifyChange(resolvedName, docId, doc, false);
     } catch (e) {
-      debugPrint("❌ Error in putDocument for $docId: $e");
+      debugPrint(" Error in putDocument for $docId: $e");
     }
   }
 
@@ -792,37 +792,37 @@ class DBHandler {
   }
 
   Future<void> forceSync(String dbName) async {
-    debugPrint("🔄 Force sync requested for: $dbName");
+    debugPrint(" Force sync requested for: $dbName");
 
     String? resolvedName = resolveName(dbName);
     if (resolvedName == null) {
-      debugPrint("❌ Database not found: $dbName");
+      debugPrint(" Database not found: $dbName");
       return;
     }
 
     try {
-      debugPrint("🔄 Starting force sync for: $resolvedName");
+      debugPrint(" Starting force sync for: $resolvedName");
 
       int pendingCount = _pendingPushes[resolvedName]?.length ?? 0;
-      debugPrint("📊 Pending pushes before sync: $pendingCount");
+      debugPrint(" Pending pushes before sync: $pendingCount");
       if (pendingCount > 0) {
-        debugPrint("📋 Pending IDs: ${_pendingPushes[resolvedName]}");
+        debugPrint(" Pending IDs: ${_pendingPushes[resolvedName]}");
       }
 
-      debugPrint("⬆️ Starting push for: $resolvedName");
+      debugPrint("⬆ Starting push for: $resolvedName");
       await _replicateToRemote(resolvedName);
-      debugPrint("✅ Push completed for: $resolvedName");
+      debugPrint(" Push completed for: $resolvedName");
 
       int remainingCount = _pendingPushes[resolvedName]?.length ?? 0;
-      debugPrint("📊 Remaining pending pushes: $remainingCount");
+      debugPrint(" Remaining pending pushes: $remainingCount");
 
-      debugPrint("⬇️ Starting pull for: $resolvedName");
+      debugPrint("⬇ Starting pull for: $resolvedName");
       await _replicateFromRemote(resolvedName);
-      debugPrint("✅ Pull completed for: $resolvedName");
+      debugPrint(" Pull completed for: $resolvedName");
 
-      debugPrint("✅ Force sync completed successfully for: $resolvedName");
+      debugPrint(" Force sync completed successfully for: $resolvedName");
     } catch (e, stackTrace) {
-      debugPrint("❌ Force sync error for $resolvedName: $e");
+      debugPrint(" Force sync error for $resolvedName: $e");
       debugPrint("Stack trace: $stackTrace");
       rethrow;
     }

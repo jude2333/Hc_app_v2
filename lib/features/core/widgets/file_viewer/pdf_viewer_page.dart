@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
+
 import 'dart:html' as html;
-// ignore: avoid_web_libraries_in_flutter
+
 import 'dart:ui_web' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -13,9 +13,6 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
 
-/// Full-screen PDF viewer with zoom and page navigation
-/// Supports loading from S3 path or preloaded bytes
-/// Handles Web (iframe) and Mobile/Desktop (PDFView)
 class PdfViewerPage extends ConsumerStatefulWidget {
   final String s3Path;
   final String? title;
@@ -28,7 +25,6 @@ class PdfViewerPage extends ConsumerStatefulWidget {
     this.preloadedBytes,
   });
 
-  /// Show PDF viewer as a full-screen page
   static Future<void> show(
     BuildContext context, {
     required String s3Path,
@@ -57,10 +53,8 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
   int _currentPage = 0;
   int _totalPages = 0;
 
-  // Static cache to prevent duplicate registration
   static final Set<String> _registeredViewTypes = {};
 
-  // Web specific
   String? _blobUrl;
   Uint8List? _pdfBytes;
 
@@ -72,7 +66,6 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
 
   @override
   void dispose() {
-    // Clean up blob URL if created
     if (_blobUrl != null && kIsWeb) {
       html.Url.revokeObjectUrl(_blobUrl!);
     }
@@ -83,7 +76,6 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
     try {
       Uint8List? bytes = widget.preloadedBytes;
 
-      // Download from S3 if no preloaded bytes
       if (bytes == null) {
         final s3Service = ref.read(s3FileServiceProvider);
         bytes = await s3Service.downloadFile(filePath: widget.s3Path);
@@ -96,7 +88,6 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       _pdfBytes = bytes;
 
       if (kIsWeb) {
-        // For web, create a blob URL and use iframe
         _blobUrl = _createBlobUrl(bytes);
         if (mounted) {
           setState(() {
@@ -104,7 +95,6 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
           });
         }
       } else {
-        // For mobile/desktop, save to temp file
         final dir = await getTemporaryDirectory();
         final fileName = FileService.getFileName(widget.s3Path);
         final file = File('${dir.path}/$fileName');
@@ -194,14 +184,10 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       );
     }
 
-    // Web: Use iframe with blob URL
     if (kIsWeb && _blobUrl != null) {
       final String viewType = 'pdf-viewer-${widget.s3Path.hashCode}';
 
-      // Prevent duplicate registration which causes assertions
       if (!_registeredViewTypes.contains(viewType)) {
-        // Register view factory for web
-        // ignore: undefined_prefixed_name
         ui.platformViewRegistry.registerViewFactory(
           viewType,
           (int viewId) => html.IFrameElement()
@@ -218,7 +204,6 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       );
     }
 
-    // Mobile/Desktop: PDFView requires a file path
     if (_localPath == null) {
       return const Center(
           child: Text('Unexpected error: No file path',

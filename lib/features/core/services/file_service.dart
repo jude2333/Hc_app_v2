@@ -7,7 +7,6 @@ import 'package:open_filex/open_filex.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 
-/// Service for downloading and managing files from S3
 class FileService {
   final Dio _dio;
   final StorageRepository _storage;
@@ -16,7 +15,6 @@ class FileService {
       : _dio = dio,
         _storage = storage;
 
-  /// Parse S3 path into bucket and key
   static (String bucket, String key) parseS3Path(String path) {
     if (path.contains(' | ')) {
       final parts = path.split(' | ');
@@ -25,14 +23,12 @@ class FileService {
     return ('homecollection', path);
   }
 
-  /// Get file extension from path
   static String getExtension(String path) {
     final name = getFileName(path);
     final dotIndex = name.lastIndexOf('.');
     return dotIndex > 0 ? name.substring(dotIndex).toLowerCase() : '';
   }
 
-  /// Get file name from path
   static String getFileName(String path) {
     String name = path;
     if (name.contains(' | ')) {
@@ -44,16 +40,13 @@ class FileService {
     return name;
   }
 
-  /// Check if file is PDF
   static bool isPdf(String path) => getExtension(path) == '.pdf';
 
-  /// Check if file is image
   static bool isImage(String path) {
     final ext = getExtension(path);
     return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].contains(ext);
   }
 
-  /// Download file bytes from S3
   Future<Uint8List?> downloadBytes(String s3Path,
       {void Function(int, int)? onProgress}) async {
     try {
@@ -80,7 +73,6 @@ class FileService {
     return null;
   }
 
-  /// Download and save file to device
   Future<String?> downloadToDevice(String s3Path,
       {void Function(int, int)? onProgress}) async {
     try {
@@ -100,7 +92,6 @@ class FileService {
     return null;
   }
 
-  /// Download and open file
   Future<void> downloadAndOpen(BuildContext context, String s3Path) async {
     final messenger = ScaffoldMessenger.of(context);
 

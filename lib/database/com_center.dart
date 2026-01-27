@@ -59,13 +59,13 @@ class ComCenter {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Message uploaded successfully: $docId');
+        debugPrint(' Message uploaded successfully: $docId');
         return 'OK';
       } else if (response.statusCode == 409) {
-        debugPrint('⚠️ Document conflict (409), resolving...');
+        debugPrint(' Document conflict (409), resolving...');
         return await _resolveConflictAndRetry(docId, message);
       } else {
-        debugPrint('❌ Failed to upload message: ${response.statusCode}');
+        debugPrint(' Failed to upload message: ${response.statusCode}');
         return 'Error: ${response.statusMessage}';
       }
     } catch (error, stackTrace) {
@@ -73,7 +73,7 @@ class ComCenter {
         return await _resolveConflictAndRetry(message['_id'], message);
       }
 
-      debugPrint('❌ Error uploading message: $error');
+      debugPrint(' Error uploading message: $error');
       debugPrint('Stack trace: $stackTrace');
       return 'Error: $error';
     }
@@ -82,7 +82,7 @@ class ComCenter {
   Future<String> _resolveConflictAndRetry(
       String docId, Map<String, dynamic> localDoc) async {
     try {
-      debugPrint('🔄 Fetching remote document: $docId');
+      debugPrint(' Fetching remote document: $docId');
 
       Response getResponse = await _client!.get('/$docId');
 
@@ -91,29 +91,28 @@ class ComCenter {
             Map<String, dynamic>.from(getResponse.data);
         String remoteRev = remoteDoc['_rev'];
 
-        debugPrint('📝 Remote _rev: $remoteRev');
+        debugPrint(' Remote _rev: $remoteRev');
         localDoc['_rev'] = remoteRev;
 
         Response retryResponse = await _client!.put('/$docId', data: localDoc);
 
         if (retryResponse.statusCode == 200 ||
             retryResponse.statusCode == 201) {
-          debugPrint('✅ Document updated after conflict resolution');
+          debugPrint(' Document updated after conflict resolution');
           return 'OK';
         } else {
-          debugPrint(
-              '❌ Conflict resolution failed: ${retryResponse.statusCode}');
+          debugPrint('Conflict resolution failed: ${retryResponse.statusCode}');
           return 'Error: Conflict resolution failed';
         }
       } else if (getResponse.statusCode == 404) {
-        debugPrint('📝 Document not found, creating new...');
+        debugPrint(' Document not found, creating new...');
         localDoc.remove('_rev');
 
         Response createResponse = await _client!.put('/$docId', data: localDoc);
 
         if (createResponse.statusCode == 200 ||
             createResponse.statusCode == 201) {
-          debugPrint('✅ Document created successfully');
+          debugPrint(' Document created successfully');
           return 'OK';
         } else {
           return 'Error: Failed to create document';
@@ -122,7 +121,7 @@ class ComCenter {
         return 'Error: Could not resolve conflict';
       }
     } catch (error) {
-      debugPrint('❌ Error in conflict resolution: $error');
+      debugPrint(' Error in conflict resolution: $error');
       return 'Error: $error';
     }
   }
@@ -132,7 +131,7 @@ class ComCenter {
 
     if (_client != null && _token.isNotEmpty) {
       _client!.options.headers["Authorization"] = "Bearer $_token";
-      debugPrint('🔄 Token refreshed in ComCenter');
+      debugPrint(' Token refreshed in ComCenter');
     }
   }
 }

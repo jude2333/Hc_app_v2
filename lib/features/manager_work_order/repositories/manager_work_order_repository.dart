@@ -40,7 +40,7 @@ class ManagerWorkOrderRepository {
   Completer<void>? _initCompleter;
 
   ManagerWorkOrderRepository({required this.storage}) {
-    debugPrint('🏭 ManagerWorkOrderRepository CONSTRUCTOR called');
+    debugPrint(' ManagerWorkOrderRepository CONSTRUCTOR called');
   }
 
   bool get isInitializing => _isInitializing;
@@ -56,7 +56,7 @@ class ManagerWorkOrderRepository {
       return _initCompleter!.future;
     }
 
-    debugPrint('🚀 ManagerWorkOrderRepository.initialize() START');
+    debugPrint(' ManagerWorkOrderRepository.initialize() START');
     _initCompleter = Completer<void>();
 
     Future.microtask(() async {
@@ -76,9 +76,9 @@ class ManagerWorkOrderRepository {
 
       _isInitializing = false;
       _initCompleter?.complete();
-      debugPrint('✅ ManagerWorkOrderRepository.initialize() COMPLETE');
+      debugPrint(' ManagerWorkOrderRepository.initialize() COMPLETE');
     } catch (e) {
-      debugPrint('❌ ManagerWorkOrderRepository.initialize() FAILED: $e');
+      debugPrint(' ManagerWorkOrderRepository.initialize() FAILED: $e');
       _isInitializing = false;
       _initCompleter?.completeError(e);
     }
@@ -92,7 +92,7 @@ class ManagerWorkOrderRepository {
 
   Stream<List<WorkOrder>> watchWorkOrdersByDate(DateTime date) {
     return _powerSync.watchWorkOrdersByDate(date).asyncMap((rawRows) async {
-      debugPrint('📊 Parsing ${rawRows.length} work orders in isolate...');
+      debugPrint(' Parsing ${rawRows.length} work orders in isolate...');
       return await compute(_parseWorkOrdersIsolate, rawRows);
     });
   }
@@ -102,7 +102,7 @@ class ManagerWorkOrderRepository {
         .watchWorkOrdersFromDate(startDate)
         .asyncMap((rawRows) async {
       debugPrint(
-          '📊 Parsing ${rawRows.length} work orders (6+ days) in isolate...');
+          ' Parsing ${rawRows.length} work orders (6+ days) in isolate...');
       return await compute(_parseWorkOrdersIsolate, rawRows);
     });
   }
@@ -112,7 +112,7 @@ class ManagerWorkOrderRepository {
       await _powerSync.createWorkOrder(order);
       return true;
     } catch (e) {
-      debugPrint('❌ Create failed: $e');
+      debugPrint(' Create failed: $e');
       return false;
     }
   }
@@ -122,7 +122,7 @@ class ManagerWorkOrderRepository {
     try {
       return await _powerSync.updateWorkOrder(order, customDoc: customDoc);
     } catch (e) {
-      debugPrint('❌ Update failed: $e');
+      debugPrint(' Update failed: $e');
       return false;
     }
   }
@@ -132,7 +132,7 @@ class ManagerWorkOrderRepository {
       await _powerSync.softDeleteWorkOrder(id, user);
       return true;
     } catch (e) {
-      debugPrint('❌ Soft delete failed: $e');
+      debugPrint(' Soft delete failed: $e');
       return false;
     }
   }
@@ -142,7 +142,7 @@ class ManagerWorkOrderRepository {
       await _powerSync.deleteWorkOrder(id);
       return true;
     } catch (e) {
-      debugPrint('❌ Delete failed: $e');
+      debugPrint(' Delete failed: $e');
       return false;
     }
   }

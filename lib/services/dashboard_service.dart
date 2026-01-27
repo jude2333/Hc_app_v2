@@ -28,7 +28,6 @@ class DashboardService {
       ref.read(dashboardDbProvider).delete(docId);
 }
 
-/* ----------  Riverpod provider  ---------- */
 final dashboardServiceProvider = Provider<DashboardService>((ref) {
   return DashboardService(ref);
 });

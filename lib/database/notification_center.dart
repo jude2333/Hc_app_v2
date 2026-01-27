@@ -18,12 +18,10 @@ class NotificationCenter {
     // Resolve notifications database name
     _resolvedDbName = _resolveDbName("notifications");
 
-    // Use Bearer token auth (same as Vue DBHandler.create() line 176)
-    // Token comes from pg_admin session (same as Vue DBHandler.refreshToken() line 303)
     String token = _storage.getFromSession("pg_admin");
 
     debugPrint(
-        '🔑 Token for CouchDB: ${token.isNotEmpty ? "${token.substring(0, 20)}..." : "EMPTY!"}');
+        ' Token for CouchDB: ${token.isNotEmpty ? "${token.substring(0, 20)}..." : "EMPTY!"}');
 
     final options = BaseOptions(
       baseUrl: '${Settings.remoteCouchUrl}/$_resolvedDbName',
@@ -45,12 +43,10 @@ class NotificationCenter {
     if (shortName == "notifications") {
       return "chennai11_hc_notifications";
     }
-    // Fallback for other databases
     return shortName;
   }
 
   Future<String> sendNotification(Map<String, dynamic> notification) async {
-    // Always recreate client to ensure fresh auth
     await _setup();
 
     try {
@@ -60,7 +56,7 @@ class NotificationCenter {
 
       String docId = notification['_id'];
       final fullUrl = '${Settings.remoteCouchUrl}/$_resolvedDbName/$docId';
-      debugPrint('📤 Sending notification to: $fullUrl');
+      debugPrint(' Sending notification to: $fullUrl');
 
       // just ensure _id is set - no need to remove anything
       notification['_id'] = docId;
@@ -70,26 +66,26 @@ class NotificationCenter {
         data: notification,
       );
 
-      debugPrint('📥 Response status: ${response.statusCode}');
-      debugPrint('📥 Response data: ${response.data}');
+      debugPrint(' Response status: ${response.statusCode}');
+      debugPrint(' Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ Notification sent successfully: $docId');
+        debugPrint(' Notification sent successfully: $docId');
         return 'OK';
       } else if (response.statusCode == 409) {
-        debugPrint('⚠️ Notification conflict (409), resolving...');
+        debugPrint(' Notification conflict (409), resolving...');
         return await _resolveConflictAndRetry(docId, notification);
       } else {
-        debugPrint('❌ Failed to send notification: ${response.statusCode}');
-        debugPrint('❌ Response body: ${response.data}');
+        debugPrint(' Failed to send notification: ${response.statusCode}');
+        debugPrint(' Response body: ${response.data}');
         return 'Error: ${response.statusMessage}';
       }
     } catch (error, stackTrace) {
       if (error is DioException) {
-        debugPrint('❌ DioException: ${error.message}');
-        debugPrint('❌ Request URL: ${error.requestOptions.uri}');
-        debugPrint('❌ Response status: ${error.response?.statusCode}');
-        debugPrint('❌ Response body: ${error.response?.data}');
+        debugPrint(' DioException: ${error.message}');
+        debugPrint(' Request URL: ${error.requestOptions.uri}');
+        debugPrint(' Response status: ${error.response?.statusCode}');
+        debugPrint(' Response body: ${error.response?.data}');
 
         if (error.response?.statusCode == 409) {
           return await _resolveConflictAndRetry(
@@ -97,7 +93,7 @@ class NotificationCenter {
         }
       }
 
-      debugPrint('❌ Error sending notification: $error');
+      debugPrint(' Error sending notification: $error');
       return 'Error: $error';
     }
   }
@@ -167,7 +163,7 @@ class NotificationCenter {
   Future<String> _resolveConflictAndRetry(
       String docId, Map<String, dynamic> localDoc) async {
     try {
-      debugPrint('🔄 Fetching remote notification: $docId');
+      debugPrint(' Fetching remote notification: $docId');
 
       Response getResponse = await _client!.get('/$docId');
 
@@ -182,7 +178,7 @@ class NotificationCenter {
 
         if (retryResponse.statusCode == 200 ||
             retryResponse.statusCode == 201) {
-          debugPrint('✅ Notification updated after conflict');
+          debugPrint(' Notification updated after conflict');
           return 'OK';
         } else {
           return 'Error: Conflict resolution failed';
@@ -194,7 +190,7 @@ class NotificationCenter {
 
         if (createResponse.statusCode == 200 ||
             createResponse.statusCode == 201) {
-          debugPrint('✅ Notification created successfully');
+          debugPrint(' Notification created successfully');
           return 'OK';
         } else {
           return 'Error: Failed to create notification';
@@ -203,7 +199,7 @@ class NotificationCenter {
         return 'Error: Could not resolve conflict';
       }
     } catch (error) {
-      debugPrint('❌ Error in conflict resolution: $error');
+      debugPrint(' Error in conflict resolution: $error');
       return 'Error: $error';
     }
   }
@@ -211,8 +207,7 @@ class NotificationCenter {
   // No longer needed - using Basic auth which doesn't require token refresh
   Future<void> refreshToken() async {
     // Basic auth credentials are static, no refresh needed
-    debugPrint(
-        '🔄 NotificationCenter uses Basic auth - no token refresh needed');
+    debugPrint(' NotificationCenter uses Basic auth - no token refresh needed');
   }
 
   String _getTodayWithTime() {

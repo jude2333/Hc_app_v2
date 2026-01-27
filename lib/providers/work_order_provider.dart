@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
-import 'package:flutter/foundation.dart'; // For compute
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:powersync/powersync.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/work_order.dart';
-// import '../powersync/servicess/powersync_service.dart';
+
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
-// import '../services/storage_service.dart';
+
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 
-// ✅ Isolate function for parsing work orders (runs in background)
 List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   return rows.map((row) {
     final data = row as Map<String, dynamic>;
@@ -18,18 +17,15 @@ List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   }).toList();
 }
 
-// ✅ Isolate function for filtering work orders using pre-computed searchableText
 List<WorkOrder> _filterWorkOrdersIsolate(_FilterParams params) {
   if (params.query.isEmpty) return params.orders;
   final term = params.query.toLowerCase();
 
   return params.orders.where((wo) {
-    // Use pre-computed searchableText for fast filtering
     return wo.searchableText.contains(term);
   }).toList();
 }
 
-// Helper class to pass multiple params to isolate
 class _FilterParams {
   final List<WorkOrder> orders;
   final String query;
@@ -50,7 +46,6 @@ class WorkOrderProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // ✅ FIX: Track initialization completion
   Completer<void>? _initCompleter;
 
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
@@ -66,12 +61,9 @@ class WorkOrderProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   SyncStatus? get syncStatus => _syncStatus;
 
-  // ✅ OPTIMIZATION: Non-blocking initialization with tracking
   Future<void> initialize() async {
-    // If already initialized, return immediately
     if (!_isInitializing) return;
 
-    // If initialization is in progress, wait for it
     if (_initCompleter != null) {
       return _initCompleter!.future;
     }
@@ -80,11 +72,9 @@ class WorkOrderProvider with ChangeNotifier {
 
     _initCompleter = Completer<void>();
 
-    // Set loading state immediately so UI can show skeleton
     _isLoading = true;
     notifyListeners();
 
-    // ✅ Use microtask to let UI render first, then await internally
     Future.microtask(() async {
       await _initializeInternal();
     });
@@ -92,12 +82,10 @@ class WorkOrderProvider with ChangeNotifier {
     return _initCompleter!.future;
   }
 
-  // Internal initialization (runs in background)
   Future<void> _initializeInternal() async {
     try {
       await _powerSync.initialize(storage);
 
-      // Sync Status Subscription
       _statusSubscription = _powerSync.watchStatus().listen((status) {
         _syncStatus = status;
         notifyListeners();
@@ -117,7 +105,6 @@ class WorkOrderProvider with ChangeNotifier {
     }
   }
 
-  // ✅ FIX: Ensure initialization is complete before loading
   Future<void> _ensureInitialized() async {
     if (_isInitializing && _initCompleter != null) {
       await _initCompleter!.future;
@@ -127,7 +114,6 @@ class WorkOrderProvider with ChangeNotifier {
   Future<void> loadWorkOrdersByDate(DateTime selectedDate) async {
     debugPrint('📅 Loading orders for: $selectedDate');
 
-    // ✅ FIX: Wait for initialization before accessing PowerSync
     await _ensureInitialized();
 
     try {
@@ -161,7 +147,6 @@ class WorkOrderProvider with ChangeNotifier {
   Future<void> loadTechnicianWorkOrders(String techId) async {
     debugPrint('👨‍🔧 Loading technician orders: $techId');
 
-    // ✅ FIX: Wait for initialization before accessing PowerSync
     await _ensureInitialized();
 
     try {
@@ -170,7 +155,6 @@ class WorkOrderProvider with ChangeNotifier {
       _ordersSubscription = _powerSync
           .watchTechnicianWorkOrders(techId)
           .asyncMap((rawRows) async {
-        // isolotate optimization
         return await compute(_parseWorkOrdersIsolate, rawRows);
       }).listen(
         (orders) {
@@ -191,8 +175,6 @@ class WorkOrderProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // ---------------- CRUD OPERATIONS ----------------
 
   Future<bool> createWorkOrder(WorkOrder order) async {
     try {
@@ -234,14 +216,12 @@ class WorkOrderProvider with ChangeNotifier {
     }
   }
 
-  // ✅ OPTIMIZED: Isolate-based search using pre-computed searchableText
   Future<List<WorkOrder>> searchWorkOrdersAsync(String query) async {
     if (query.isEmpty) return workOrders;
     return await compute(
         _filterWorkOrdersIsolate, _FilterParams(workOrders, query));
   }
 
-  // Sync version for small lists (kept for compatibility)
   List<WorkOrder> searchWorkOrders(String query) {
     if (query.isEmpty) return workOrders;
     final q = query.toLowerCase();

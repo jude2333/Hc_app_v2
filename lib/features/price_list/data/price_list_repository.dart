@@ -9,7 +9,7 @@ class PriceListRepository {
   PriceListRepository(this._db);
 
   Future<List<PriceListItem>> fetchAll({String query = ''}) async {
-    debugPrint('📊 [PriceListRepo] fetchAll(query: "$query")');
+    debugPrint(' [PriceListRepo] fetchAll(query: "$query")');
 
     String sql;
     List<dynamic> params = [];
@@ -66,16 +66,16 @@ class PriceListRepository {
     try {
       final results = await _db.getAll(sql, params);
       final items = results.map((row) => PriceListItem.fromRow(row)).toList();
-      debugPrint('✅ [PriceListRepo] Found ${items.length} items');
+      debugPrint(' [PriceListRepo] Found ${items.length} items');
       return items;
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] fetchAll error: $e');
+      debugPrint(' [PriceListRepo] fetchAll error: $e');
       return [];
     }
   }
 
   Future<PriceListItem?> getById(String id) async {
-    debugPrint('📊 [PriceListRepo] getById($id)');
+    debugPrint(' [PriceListRepo] getById($id)');
 
     try {
       final results = await _db.getAll(
@@ -84,19 +84,19 @@ class PriceListRepository {
       );
 
       if (results.isEmpty) {
-        debugPrint('⚠️ [PriceListRepo] Item not found: $id');
+        debugPrint(' [PriceListRepo] Item not found: $id');
         return null;
       }
 
       return PriceListItem.fromRow(results.first);
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] getById error: $e');
+      debugPrint(' [PriceListRepo] getById error: $e');
       return null;
     }
   }
 
   Stream<List<PriceListItem>> watchAll({String query = ''}) {
-    debugPrint('👁️ [PriceListRepo] watchAll(query: "$query")');
+    debugPrint(' [PriceListRepo] watchAll(query: "$query")');
 
     String sql;
     List<dynamic> params = [];
@@ -121,7 +121,7 @@ class PriceListRepository {
   }
 
   Future<String> insert(PriceListItem item) async {
-    debugPrint('📤 [PriceListRepo] insert(${item.investName})');
+    debugPrint(' [PriceListRepo] insert(${item.investName})');
 
     try {
       final row = item.toRow();
@@ -149,16 +149,16 @@ class PriceListRepository {
         row['visible'],
       ]);
 
-      debugPrint('✅ [PriceListRepo] Inserted: ${item.id}');
+      debugPrint(' [PriceListRepo] Inserted: ${item.id}');
       return 'OK';
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] insert error: $e');
+      debugPrint(' [PriceListRepo] insert error: $e');
       return 'Error: $e';
     }
   }
 
   Future<String> update(PriceListItem item) async {
-    debugPrint('🔄 [PriceListRepo] update(${item.id})');
+    debugPrint(' [PriceListRepo] update(${item.id})');
 
     try {
       final row = item.toRow();
@@ -194,16 +194,16 @@ class PriceListRepository {
         row['id'],
       ]);
 
-      debugPrint('✅ [PriceListRepo] Updated: ${item.id}');
+      debugPrint(' [PriceListRepo] Updated: ${item.id}');
       return 'OK';
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] update error: $e');
+      debugPrint(' [PriceListRepo] update error: $e');
       return 'Error: $e';
     }
   }
 
   Future<String> softDelete(String id) async {
-    debugPrint('🗑️ [PriceListRepo] softDelete($id)');
+    debugPrint(' [PriceListRepo] softDelete($id)');
 
     try {
       await _db.execute(
@@ -211,30 +211,30 @@ class PriceListRepository {
         [DateTime.now().toIso8601String(), id],
       );
 
-      debugPrint('✅ [PriceListRepo] Soft deleted: $id');
+      debugPrint(' [PriceListRepo] Soft deleted: $id');
       return 'OK';
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] softDelete error: $e');
+      debugPrint(' [PriceListRepo] softDelete error: $e');
       return 'Error: $e';
     }
   }
 
   Future<String> hardDelete(String id) async {
-    debugPrint('🗑️ [PriceListRepo] hardDelete($id)');
+    debugPrint(' [PriceListRepo] hardDelete($id)');
 
     try {
       await _db.execute('DELETE FROM price_list WHERE id = ?', [id]);
 
-      debugPrint('✅ [PriceListRepo] Hard deleted: $id');
+      debugPrint(' [PriceListRepo] Hard deleted: $id');
       return 'OK';
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] hardDelete error: $e');
+      debugPrint(' [PriceListRepo] hardDelete error: $e');
       return 'Error: $e';
     }
   }
 
   Future<Map<String, String>> getDepartmentMap() async {
-    debugPrint('📊 [PriceListRepo] getDepartmentMap()');
+    debugPrint(' [PriceListRepo] getDepartmentMap()');
 
     try {
       final results = await _db.getAll('''
@@ -253,16 +253,16 @@ class PriceListRepository {
         }
       }
 
-      debugPrint('✅ [PriceListRepo] Found ${deptMap.length} departments');
+      debugPrint(' [PriceListRepo] Found ${deptMap.length} departments');
       return deptMap;
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] getDepartmentMap error: $e');
+      debugPrint(' [PriceListRepo] getDepartmentMap error: $e');
       return {};
     }
   }
 
   Future<Map<String, String>> getInvestigationMap() async {
-    debugPrint('📊 [PriceListRepo] getInvestigationMap()');
+    debugPrint(' [PriceListRepo] getInvestigationMap()');
 
     try {
       final results = await _db.getAll('''
@@ -281,16 +281,16 @@ class PriceListRepository {
         }
       }
 
-      debugPrint('✅ [PriceListRepo] Found ${investMap.length} investigations');
+      debugPrint(' [PriceListRepo] Found ${investMap.length} investigations');
       return investMap;
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] getInvestigationMap error: $e');
+      debugPrint(' [PriceListRepo] getInvestigationMap error: $e');
       return {};
     }
   }
 
   Future<List<Map<String, dynamic>>> getGlobalHistory({int limit = 100}) async {
-    debugPrint('📜 [PriceListRepo] getGlobalHistory(limit: $limit)');
+    debugPrint(' [PriceListRepo] getGlobalHistory(limit: $limit)');
 
     try {
       final results = await _db.getAll('''
@@ -326,10 +326,10 @@ class PriceListRepository {
       });
 
       final limited = allHistory.take(limit).toList();
-      debugPrint('✅ [PriceListRepo] Found ${limited.length} history entries');
+      debugPrint(' [PriceListRepo] Found ${limited.length} history entries');
       return limited;
     } catch (e) {
-      debugPrint('❌ [PriceListRepo] getGlobalHistory error: $e');
+      debugPrint(' [PriceListRepo] getGlobalHistory error: $e');
       return [];
     }
   }

@@ -32,27 +32,19 @@ class AppState {
       );
 }
 
-/* ----------  NOTIFIER  (actions)  ---------- */
 class AppNotifier extends StateNotifier<AppState> {
   AppNotifier() : super(AppState(today: Util.getTodayString()));
 
-  // Notifications are now handled by LiveNotificationController in notification_provider.dart
-
-  /* ----- mutations ----- */
   void setStatus(String v) => state = state.copyWith(status: v);
   void setWorkOrder(String v) => state = state.copyWith(workOrder: v);
   void setToday(String v) => state = state.copyWith(today: v);
   void setNotifications(String v) => state = state.copyWith(notifications: v);
 }
 
-/* ----------  PROVIDERS  ---------- */
 final appNotifierProvider = StateNotifierProvider<AppNotifier, AppState>(
   (ref) => AppNotifier(),
 );
 
-// Notification providers moved to lib/providers/notification_provider.dart
-
-/* ---- convenience selectors ---- */
 final notificationsProvider = Provider<String>(
   (ref) => ref.watch(appNotifierProvider.select((s) => s.notifications)),
 );

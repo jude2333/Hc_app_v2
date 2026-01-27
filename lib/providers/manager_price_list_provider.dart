@@ -1,5 +1,3 @@
-// FILE: lib/providers/manager_price_list_provider.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,7 +65,6 @@ String _toTitleCaseIsolate(String text) {
   }).join(' ');
 }
 
-// State Class
 class ManagerPriceListState {
   final bool isLoading;
   final List<Map<String, dynamic>> items;
@@ -78,7 +75,7 @@ class ManagerPriceListState {
   final List<Map<String, dynamic>> history;
   final Map<String, String> investIdToName;
   final Map<String, String> investNameToId;
-  final String currentSearchQuery; // ✅ Track current search
+  final String currentSearchQuery;
 
   ManagerPriceListState({
     this.isLoading = false,
@@ -120,7 +117,6 @@ class ManagerPriceListState {
   }
 }
 
-// Notifier
 class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
   final Ref ref;
 
@@ -128,7 +124,6 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
 
   PriceListDB get _db => ref.read(priceListDbProvider);
 
-  // ✅ Load combo data in isolate
   Future<void> loadComboData() async {
     debugPrint('📊 Loading combo data...');
 
@@ -140,7 +135,6 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
 
     debugPrint('🔄 Parsing ${investStr.length} chars in isolate...');
 
-    // ✅ Parse in background isolate
     final result = await compute(_parseComboDataIsolate, {
       'dept_names': deptStr,
       'invest_names': investStr,
@@ -159,9 +153,7 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
         '✅ Loaded ${state.deptNames.length} depts, ${state.investIds.length} investigations');
   }
 
-  // ✅ Debounced search
   Future<void> search(String query) async {
-    // Skip if same query
     if (state.currentSearchQuery == query && state.items.isNotEmpty) {
       debugPrint('⏭️ Skipping duplicate search: $query');
       return;
@@ -217,7 +209,7 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
       final result = await _db.insertNew(doc);
       if (result == "OK") {
         await _db.insertHistory(history);
-        search(""); // Refresh list
+        search("");
         return "OK";
       }
       return result;
@@ -265,7 +257,7 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
       final result = await _db.update(oldDoc);
       if (result == "OK") {
         await _db.insertHistory(history);
-        search(state.currentSearchQuery); // Refresh with current query
+        search(state.currentSearchQuery);
         return "OK";
       }
       return result;

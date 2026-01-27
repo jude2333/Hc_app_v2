@@ -400,17 +400,17 @@ class HCProcessController {
     try {
       final otp = Util.generateOTP();
       _notifier.setGeneratedOtp(otp);
-      debugPrint('📱 Generated OTP: $otp');
+      debugPrint(' Generated OTP: $otp');
 
       if (Settings.development) {
-        debugPrint('🔧 Development mode: OTP will be shown in UI');
+        debugPrint(' Development mode: OTP will be shown in UI');
         _notifier.setLoading(false);
         return;
       }
 
       await _sendOtpMsg(otp);
     } catch (e) {
-      debugPrint('❌ Error generating OTP: $e');
+      debugPrint(' Error generating OTP: $e');
     } finally {
       _notifier.setLoading(false);
     }
@@ -549,7 +549,7 @@ class HCProcessController {
       _notifier.setLoading(false);
       return fileLocation;
     } catch (e) {
-      debugPrint('❌ Upload error: $e');
+      debugPrint(' Upload error: $e');
       _notifier.setLoading(false);
       rethrow;
     }
@@ -663,7 +663,7 @@ class HCProcessController {
       if (workOrder == null) return;
 
       if (Settings.development) {
-        debugPrint('🔧 Dev mode: Notification skipped');
+        debugPrint(' Dev mode: Notification skipped');
         return;
       }
 

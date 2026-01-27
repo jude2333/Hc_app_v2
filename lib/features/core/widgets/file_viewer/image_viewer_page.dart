@@ -5,8 +5,6 @@ import 'package:photo_view/photo_view.dart';
 import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
 
-/// Full-screen image viewer with pinch-to-zoom and pan
-/// Supports loading from S3 path, preloaded bytes, or URL
 class ImageViewerPage extends ConsumerStatefulWidget {
   final String s3Path;
   final String? title;
@@ -21,7 +19,6 @@ class ImageViewerPage extends ConsumerStatefulWidget {
     this.imageUrl,
   });
 
-  /// Show image viewer as a full-screen page
   static Future<void> show(
     BuildContext context, {
     required String s3Path,
@@ -57,7 +54,6 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
   }
 
   Future<void> _loadImage() async {
-    // 1. Use preloaded bytes if available
     if (widget.preloadedBytes != null) {
       if (mounted) {
         setState(() {
@@ -68,7 +64,6 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       return;
     }
 
-    // 2. Use URL if available (handled by PhotoView.network)
     if (widget.imageUrl != null) {
       if (mounted) {
         setState(() {
@@ -78,13 +73,11 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       return;
     }
 
-    // 3. Download from S3
     try {
       final s3Service = ref.read(s3FileServiceProvider);
       final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
       if (bytes.length < 1000 && bytes.toString().contains('Error')) {
-        // Basic validation - sometimes error text is returned as bytes
         throw Exception('Invalid image data');
       }
 
@@ -135,7 +128,6 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       return _buildError();
     }
 
-    // Use bytes if available
     if (_imageBytes != null) {
       return PhotoView(
         imageProvider: MemoryImage(_imageBytes!),
@@ -147,7 +139,6 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       );
     }
 
-    // Use URL if available
     if (widget.imageUrl != null) {
       return PhotoView(
         imageProvider: NetworkImage(widget.imageUrl!),

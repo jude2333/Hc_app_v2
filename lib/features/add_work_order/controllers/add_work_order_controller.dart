@@ -216,7 +216,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
 
   Future<void> _sendConfirmationSms(WorkOrder workOrder, bool sendSms) async {
     if (!sendSms) {
-      debugPrint('⏭️ Skipping SMS (user disabled SMS)');
+      debugPrint(' Skipping SMS (user disabled SMS)');
       return;
     }
 
@@ -257,16 +257,16 @@ class AddWorkOrderController extends StateNotifier<bool> {
         'updated_at': Util.getTimeStamp(),
       };
 
-      debugPrint('📤 Sending confirmation SMS to ${workOrder.mobile}');
+      debugPrint(' Sending confirmation SMS to ${workOrder.mobile}');
       final result = await comCenter.sendMsg(message);
 
       if (result == 'OK') {
-        debugPrint('✅ Confirmation SMS sent successfully');
+        debugPrint(' Confirmation SMS sent successfully');
       } else {
-        debugPrint('⚠️ SMS sending failed: $result');
+        debugPrint(' SMS sending failed: $result');
       }
     } catch (e) {
-      debugPrint('❌ Error sending confirmation SMS: $e');
+      debugPrint(' Error sending confirmation SMS: $e');
     }
   }
 
@@ -305,12 +305,12 @@ class AddWorkOrderController extends StateNotifier<bool> {
         };
 
         debugPrint(
-            '📤 Sending cancellation notification to ${workOrder.assignedTo}');
+            ' Sending cancellation notification to ${workOrder.assignedTo}');
         final result = await notificationCenter.sendNotification(notification);
         if (result == 'OK') {
-          debugPrint('✅ Cancellation notification sent to technician');
+          debugPrint(' Cancellation notification sent to technician');
         } else {
-          debugPrint('⚠️ Failed to send notification: $result');
+          debugPrint(' Failed to send notification: $result');
         }
       }
 
@@ -339,12 +339,12 @@ class AddWorkOrderController extends StateNotifier<bool> {
         smsMessage['message'] =
             SmsTemplate.homeCollectionCancellation(rescheduleUrl);
 
-        debugPrint('📤 Sending cancellation SMS to ${workOrder.mobile}');
+        debugPrint(' Sending cancellation SMS to ${workOrder.mobile}');
         final result = await comCenter.sendMsg(smsMessage);
         if (result == 'OK') {
-          debugPrint('✅ Cancellation SMS sent successfully');
+          debugPrint(' Cancellation SMS sent successfully');
         } else {
-          debugPrint('⚠️ SMS failed: $result');
+          debugPrint(' SMS failed: $result');
         }
       }
 
@@ -355,16 +355,16 @@ class AddWorkOrderController extends StateNotifier<bool> {
         waMessage['message'] = [rescheduleUrl];
         waMessage['template'] = 'hc_cancellation';
 
-        debugPrint('📤 Sending cancellation WhatsApp to ${workOrder.mobile}');
+        debugPrint(' Sending cancellation WhatsApp to ${workOrder.mobile}');
         final result = await comCenter.sendMsg(waMessage);
         if (result == 'OK') {
-          debugPrint('✅ Cancellation WhatsApp sent successfully');
+          debugPrint(' Cancellation WhatsApp sent successfully');
         } else {
-          debugPrint('⚠️ WhatsApp failed: $result');
+          debugPrint(' WhatsApp failed: $result');
         }
       }
     } catch (e) {
-      debugPrint('❌ Error sending cancellation notifications: $e');
+      debugPrint(' Error sending cancellation notifications: $e');
     }
   }
 }
