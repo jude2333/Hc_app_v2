@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-/// Status chip for work order status display (bordered style).
-/// Used by both Manager and Technician work order pages.
 class StatusChip extends StatelessWidget {
   final String status;
   final VoidCallback? onTap;
@@ -26,10 +25,10 @@ class StatusChip extends StatelessWidget {
     final color = _getColor(status);
 
     final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: AppPadding.custom,
       decoration: BoxDecoration(
         border: Border.all(color: color),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.xsAll,
       ),
       child: Text(
         status.isEmpty ? 'N/A' : status,
@@ -44,7 +43,7 @@ class StatusChip extends StatelessWidget {
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.smAll,
         child: Align(
           alignment: Alignment.centerLeft,
           child: chip,
@@ -84,10 +83,10 @@ class ServerStatusChip extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: AppPadding.custom,
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.xsAll,
         ),
         child: Text(
           status.isEmpty ? 'N/A' : status,

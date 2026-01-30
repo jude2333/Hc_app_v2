@@ -262,6 +262,14 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Future<void> _save() async {
+    // Generate S3-style path for prescription if new image picked
+    String prescriptionPath = _prescriptionPath;
+    if (_prescriptionImage != null) {
+      final todayFolder = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final fileName = _prescriptionImage!.name;
+      prescriptionPath = 'homecollection/prescriptions/$todayFolder/$fileName';
+    }
+
     final result =
         await ref.read(addWorkOrderControllerProvider.notifier).saveWorkOrder(
               isEditMode: isEditMode,
@@ -287,9 +295,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               sendSms: _sendSms,
               sendWhatsapp: _sendWhatsapp,
               sendEmail: _sendEmail,
-              prescriptionPath: _prescriptionImage != null
-                  ? _prescriptionImage!.path
-                  : _prescriptionPath,
+              prescriptionPath: prescriptionPath,
+              prescriptionImage: _prescriptionImage,
               isCancelled: _isCancelled,
               cancelReason: _cancellationReasonController.text.trim(),
             );

@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-/// Model representing the technician's HC Process document structure
-/// This wraps the nested JSON stored in the `doc` column of hc_patient_visit_detail
 class TechnicianProcessDoc {
   // Process Steps
   final ProcessSteps process;
@@ -52,8 +50,8 @@ class TechnicianProcessDoc {
     this.paymentMethod,
     this.gpayRef,
     this.remarks,
-    this.credit, // ✅ Added
-    this.cghs, // ✅ Added
+    this.credit,
+    this.cghs,
     this.status,
     this.serverStatus,
     this.billNumber,
@@ -91,11 +89,8 @@ class TechnicianProcessDoc {
       paymentMethod: json['payment_method']?.toString(),
       gpayRef: json['gpay_ref']?.toString(),
       remarks: json['remarks']?.toString(),
-
-      // ✅ Parse Flags
       credit: int.tryParse(json['credit']?.toString() ?? ''),
       cghs: int.tryParse(json['cghs']?.toString() ?? ''),
-
       status: json['status']?.toString(),
       serverStatus: json['server_status']?.toString(),
       billNumber: json['bill_number']?.toString(),
@@ -119,11 +114,8 @@ class TechnicianProcessDoc {
       'payment_method': paymentMethod,
       'gpay_ref': gpayRef,
       'remarks': remarks,
-
-      // ✅ Serialize Flags
       'credit': credit,
       'cghs': cghs,
-
       'status': status,
       'server_status': serverStatus,
       'bill_number': billNumber,
@@ -146,8 +138,6 @@ class TechnicianProcessDoc {
     String? paymentMethod,
     String? gpayRef,
     String? remarks,
-
-    // ✅ Add to copyWith arguments
     int? credit,
     int? cghs,
     String? status,
@@ -170,11 +160,8 @@ class TechnicianProcessDoc {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       gpayRef: gpayRef ?? this.gpayRef,
       remarks: remarks ?? this.remarks,
-
-      // ✅ Assign Flags
       credit: credit ?? this.credit,
       cghs: cghs ?? this.cghs,
-
       status: status ?? this.status,
       serverStatus: serverStatus ?? this.serverStatus,
       billNumber: billNumber ?? this.billNumber,

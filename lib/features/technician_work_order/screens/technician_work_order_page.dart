@@ -338,7 +338,7 @@ class VirtualTechnicianTable extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.all(AppSpacing.md),
+          padding: AppPadding.md,
           child: WorkOrderSearchBar(
             hintText: 'Search Patient, Mobile, Bill No...',
             onChanged: (v) => ref.read(_searchPod.notifier).state = v,
@@ -347,16 +347,14 @@ class VirtualTechnicianTable extends ConsumerWidget {
         ),
         Expanded(
           child: Card(
-            margin: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            margin: AppPadding.md,
             elevation: AppSizes.cardElevation,
             color: AppColors.surface,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
             child: Column(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  padding: AppPadding.customTable,
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: const BorderRadius.only(
@@ -459,8 +457,8 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
                 border:
                     Border(bottom: BorderSide(color: AppColors.tableBorder))),
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+              padding:
+                  EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
               child: Row(
                 children: [
                   Expanded(
@@ -503,11 +501,9 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
 
   Widget _buildCell(String text, {required int flex}) {
     return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
+        flex: flex,
+        child: Container(
+            padding: AppPadding.sm,
+            child: Text(text, overflow: TextOverflow.ellipsis)));
   }
 }

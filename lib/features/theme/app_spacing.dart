@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppSpacing {
+  static const double xxs = 2.0;
   static const double xs = 4.0;
+  static const double ssm = 6.0;
   static const double sm = 8.0;
   static const double md = 12.0;
   static const double lg = 16.0;
@@ -12,11 +14,17 @@ class AppSpacing {
 
 class AppPadding {
   static const EdgeInsets none = EdgeInsets.zero;
+  static const EdgeInsets xxs = EdgeInsets.all(2);
   static const EdgeInsets xs = EdgeInsets.all(4);
+  static const EdgeInsets ssm = EdgeInsets.all(6);
   static const EdgeInsets sm = EdgeInsets.all(8);
   static const EdgeInsets md = EdgeInsets.all(12);
   static const EdgeInsets lg = EdgeInsets.all(16);
   static const EdgeInsets xl = EdgeInsets.all(20);
+  static const EdgeInsets custom =
+      EdgeInsets.symmetric(horizontal: 10, vertical: 2);
+  static const EdgeInsets customTable =
+      EdgeInsets.symmetric(horizontal: 16, vertical: 2);
 
   static const EdgeInsets card = EdgeInsets.all(16);
   static const EdgeInsets cardCompact = EdgeInsets.all(12);

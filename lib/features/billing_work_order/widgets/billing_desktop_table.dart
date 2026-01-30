@@ -86,8 +86,7 @@ class BillingDesktopTable extends ConsumerWidget {
               child: Column(
                 children: [
                   Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg, vertical: 2),
+                    padding: AppPadding.customTable,
                     decoration: BoxDecoration(
                       color: AppColors.primaryLight,
                       borderRadius: const BorderRadius.only(

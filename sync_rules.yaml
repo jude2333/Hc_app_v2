@@ -36,3 +36,10 @@ bucket_definitions:
           AND server_status = 'Received'
           AND visit_date >= CURRENT_DATE - INTERVAL '7 days'
           AND visit_date <= CURRENT_DATE + INTERVAL '7 days'
+
+  # TEMP UPLOADS: Prescription photos pending S3 upload
+  temp_uploads:
+    parameters: SELECT request.jwt() ->> 'tenant_id' AS tenant_id
+    data:
+      - SELECT * FROM data.temp_uploads 
+        WHERE tenant_id::text = bucket.tenant_id

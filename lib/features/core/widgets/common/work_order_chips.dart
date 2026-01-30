@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================================
-// COMPACT CHIP WIDGETS (matching status chip style)
-// Used in Manager and Billing expanded content
-// ============================================================================
-
-/// Bordered chip (outline only) - like Status chip
 class BorderedChip extends StatelessWidget {
   final String label;
   final Color color;

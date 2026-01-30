@@ -178,6 +178,9 @@ class BackendConnector extends PowerSyncBackendConnector {
         case 'price_list':
           await _handlePriceListUpload(operation);
           break;
+        case 'temp_uploads':
+          await _handleTempUploadSync(operation);
+          break;
         default:
           debugPrint('[BackendConnector] Unknown table: $table');
           return;
@@ -423,5 +426,113 @@ class BackendConnector extends PowerSyncBackendConnector {
       debugPrint('[BackendConnector] Connection check failed: $e');
       return false;
     }
+  }
+
+  // Temp Uploads Handlers (for prescription photos)
+  Future<void> _handleTempUploadSync(CrudEntry operation) async {
+    final id = operation.id;
+    final data = operation.opData;
+
+    switch (operation.op) {
+      case UpdateType.put:
+        await _upsertTempUpload(id, data!);
+        break;
+      case UpdateType.patch:
+        await _updateTempUpload(id, data!);
+        break;
+      case UpdateType.delete:
+        await _deleteTempUpload(id);
+        break;
+    }
+  }
+
+  Future<void> _upsertTempUpload(String id, Map<String, dynamic> data) async {
+    final baseUrl = Settings.currentPostgresUrl;
+    final url = '$baseUrl/data.temp_uploads';
+
+    final dataWithId = {...data, 'id': id};
+
+    debugPrint('[BackendConnector] Syncing temp upload: $id');
+
+    final token = await storage.getFromSessionAsync('pg_admin');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=minimal',
+    };
+
+    if (token.isNotEmpty && !Settings.development) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(dataWithId),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint('[BackendConnector] Temp upload synced: $id');
+      } else {
+        debugPrint(
+            '[BackendConnector] Temp upload sync failed: ${response.statusCode} - ${response.body}');
+        throw Exception('TempUpload upsert failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('[BackendConnector] Temp upload sync error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _updateTempUpload(String id, Map<String, dynamic> data) async {
+    final baseUrl = Settings.currentPostgresUrl;
+    final url = '$baseUrl/data.temp_uploads?id=eq.$id';
+
+    debugPrint('[BackendConnector] Updating temp upload: $id');
+
+    final token = await storage.getFromSessionAsync('pg_admin');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    if (token.isNotEmpty && !Settings.development) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: headers,
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      debugPrint(
+          '[BackendConnector] Temp upload update failed: ${response.statusCode}');
+      throw Exception('TempUpload update failed: ${response.statusCode}');
+    }
+    debugPrint('[BackendConnector] Temp upload updated: $id');
+  }
+
+  Future<void> _deleteTempUpload(String id) async {
+    final baseUrl = Settings.currentPostgresUrl;
+    final url = '$baseUrl/data.temp_uploads?id=eq.$id';
+
+    debugPrint('[BackendConnector] Deleting temp upload: $id');
+
+    final token = await storage.getFromSessionAsync('pg_admin');
+    final headers = <String, String>{};
+
+    if (token.isNotEmpty && !Settings.development) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.delete(Uri.parse(url), headers: headers);
+
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      debugPrint(
+          '[BackendConnector] Temp upload delete failed: ${response.statusCode}');
+      throw Exception('TempUpload delete failed: ${response.statusCode}');
+    }
+    debugPrint('[BackendConnector] Temp upload deleted: $id');
   }
 }

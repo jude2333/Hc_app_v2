@@ -78,7 +78,8 @@ class ManagerDesktopView extends ConsumerWidget {
   Widget _buildTableHeader(
       String sortCol, bool sortAsc, Function(String) handleSort) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
+      // padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
+      padding: AppPadding.customTable,
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
         borderRadius: const BorderRadius.only(
@@ -220,8 +221,7 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
     return Expanded(
         flex: flex,
         child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+            padding: AppPadding.sm,
             child: Text(text, overflow: TextOverflow.ellipsis)));
   }
 

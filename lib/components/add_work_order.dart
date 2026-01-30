@@ -15,6 +15,7 @@ import '../features/core/util.dart';
 import '../config/settings.dart';
 import '../features/theme/theme.dart';
 import '../providers/pincode_provider.dart';
+import '../repositories/temp_upload_repository.dart';
 
 final _b2bClientsPod = StateProvider<List<Map<String, dynamic>>>((_) => []);
 
@@ -1247,10 +1248,11 @@ class _AddWorkOrderPageMobileState
       maxHeight: 1920,
     );
     if (image != null) {
+      final todayFolder = DateFormat('yyyy-MM-dd').format(DateTime.now());
       setState(() {
         _prescriptionImage = image;
         _prescriptionPath =
-            'homecollection/prescriptions/${DateTime.now().toIso8601String()}/${image.name}';
+            'homecollection/prescriptions/$todayFolder/${image.name}';
       });
     }
   }
@@ -1413,6 +1415,15 @@ class _AddWorkOrderPageMobileState
           final success =
               await ref.read(workOrderProvider).createWorkOrder(workOrder);
 
+          // Save prescription to temp_uploads if new image picked
+          if (success &&
+              _prescriptionImage != null &&
+              _prescriptionPath.isNotEmpty) {
+            await _savePrescriptionToTempUploads(
+              workOrderDocId: workOrder.docId,
+            );
+          }
+
           if (success) {
             await _sendConfirmationSms(workOrder);
           }
@@ -1501,6 +1512,37 @@ class _AddWorkOrderPageMobileState
       });
     } else if (!success && mounted) {
       _showSnackBar('Operation failed');
+    }
+  }
+
+  /// Save prescription image to temp_uploads for S3 upload via hc_app_local
+  Future<void> _savePrescriptionToTempUploads({
+    required String workOrderDocId,
+  }) async {
+    if (_prescriptionImage == null || _prescriptionPath.isEmpty) return;
+
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final tempUploadRepo = ref.read(tempUploadRepositoryProvider);
+
+      final bytes = await _prescriptionImage!.readAsBytes();
+      final fileName = _prescriptionImage!.name;
+
+      debugPrint('📷 Saving prescription to temp_uploads: $fileName');
+
+      await tempUploadRepo.saveOfflinePhoto(
+        workOrderId: workOrderDocId,
+        fileName: fileName,
+        fileLocation: _prescriptionPath,
+        fileBytes: bytes,
+        tenantId: int.tryParse(storage.getFromSession('logged_in_tenant_id')),
+        createdBy: int.tryParse(storage.getFromSession('logged_in_emp_id')),
+      );
+
+      debugPrint('✅ Prescription saved to temp_uploads: $workOrderDocId');
+    } catch (e) {
+      debugPrint('❌ Failed to save prescription to temp_uploads: $e');
+      // Don't throw - allow work order creation to continue
     }
   }
 

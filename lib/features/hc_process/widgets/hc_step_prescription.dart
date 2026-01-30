@@ -43,7 +43,7 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
+                title: const Text('Files'),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],

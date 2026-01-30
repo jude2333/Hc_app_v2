@@ -558,9 +558,9 @@ class HCProcessController {
   Future<void> _uploadOffline(
       String fileName, String fileLocation, Uint8List bytes) async {
     final storage = _ref.read(storageServiceProvider);
-    final tenantId = int.tryParse(storage.getFromSession('tenant_id') ?? '');
-    final createdBy =
-        int.tryParse(storage.getFromSession('logged_in_emp_id') ?? '');
+    final tenantId =
+        int.tryParse(storage.getFromSession('logged_in_tenant_id'));
+    final createdBy = int.tryParse(storage.getFromSession('logged_in_emp_id'));
 
     final tempUploadRepo = _ref.read(tempUploadRepositoryProvider);
     await tempUploadRepo.saveOfflinePhoto(
@@ -576,7 +576,7 @@ class HCProcessController {
   Future<void> _uploadToS3(
       String fileLocation, Uint8List bytes, String fileName) async {
     final storage = _ref.read(storageServiceProvider);
-    String jwtToken = storage.getFromSession('pg_admin') ?? '';
+    String jwtToken = storage.getFromSession('pg_admin');
 
     final filePart = MultipartFile.fromBytes(bytes, filename: fileName);
     FormData formData = FormData.fromMap({
@@ -606,7 +606,7 @@ class HCProcessController {
 
     try {
       final storage = _ref.read(storageServiceProvider);
-      String empName = storage.getFromSession('logged_in_emp_name') ?? '';
+      String empName = storage.getFromSession('logged_in_emp_name');
       String timeline = '${Util.gettime()} - $empName - Work Order Completed';
 
       String paymentMethod;

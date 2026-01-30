@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../features/core/util.dart';
 import '../../../../models/work_order.dart';
 import '../../../../providers/storage_provider.dart';
@@ -10,6 +11,7 @@ import '../../../../providers/work_order_provider.dart';
 import '../../../../providers/com_center_provider.dart';
 import '../../../../providers/notificationCenter_provider.dart';
 import '../../../../config/settings.dart';
+import '../../../../repositories/temp_upload_repository.dart';
 
 import '../../../../database/sms_template.dart';
 
@@ -52,6 +54,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
     required bool sendWhatsapp,
     required bool sendEmail,
     required String prescriptionPath,
+    XFile? prescriptionImage,
     required bool isCancelled,
     required String cancelReason,
   }) async {
@@ -182,6 +185,15 @@ class AddWorkOrderController extends StateNotifier<bool> {
           sendWhatsapp: sendWhatsapp,
           sendEmail: sendEmail,
         );
+
+        // Save prescription image to temp_uploads if provided
+        if (prescriptionImage != null && prescriptionPath.isNotEmpty) {
+          await _savePrescriptionToTempUploads(
+            workOrderDocId: workOrder.docId,
+            prescriptionImage: prescriptionImage,
+            prescriptionPath: prescriptionPath,
+          );
+        }
 
         if (isCopyMode) {
           final log = "${Util.gettime()} - $managerName - Work Order Copied";
@@ -365,6 +377,37 @@ class AddWorkOrderController extends StateNotifier<bool> {
       }
     } catch (e) {
       debugPrint(' Error sending cancellation notifications: $e');
+    }
+  }
+
+  /// Save prescription image to temp_uploads for S3 upload via hc_app_local
+  Future<void> _savePrescriptionToTempUploads({
+    required String workOrderDocId,
+    required XFile prescriptionImage,
+    required String prescriptionPath,
+  }) async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final tempUploadRepo = ref.read(tempUploadRepositoryProvider);
+
+      final bytes = await prescriptionImage.readAsBytes();
+      final fileName = prescriptionImage.name;
+
+      debugPrint('📷 Saving prescription to temp_uploads: $fileName');
+
+      await tempUploadRepo.saveOfflinePhoto(
+        workOrderId: workOrderDocId,
+        fileName: fileName,
+        fileLocation: prescriptionPath,
+        fileBytes: bytes,
+        tenantId: int.tryParse(storage.getFromSession('logged_in_tenant_id')),
+        createdBy: int.tryParse(storage.getFromSession('logged_in_emp_id')),
+      );
+
+      debugPrint('✅ Prescription saved to temp_uploads: $workOrderDocId');
+    } catch (e) {
+      debugPrint('❌ Failed to save prescription to temp_uploads: $e');
+      // Don't throw - allow work order creation to continue
     }
   }
 }

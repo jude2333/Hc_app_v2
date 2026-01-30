@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 /// Server status chip for work order billing status display (filled style).
 /// Used by both Manager and Technician work order pages.
@@ -17,6 +18,9 @@ class ServerChip extends StatelessWidget {
     if (s == 'billed') return Colors.green;
     if (s == 'unbilled' || s == 'received') return Colors.red;
     if (s == 'cancelled') return Colors.grey;
+    if (s == 'processing') return Colors.blue;
+    if (s == 'pending') return Colors.orange;
+    if (s == 'error' || s == 'failed') return Colors.red;
     return Colors.orange;
   }
 
@@ -29,10 +33,10 @@ class ServerChip extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: AppPadding.custom,
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: AppRadius.xsAll,
           border: showBorder ? Border.all(color: color) : null,
         ),
         child: Text(

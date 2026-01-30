@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 /// Sortable header cell for virtual work order tables.
 /// Callback-based design to keep Riverpod logic in pages.
@@ -40,7 +41,7 @@ class SortableHeader extends StatelessWidget {
       child: InkWell(
         onTap: () => onSort(sortKey),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: AppPadding.custom,
           child: Row(
             children: [
               Text(
@@ -76,7 +77,7 @@ class HeaderCell extends StatelessWidget {
     return Expanded(
       flex: flex,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: AppPadding.custom,
         child: Text(
           text,
           style: const TextStyle(fontWeight: FontWeight.bold),
