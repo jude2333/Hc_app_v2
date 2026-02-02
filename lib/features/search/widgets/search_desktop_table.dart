@@ -5,7 +5,7 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
 import 'search_expanded_content.dart';
-import 'package:anderson_crm_flutter/features/theme/app_text_styles.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class SearchDesktopTable extends ConsumerWidget {
   final List<Map<String, dynamic>> results;
@@ -320,10 +320,10 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: AppPadding.custom,
       decoration: BoxDecoration(
         border: Border.all(color: _getColor()),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.smAll,
       ),
       child: Text(
         status.isEmpty ? 'N/A' : status,
@@ -348,10 +348,10 @@ class _ServerChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayStatus = status == 'Received' ? 'Unbilled' : status;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: AppPadding.custom,
       decoration: BoxDecoration(
         color: _getColor().withOpacity(0.15),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.smAll,
       ),
       child: Text(
         displayStatus.isEmpty ? 'N/A' : displayStatus,

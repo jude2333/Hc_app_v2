@@ -253,11 +253,48 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     setState(() => _hasAttemptedValidation = true);
 
     if (_formKey.currentState!.validate() && _collectionTime != null) {
+      // Validate future time for same-day appointments
+      if (!_validateFutureTime()) {
+        _showSnackBar('Collection time must be in the future');
+        return;
+      }
       _save();
     } else if (_collectionTime == null) {
       _showSnackBar('Please select collection time');
       _scrollController.animateTo(0,
           duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    }
+  }
+
+  /// Validates that collection time is in the future for same-day appointments
+  bool _validateFutureTime() {
+    if (_collectionTime == null || _collectionDate.isEmpty) return true;
+
+    try {
+      DateTime collectionDateTime;
+      try {
+        collectionDateTime =
+            DateFormat('EEEE d MMM yyyy').parse(_collectionDate);
+      } catch (_) {
+        collectionDateTime =
+            DateFormat('EEEE d MMMM yyyy').parse(_collectionDate);
+      }
+
+      // Combine date and time
+      final fullDateTime = DateTime(
+        collectionDateTime.year,
+        collectionDateTime.month,
+        collectionDateTime.day,
+        _collectionTime!.hour,
+        _collectionTime!.minute,
+      );
+
+      // Allow future times only
+      final now = DateTime.now();
+      return fullDateTime.isAfter(now);
+    } catch (e) {
+      debugPrint('Error validating future time: $e');
+      return true; // Allow on parse error
     }
   }
 
@@ -379,7 +416,23 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         _selectedB2BClientName =
             '${result['first_name']} ${result['last_name']}${clientName.isNotEmpty ? ' ($clientName)' : ''}';
         _isB2B = true;
+
+        // Auto-disable notifications for B2B clients (Vue: selected_client L595-597)
+        _sendSms = false;
+        _sendWhatsapp = false;
+        _sendEmail = false;
       });
+    } else {
+      // If dialog cancelled without selection, reset B2B state and enable notifications
+      // (Vue: closeSheet2 L610-616)
+      if (_selectedB2BClientId == null) {
+        setState(() {
+          _isB2B = false;
+          _sendSms = true;
+          _sendWhatsapp = true;
+          _sendEmail = true;
+        });
+      }
     }
   }
 
@@ -762,8 +815,12 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               setState(() {
                 _isB2B = v;
                 if (!v) {
+                  // Reset B2B state and re-enable notifications (Vue: closeSheet2 L610-616)
                   _selectedB2BClientId = null;
                   _selectedB2BClientName = '';
+                  _sendSms = true;
+                  _sendWhatsapp = true;
+                  _sendEmail = true;
                 } else {
                   _showB2BDialog();
                 }
