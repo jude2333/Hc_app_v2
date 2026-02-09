@@ -77,10 +77,13 @@ services:
         condition: service_healthy
     environment:
       PGRST_DB_URI: postgres://postgres:root@postgres:5432/live_db2
-      PGRST_DB_SCHEMA: data
-      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_SCHEMAS: data,public
+      PGRST_DB_ANON_ROLE: anonymous
       PGRST_SERVER_HOST: 0.0.0.0
       PGRST_SERVER_PORT: 3000
+      # JWT Configuration 
+      PGRST_JWT_SECRET: "7D4519C83958B3E2EBC9A855E79BCC7608E524F8141E0A"
+      PGRST_JWT_SECRET_IS_BASE64: "false"
     ports:
       - "3001:3000"  
     restart: unless-stopped

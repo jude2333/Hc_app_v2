@@ -16,7 +16,7 @@ class NotificationCenter {
 
   Future<void> _setup() async {
     // Resolve notifications database name
-    _resolvedDbName = _resolveDbName("notifications");
+    _resolvedDbName = _resolveDbName("hc_notifications");
 
     String token = _storage.getFromSession("pg_admin");
 
@@ -40,7 +40,7 @@ class NotificationCenter {
   }
 
   String _resolveDbName(String shortName) {
-    if (shortName == "notifications") {
+    if (shortName == "hc_notifications") {
       return "chennai11_hc_notifications";
     }
     return shortName;
@@ -99,41 +99,41 @@ class NotificationCenter {
   }
 
   /// Helper: Send work order completion notification
-  Future<String> sendWorkOrderCompletedNotification({
-    required String appointmentDate,
-    required String appointmentTime,
-    required String patientName,
-    required String age,
-    required String gender,
-    required String address,
-    required String mobile,
-    required String pincode,
-    required String freeText,
-    required String managerId,
-    required String managerName,
-  }) async {
-    String msgHeader =
-        'Completed Collection $appointmentDate $appointmentTime.';
-    String msgBody =
-        'Completed home collection for $patientName ($age/$gender) '
-        'address:$address mobile:$mobile pincode:$pincode $freeText';
+  // Future<String> sendWorkOrderCompletedNotification({
+  //   required String appointmentDate,
+  //   required String appointmentTime,
+  //   required String patientName,
+  //   required String age,
+  //   required String gender,
+  //   required String address,
+  //   required String mobile,
+  //   required String pincode,
+  //   required String freeText,
+  //   required String managerId,
+  //   required String managerName,
+  // }) async {
+  //   String msgHeader =
+  //       'Completed Collection $appointmentDate $appointmentTime.';
+  //   String msgBody =
+  //       'Completed home collection for $patientName ($age/$gender) '
+  //       'address:$address mobile:$mobile pincode:$pincode $freeText';
 
-    Map<String, dynamic> notification = {
-      '_id': 'notifications:${Util.getDateForId()}:${Util.uuidv4()}',
-      'from_id': _storage.getFromSession('logged_in_emp_id'),
-      'from_name': _storage.getFromSession('logged_in_emp_name'),
-      'to_id': managerId,
-      'to_name': managerName,
-      'msg_header': msgHeader,
-      'msg_body': msgBody,
-      'msg_attachment': {},
-      'status': 'New',
-      'msg_time': _getTodayWithTime(),
-      'updated_at': _getTimeStamp(),
-    };
+  //   Map<String, dynamic> notification = {
+  //     '_id': 'notifications:${Util.getDateForId()}:${Util.uuidv4()}',
+  //     'from_id': _storage.getFromSession('logged_in_emp_id'),
+  //     'from_name': _storage.getFromSession('logged_in_emp_name'),
+  //     'to_id': managerId,
+  //     'to_name': managerName,
+  //     'msg_header': msgHeader,
+  //     'msg_body': msgBody,
+  //     'msg_attachment': {},
+  //     'status': 'New',
+  //     'msg_time': _getTodayWithTime(),
+  //     'updated_at': _getTimeStamp(),
+  //   };
 
-    return await sendNotification(notification);
-  }
+  //   return await sendNotification(notification);
+  // }
 
   /// Helper: Send custom notification
   // Future<String> sendCustomNotification({

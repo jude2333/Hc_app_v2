@@ -254,10 +254,10 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
 
     if (_formKey.currentState!.validate() && _collectionTime != null) {
       // Validate future time for same-day appointments
-      if (!_validateFutureTime()) {
-        _showSnackBar('Collection time must be in the future');
-        return;
-      }
+      // if (!_validateFutureTime()) {
+      //   _showSnackBar('Collection time must be in the future');
+      //   return;
+      // }
       _save();
     } else if (_collectionTime == null) {
       _showSnackBar('Please select collection time');
@@ -266,7 +266,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     }
   }
 
-  /// Validates that collection time is in the future for same-day appointments
   bool _validateFutureTime() {
     if (_collectionTime == null || _collectionDate.isEmpty) return true;
 
@@ -280,7 +279,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             DateFormat('EEEE d MMMM yyyy').parse(_collectionDate);
       }
 
-      // Combine date and time
       final fullDateTime = DateTime(
         collectionDateTime.year,
         collectionDateTime.month,
@@ -289,12 +287,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         _collectionTime!.minute,
       );
 
-      // Allow future times only
       final now = DateTime.now();
       return fullDateTime.isAfter(now);
     } catch (e) {
       debugPrint('Error validating future time: $e');
-      return true; // Allow on parse error
+      return true;
     }
   }
 

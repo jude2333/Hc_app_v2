@@ -57,11 +57,81 @@ class PowerSyncService {
 
       _initialized = true;
       _initCompleter!.complete();
+
+      // DEBUG: Check what's in the local PowerSync database
+      _debugCheckLocalDatabase();
     } catch (e) {
       _initCompleter!.completeError(e);
       _initCompleter = null;
       rethrow;
     }
+  }
+
+  Future<void> _debugCheckLocalDatabase() async {
+    try {
+      // Check tables
+      final tables = await db.getAll(
+        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+      );
+      debugPrint(
+          ' [PowerSync DEBUG] Tables in local DB: ${tables.map((t) => t['name']).toList()}');
+
+      // Check record count
+      final count = await db.get(
+        'SELECT COUNT(*) as cnt FROM hc_patient_visit_detail',
+      );
+      debugPrint(
+          ' [PowerSync DEBUG] Total records in hc_patient_visit_detail: ${count?['cnt'] ?? 0}');
+
+      // Check first few records
+      final sample = await db.getAll(
+        'SELECT id, visit_date, patient_name, status FROM hc_patient_visit_detail LIMIT 5',
+      );
+      debugPrint(' [PowerSync DEBUG] Sample records:');
+      for (var row in sample) {
+        debugPrint(
+            '   - ID: ${row['id']}, Date: ${row['visit_date']}, Name: ${row['patient_name']}, Status: ${row['status']}');
+      }
+
+      // Check sync status
+      final status = db.currentStatus;
+      debugPrint(
+          ' [PowerSync DEBUG] Sync status: connected=${status.connected}, downloading=${status.downloading}, uploading=${status.uploading}');
+
+      // Watch for sync completion
+      _watchSyncCompletion();
+    } catch (e) {
+      debugPrint(' [PowerSync DEBUG] Error checking database: $e');
+    }
+  }
+
+  /// Watch for sync to complete and re-check database
+  void _watchSyncCompletion() {
+    debugPrint(' [PowerSync DEBUG] Starting sync completion watcher...');
+    db.statusStream.listen((status) async {
+      debugPrint(
+          ' [PowerSync STATUS] connected=${status.connected}, downloading=${status.downloading}, hasSynced=${status.hasSynced}');
+
+      if (status.hasSynced == true) {
+        debugPrint('[PowerSync DEBUG] SYNC COMPLETE! hasSynced=true');
+
+        // Re-check database after sync
+        final count = await db.get(
+          'SELECT COUNT(*) as cnt FROM hc_patient_visit_detail',
+        );
+        debugPrint(
+            '[PowerSync DEBUG] After sync - Total records: ${count?['cnt'] ?? 0}');
+
+        // Show sample data
+        final sample = await db.getAll(
+          'SELECT id, visit_date, patient_name FROM hc_patient_visit_detail LIMIT 3',
+        );
+        for (var row in sample) {
+          debugPrint(
+              ' [PowerSync DEBUG] Sample: ${row['visit_date']} - ${row['patient_name']}');
+        }
+      }
+    });
   }
 
   Future<void> _ensureInitialized() async {
@@ -321,9 +391,12 @@ class PowerSyncService {
     final now = DateTime.now().toIso8601String();
 
     await db.writeTransaction((tx) async {
-      final result = await tx
-          .get('SELECT doc FROM hc_patient_visit_detail WHERE id = ?', [id]);
-      if (result == null) return;
+      final result = await tx.getOptional(
+          'SELECT doc FROM hc_patient_visit_detail WHERE id = ?', [id]);
+      if (result == null) {
+        debugPrint('[PowerSync] toggleRemittance: No local record for id=$id');
+        return;
+      }
 
       final docMap = jsonDecode(result['doc'] as String);
 

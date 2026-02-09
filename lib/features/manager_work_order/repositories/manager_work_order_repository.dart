@@ -45,8 +45,18 @@ class ManagerWorkOrderRepository {
 
   bool get isInitializing => _isInitializing;
   bool get isConnected => _syncStatus?.connected ?? false;
-  bool get isSyncing =>
-      (_syncStatus?.downloading ?? false) || (_syncStatus?.uploading ?? false);
+  bool get isSyncing {
+    if (_syncStatus == null) return false;
+    // Only show syncing indicator during initial sync or active downloads
+    // Don't show for uploads after initial sync (causes perpetual spinner)
+    final hasSynced = _syncStatus?.hasSynced ?? false;
+    if (hasSynced) {
+      return _syncStatus?.downloading ?? false;
+    }
+    return (_syncStatus?.downloading ?? false) ||
+        (_syncStatus?.uploading ?? false);
+  }
+
   bool get hasPendingUploads => _syncStatus?.uploading ?? false;
   SyncStatus? get syncStatus => _syncStatus;
 
@@ -91,9 +101,17 @@ class ManagerWorkOrderRepository {
   }
 
   Stream<List<WorkOrder>> watchWorkOrdersByDate(DateTime date) {
+    debugPrint('🔍 [Manager DEBUG] watchWorkOrdersByDate called for: $date');
     return _powerSync.watchWorkOrdersByDate(date).asyncMap((rawRows) async {
+      debugPrint('🔍 [Manager DEBUG] Raw rows received: ${rawRows.length}');
+      // if (rawRows.isNotEmpty) {
+      //   debugPrint('🔍 [Manager DEBUG] First raw row: ${rawRows.first}');
+      // }
       debugPrint(' Parsing ${rawRows.length} work orders in isolate...');
-      return await compute(_parseWorkOrdersIsolate, rawRows);
+      final parsed = await compute(_parseWorkOrdersIsolate, rawRows);
+      debugPrint(
+          '🔍 [Manager DEBUG] Parsed ${parsed.length} WorkOrder objects');
+      return parsed;
     });
   }
 

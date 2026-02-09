@@ -52,13 +52,8 @@ class PostgresDB {
   // }
 
   Future<void> _setup() async {
-    if (Settings.development) {
-      // LOCAL MODE → NO TOKEN
-      _token = "";
-    } else {
-      // PRODUCTION MODE → USE SAVED TOKEN
-      _token = await _storage.getSessionItem("pg_admin") ?? "";
-    }
+    // Always use saved token for authentication
+    _token = await _storage.getSessionItem("pg_admin") ?? "";
 
     final options = BaseOptions(
       baseUrl: Settings.currentPostgresUrl,
@@ -72,8 +67,8 @@ class PostgresDB {
           "count=estimated,resolution=merge-duplicates,return=representation",
     };
 
-    // ADD HEADER ONLY IN PRODUCTION
-    if (_token.isNotEmpty && !Settings.development) {
+    // Always add Authorization header if token exists
+    if (_token.isNotEmpty) {
       headers["Authorization"] = "Bearer $_token";
     }
 
@@ -84,8 +79,6 @@ class PostgresDB {
     Future.microtask(() => onStatusChange?.call('Ready'));
   }
 
-  /// Special setup for login only - ALWAYS uses live URL regardless of development flag
-  /// This ensures authentication happens against live server even in dev mode
   Future<void> _setupForLogin() async {
     final options = BaseOptions(
       baseUrl: Settings.loginPostgresUrl, // Always live URL!
@@ -104,8 +97,6 @@ class PostgresDB {
       ..options.validateStatus = (status) => status != null && status < 500;
   }
 
-  /// Setup for login WITH token - still uses live URL
-  /// Called after initial auth succeeds to add Bearer token for appLogin()
   Future<void> _setupForLoginWithToken() async {
     final options = BaseOptions(
       baseUrl: Settings.loginPostgresUrl, // Always live URL!
@@ -848,7 +839,7 @@ class PostgresDB {
           "/doctor_login?select=*,client_master(client_id,client_type,client_name)");
 
       if (response.statusCode == 200 || response.statusCode == 206) {
-        debugPrint("doctor_login: ${jsonEncode(response.data)}");
+        // debugPrint("doctor_login: ${jsonEncode(response.data)}");
 
         onStatusChange?.call('B2B clients loaded successfully');
         return response.data;
@@ -986,6 +977,65 @@ class PostgresDB {
     }
   }
 
+  /// Get all work orders for a specific date - for Tech Engagement queries
+  /// This queries PostgreSQL directly (not PowerSync) to get all work orders
+  Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(
+      String dateStr) async {
+    if (_client == null) await _setup();
+
+    try {
+      final query =
+          '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,assigned_id,received_amount,doc&visit_date=eq.$dateStr&visible=is.true';
+
+      final res = await _client!.get(query);
+      if (res.statusCode != 200 && res.statusCode != 206) return [];
+
+      List<dynamic> dataList = [];
+      final body = res.data;
+      if (body is Map && body['data'] is List) {
+        dataList = body['data'] as List;
+      } else if (body is List) {
+        dataList = body;
+      }
+
+      debugPrint(
+          "📊 [PostgreSQL] Work orders for $dateStr: ${dataList.length}");
+      return dataList.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      debugPrint('getAllWorkOrdersForDate error: $e');
+      return [];
+    }
+  }
+
+  /// Get all work orders for a date range - for Tech Engagement monthly queries
+  Future<List<Map<String, dynamic>>> getAllWorkOrdersForDateRange(
+      String startDate, String endDate) async {
+    if (_client == null) await _setup();
+
+    try {
+      final query =
+          '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,assigned_id,received_amount,doc&visit_date=gte.$startDate&visit_date=lte.$endDate&visible=is.true';
+
+      final res = await _client!.get(query);
+      if (res.statusCode != 200 && res.statusCode != 206) return [];
+
+      List<dynamic> dataList = [];
+      final body = res.data;
+      if (body is Map && body['data'] is List) {
+        dataList = body['data'] as List;
+      } else if (body is List) {
+        dataList = body;
+      }
+
+      debugPrint(
+          "📊 [PostgreSQL] Work orders for $startDate to $endDate: ${dataList.length}");
+      return dataList.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      debugPrint('getAllWorkOrdersForDateRange error: $e');
+      return [];
+    }
+  }
+
   Map<String, dynamic> _extractWorkOrderData(dynamic doc) {
     try {
       Map<String, dynamic> workOrderData = {};
@@ -1094,5 +1144,68 @@ class PostgresDB {
     }
 
     return "Error";
+  }
+
+  /// Toggle remittance acceptance for a work order (for tech engagement)
+  Future<dynamic> toggleRemittance(
+      String workOrderId, bool acceptRemittance, String user) async {
+    onStatusChange?.call('Updating remittance status...');
+
+    if (_client == null) {
+      await _setup();
+    }
+
+    try {
+      // First fetch the current doc
+      final getResponse = await _client!
+          .get("/hc_patient_visit_detail?id=eq.$workOrderId&select=id,doc");
+
+      if (getResponse.statusCode != 200 || (getResponse.data as List).isEmpty) {
+        debugPrint(
+            '[PostgresDB] toggleRemittance: Work order not found: $workOrderId');
+        return "Work order not found";
+      }
+
+      final record = (getResponse.data as List).first;
+      final docMap = jsonDecode(record['doc'] as String);
+
+      // Update doc fields
+      docMap['accept_remittance'] = acceptRemittance;
+
+      // Add timeline entry
+      final timeStamp = Util.gettime();
+      final actionLog =
+          acceptRemittance ? "Remittance Accepted." : "Remittance Cancelled.";
+      final logEntry = '$timeStamp - $user - $actionLog';
+      List<dynamic> timeline = List.from(docMap['time_line'] ?? []);
+      timeline.add(logEntry);
+      docMap['time_line'] = timeline;
+      docMap['updated_at'] = DateTime.now().toIso8601String();
+
+      // Update via PATCH
+      final now = DateTime.now().toIso8601String();
+      final response = await _client!.patch(
+        "/hc_patient_visit_detail?id=eq.$workOrderId",
+        data: {
+          'doc': jsonEncode(docMap),
+          'last_updated_by': user,
+          'last_updated_at': now,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('[PostgresDB] toggleRemittance: Success for $workOrderId');
+        onStatusChange?.call('Remittance updated');
+        return "OK";
+      } else {
+        debugPrint(
+            '[PostgresDB] toggleRemittance failed: ${response.statusCode}');
+        return "Error: ${response.statusCode}";
+      }
+    } catch (e) {
+      debugPrint("[PostgresDB] toggleRemittance error: $e");
+      onStatusChange?.call('Failed to update remittance');
+      return e.toString();
+    }
   }
 }

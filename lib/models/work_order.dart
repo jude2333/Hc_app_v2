@@ -48,7 +48,7 @@ class WorkOrder {
   // Full Document (Lazy Loaded)
   final String? _rawDocString;
 
-  // ✅ OPTIMIZATION 1: The Immutable Source of Truth for nested data
+  //  OPTIMIZATION 1: The Immutable Source of Truth for nested data
   final Map<String, dynamic> parsedDocMap;
 
   // Bill & Lab
@@ -62,7 +62,10 @@ class WorkOrder {
   final String lastUpdatedBy;
   final DateTime lastUpdatedAt;
 
-  // ✅ PRE-CACHED FORMATTED STRINGS (computed once at construction)
+  // Sync Window - whether this record is within the sync date range
+  final bool syncWindow;
+
+  //  PRE-CACHED FORMATTED STRINGS (computed once at construction)
   final String formattedVisitDate; // 'yyyy-MM-dd'
   final String formattedShortDate; // 'dd-MM-yyyy'
   final String formattedBillAmount; // '₹1,234'
@@ -101,6 +104,7 @@ class WorkOrder {
     required this.createdAt,
     required this.lastUpdatedBy,
     required this.lastUpdatedAt,
+    required this.syncWindow,
     required this.formattedVisitDate,
     required this.formattedShortDate,
     required this.formattedBillAmount,
@@ -109,7 +113,7 @@ class WorkOrder {
     required this.searchableText,
   }) : _rawDocString = doc;
 
-  // ✅ Factory constructor that pre-computes formatted strings
+  //  Factory constructor that pre-computes formatted strings
   factory WorkOrder({
     required String id,
     int? tenantId,
@@ -140,6 +144,7 @@ class WorkOrder {
     required DateTime createdAt,
     required String lastUpdatedBy,
     required DateTime lastUpdatedAt,
+    bool syncWindow = true, // New work orders are always in sync window
   }) {
     // Pre-compute formatted strings
     final formattedVisitDate = _displayDateFormat.format(visitDate);
@@ -175,6 +180,7 @@ class WorkOrder {
       createdAt: createdAt,
       lastUpdatedBy: lastUpdatedBy,
       lastUpdatedAt: lastUpdatedAt,
+      syncWindow: syncWindow,
       formattedVisitDate: formattedVisitDate,
       formattedShortDate: _shortDateFormat.format(visitDate),
       formattedBillAmount: _currencyFormat.format(billAmount),
@@ -187,13 +193,13 @@ class WorkOrder {
     );
   }
 
-  // ✅ COMPATIBILITY GETTER (Prevents errors in other files)
+  //  COMPATIBILITY GETTER (Prevents errors in other files)
   Map<String, dynamic> get parsedDoc => parsedDocMap;
 
   // Lazy doc getter
   String get doc => _rawDocString ?? jsonEncode(parsedDocMap);
 
-  // ✅ OPTIMIZATION 4: Robust Equality Check
+  //  OPTIMIZATION 4: Robust Equality Check
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -307,6 +313,7 @@ class WorkOrder {
       'created_at': createdAt.toIso8601String(),
       'last_updated_by': lastUpdatedBy,
       'last_updated_at': lastUpdatedAt.toIso8601String(),
+      'sync_window': syncWindow ? 1 : 0,
     };
   }
 
@@ -372,7 +379,7 @@ class WorkOrder {
     String? gpayRef,
     String? remarks,
   }) {
-    // ✅ OPTIMIZATION 5: Deep Copy to break references
+    //  OPTIMIZATION 5: Deep Copy to break references
     final updatedDoc = _deepCopyMap(parsedDocMap);
 
     if (patientName != null) updatedDoc['name'] = patientName;
@@ -457,7 +464,7 @@ class WorkOrder {
       receivedAmount: receivedAmount ?? this.receivedAmount,
       discountAmount: discountAmount ?? this.discountAmount,
       doc: doc, // Pass raw string if available, or null to lazy-load
-      parsedDocMap: Map.unmodifiable(updatedDoc), // ✅ Freeze map
+      parsedDocMap: Map.unmodifiable(updatedDoc), //  Freeze map
       billNumber: billNumber ?? this.billNumber,
       labNumber: labNumber ?? this.labNumber,
       visible: visible ?? this.visible,
@@ -465,6 +472,7 @@ class WorkOrder {
       createdAt: createdAt ?? this.createdAt,
       lastUpdatedBy: lastUpdatedBy ?? this.lastUpdatedBy,
       lastUpdatedAt: lastUpdatedAt ?? DateTime.now(),
+      syncWindow: this.syncWindow, // Preserve sync_window on edit
     );
   }
 
@@ -582,7 +590,7 @@ class WorkOrder {
         receivedAmount: _parseDouble(row, 'received_amount'),
         discountAmount: _parseDouble(row, 'discount_amount'),
         doc: parsedDocString,
-        parsedDocMap: Map.unmodifiable(parsedMap), // ✅ Immutable
+        parsedDocMap: Map.unmodifiable(parsedMap), //  Immutable
         billNumber: _parseString(row, 'bill_number'),
         labNumber: _parseString(row, 'lab_number'),
         visible: _parseBool(row, 'visible'),
@@ -590,9 +598,10 @@ class WorkOrder {
         createdAt: _parseDateTime(row, 'created_at'),
         lastUpdatedBy: _parseString(row, 'last_updated_by'),
         lastUpdatedAt: _parseDateTime(row, 'last_updated_at'),
+        syncWindow: _parseBool(row, 'sync_window'),
       );
     } catch (e) {
-      debugPrint('❌ WorkOrder Parsing Error: $e');
+      debugPrint(' WorkOrder Parsing Error: $e');
       rethrow;
     }
   }

@@ -99,8 +99,15 @@ class PostgresService {
           'name': result['name']?.toString() ?? '',
         };
       }
-    } catch (e) {}
+    } catch (e) {
+      // Error logged in PostgresDB
+    }
     return {'mobile': '', 'id_card_location': '', 'name': ''};
+  }
+
+  Future<dynamic> toggleRemittance(
+      String workOrderId, bool acceptRemittance, String user) async {
+    return await _db.toggleRemittance(workOrderId, acceptRemittance, user);
   }
 
   Future<dynamic> getAllClients() async {
@@ -117,6 +124,18 @@ class PostgresService {
 
   String? getDashboardTenantName(String? str) {
     return _db.getDashboardTenantName(str);
+  }
+
+  /// Get all work orders for a specific date - queries PostgreSQL directly
+  Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(
+      String dateStr) async {
+    return await _db.getAllWorkOrdersForDate(dateStr);
+  }
+
+  /// Get all work orders for a date range - queries PostgreSQL directly
+  Future<List<Map<String, dynamic>>> getAllWorkOrdersForDateRange(
+      String startDate, String endDate) async {
+    return await _db.getAllWorkOrdersForDateRange(startDate, endDate);
   }
 }
 

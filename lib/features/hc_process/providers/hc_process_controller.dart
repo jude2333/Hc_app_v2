@@ -109,6 +109,7 @@ class HCProcessController {
 
     final updatedOrder = currentOrder.copyWith(
       status: updatedProcessDoc.status ?? currentOrder.status,
+      serverStatus: updatedProcessDoc.serverStatus ?? currentOrder.serverStatus,
       doc: jsonEncode(updatedDocMap),
       lastUpdatedBy: storage.getFromSession('logged_in_emp_name'),
       lastUpdatedAt: DateTime.now(),
@@ -496,15 +497,15 @@ class HCProcessController {
         await comCenterService.sendMessage(whatsappMessage);
       }
 
-      if (_state.email == 1) {
-        final emailMessage = {
-          '_id': 'email_center:$idPart:${Util.uuidv4()}',
-          ...baseMessage,
-        };
+      // if (_state.email == 1) {
+      //   final emailMessage = {
+      //     '_id': 'email_center:$idPart:${Util.uuidv4()}',
+      //     ...baseMessage,
+      //   };
 
-        debugPrint(">>> EMAIL PAYLOAD: ${jsonEncode(emailMessage)}");
-        await comCenterService.sendMessage(emailMessage);
-      }
+      //   debugPrint(">>> EMAIL PAYLOAD: ${jsonEncode(emailMessage)}");
+      //   await comCenterService.sendMessage(emailMessage);
+      // }
     } catch (e, stackTrace) {
       debugPrint('Error sending OTP: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -671,19 +672,19 @@ class HCProcessController {
       final appointmentDate =
           DateFormat('dd-MM-yyyy').format(workOrder.visitDate);
 
-      await notificationService.sendWorkOrderCompleted(
-        appointmentDate: appointmentDate,
-        appointmentTime: workOrder.visitTime,
-        patientName: workOrder.patientName,
-        age: workOrder.age,
-        gender: workOrder.gender,
-        address: workOrder.address,
-        mobile: workOrder.mobile,
-        pincode: workOrder.pincode,
-        freeText: workOrder.freeText,
-        managerId: workOrder.managerId?.toString() ?? '',
-        managerName: workOrder.managerName,
-      );
+      // await notificationService.sendWorkOrderCompleted(
+      //   appointmentDate: appointmentDate,
+      //   appointmentTime: workOrder.visitTime,
+      //   patientName: workOrder.patientName,
+      //   age: workOrder.age,
+      //   gender: workOrder.gender,
+      //   address: workOrder.address,
+      //   mobile: workOrder.mobile,
+      //   pincode: workOrder.pincode,
+      //   freeText: workOrder.freeText,
+      //   managerId: workOrder.managerId?.toString() ?? '',
+      //   managerName: workOrder.managerName,
+      // );
     } catch (e) {
       debugPrint('Error sending notification: $e');
     }

@@ -6,6 +6,7 @@ import 'package:anderson_crm_flutter/database/authorize.dart';
 import 'package:anderson_crm_flutter/features/shell/presentation/tenant_selector_sheet.dart';
 import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
+import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import '../providers/shell_providers.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -244,10 +245,21 @@ class AppDrawer extends ConsumerWidget {
             onPressed: () {
               Navigator.pop(context);
 
+              // IMPORTANT: Reset notification provider FIRST (before clearing session)
+              // This cancels streams while auth tokens are still valid
+              ref.read(liveNotificationProvider.notifier).reset();
+
+              // Stop DB sync handlers
               ref.read(dbHandlerProvider).stopSync();
 
+              // Clear CouchDB cached Dio instances (before clearing session)
+              // This forces fresh instances with new auth tokens after re-login
+              ref.read(couchDbClientProvider).clearCache();
+
+              // Clear session AFTER resetting providers
               ref.read(storageServiceProvider).clearSession();
 
+              // Invalidate the provider to ensure fresh state on next login
               ref.invalidate(liveNotificationProvider);
               ref.read(signedInProvider.notifier).state = false;
 

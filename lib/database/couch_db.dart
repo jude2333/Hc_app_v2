@@ -35,6 +35,12 @@ class CouchDBClient {
   Future<Dio> _createDB(String dbName) async {
     String remoteUrl = "${Settings.remoteCouchUrl}/$dbName";
     String token = await _getToken();
+
+    // Debug: trace token retrieval
+    debugPrint("🔑 [CouchDB] Creating DB: $dbName");
+    debugPrint(
+        "🔑 [CouchDB] Token length: ${token.length}, empty: ${token.isEmpty}");
+
     final options = BaseOptions(
       baseUrl: remoteUrl,
       connectTimeout: const Duration(seconds: 30),
@@ -117,6 +123,26 @@ class CouchDBClient {
       debugPrint("Error refreshing token: $e");
       return "";
     }
+  }
+
+  /// Clear cached Dio instances - call this on logout to force fresh instances on re-login
+  void clearCache() {
+    debugPrint("🔄 [CouchDB] Clearing cached Dio instances...");
+
+    // Cancel token refresh timers
+    for (var timer in _tokenRefreshTimers.values) {
+      timer.cancel();
+    }
+    _tokenRefreshTimers.clear();
+
+    // Close and clear Dio instances
+    for (var db in _dbMap.values) {
+      db.close();
+    }
+    _dbMap.clear();
+
+    debugPrint(
+        "✅ [CouchDB] Cache cleared - fresh instances will be created on next request");
   }
 
   void dispose() {

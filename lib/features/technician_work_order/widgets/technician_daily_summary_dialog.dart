@@ -8,7 +8,10 @@ import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 
 final _selectedDateProvider = StateProvider<DateTime>(
-  (ref) => Settings.development ? DateTime(2022, 12, 14) : DateTime.now(),
+  (ref) {
+    final now = Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  },
 );
 
 final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,
@@ -80,8 +83,9 @@ class TechnicianDailySummaryDialog extends ConsumerWidget {
   const TechnicianDailySummaryDialog({super.key});
 
   List<DateTime> _getSuitableDates() {
-    final baseDate =
-        Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+    final now = Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+    // Normalize to midnight (strip time) to ensure dropdown matching
+    final baseDate = DateTime(now.year, now.month, now.day);
     return [
       baseDate.add(const Duration(days: 1)),
       baseDate,

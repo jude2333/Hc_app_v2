@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
@@ -116,7 +115,6 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
 
     try {
       final postgres = ref.read(postgresServiceProvider);
-      final powerSync = ref.read(powerSyncServiceProvider);
 
       List<Map<String, dynamic>> allOrders = [];
 
@@ -131,19 +129,34 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
 
         final results = await Future.wait([
           postgres.getTechnicians(),
-          powerSync.getAllWorkOrdersForDateRange(startStr, endStr)
+          postgres.getAllWorkOrdersForDateRange(startStr, endStr)
         ]);
+
+        final techs = results[0] as List;
         allOrders = results[1] as List<Map<String, dynamic>>;
 
-        _processData(results[0] as List, allOrders);
+        debugPrint(" [TechEngagement] Month: $startStr to $endStr");
+        debugPrint(" [TechEngagement] Technicians fetched: ${techs.length}");
+        debugPrint(
+            " [TechEngagement] Work orders from PostgreSQL: ${allOrders.length}");
+
+        _processData(techs, allOrders);
       } else {
         final dateStr = DateFormat('yyyy-MM-dd').format(state.selectedDate);
         final results = await Future.wait([
           postgres.getTechnicians(),
-          powerSync.getAllWorkOrdersForDate(dateStr)
+          postgres.getAllWorkOrdersForDate(dateStr)
         ]);
+
+        final techs = results[0] as List;
         allOrders = results[1] as List<Map<String, dynamic>>;
-        _processData(results[0] as List, allOrders);
+
+        debugPrint(" [TechEngagement] Date: $dateStr");
+        debugPrint(" [TechEngagement] Technicians fetched: ${techs.length}");
+        debugPrint(
+            " [TechEngagement] Work orders from PostgreSQL: ${allOrders.length}");
+
+        _processData(techs, allOrders);
       }
     } catch (e) {
       debugPrint("Error loading stats: $e");
@@ -243,6 +256,9 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
       }
     }
 
+    debugPrint(" [TechEngagement] Summaries created: ${summaries.length}");
+    debugPrint(" [TechEngagement] Total assigned across all techs: $gAssigned");
+
     state = state.copyWith(
         isLoading: false,
         techList: summaries,
@@ -301,11 +317,16 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
 
   Future<void> toggleRemittance(String workOrderId, bool currentValue) async {
     try {
-      final db = ref.read(powerSyncServiceProvider);
+      final postgres = ref.read(postgresServiceProvider);
       final storage = ref.read(storageServiceProvider);
       final user = storage.getFromSession('logged_in_emp_name') ?? 'Manager';
-      await db.toggleRemittanceAcceptance(workOrderId, !currentValue, user);
-      await loadData();
+      final result =
+          await postgres.toggleRemittance(workOrderId, !currentValue, user);
+      if (result == "OK") {
+        await loadData();
+      } else {
+        debugPrint("Remittance update failed: $result");
+      }
     } catch (e) {
       debugPrint("Error toggling remittance: $e");
     }

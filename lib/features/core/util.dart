@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:async';
 import 'dart:io' show HttpDate, Platform;
-import 'package:anderson_crm_flutter/providers/app_state.dart';
 
 class Util {
   static const String shToken =
@@ -112,22 +111,31 @@ class Util {
     return formatDateForStorage(newDt);
   }
 
-  static bool isPassedDate(WidgetRef ref, String dt) {
+  /// Checks if the given date string is in the past (before today)
+  static bool isPassedDate(String dt) {
     if (dt.isEmpty) return false;
 
     try {
-      final format = 'yyyy-MM-dd';
-      final orderDate = DateFormat(format).parse(dt);
+      DateTime orderDate;
 
-      final todayStr = ref.read(todayProvider);
-      final today = DateFormat('yyyy-MM-dd HH:mm:ss').parse(todayStr);
+      // Try multiple formats
+      if (dt.contains(' ')) {
+        // DateTime.toString() format: "2022-12-15 00:00:00.000"
+        orderDate = DateTime.parse(dt);
+      } else if (dt.contains('-') && dt.indexOf('-') == 2) {
+        // dd-MM-yyyy format
+        orderDate = DateFormat('dd-MM-yyyy').parse(dt);
+      } else {
+        // yyyy-MM-dd format
+        orderDate = DateFormat('yyyy-MM-dd').parse(dt);
+      }
 
+      final now = DateTime.now();
       final orderDateOnly =
           DateTime(orderDate.year, orderDate.month, orderDate.day);
-      final todayDateOnly = DateTime(today.year, today.month, today.day);
+      final todayDateOnly = DateTime(now.year, now.month, now.day);
 
-      final diff = orderDateOnly.difference(todayDateOnly).inDays;
-      return diff < 0;
+      return orderDateOnly.isBefore(todayDateOnly);
     } catch (e) {
       debugPrint('Error parsing date in isPassedDate: $e');
       return false;

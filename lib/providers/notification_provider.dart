@@ -54,11 +54,31 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     super.dispose();
   }
 
+  /// Reset the provider state on logout - cancels streams without triggering reload
+  void reset() {
+    debugPrint("🔄 [Notifications] Resetting notification provider...");
+    _subscription?.cancel();
+    _subscription = null;
+    _isRealtimeSetup = false;
+    state = const NotificationState();
+    debugPrint("✅ [Notifications] Provider reset complete");
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {}
 
   Future<void> _init() async {
     if (!mounted) return;
+
+    // Check if user is logged in before loading notifications
+    // This prevents 401 errors when provider is recreated after logout
+    final storage = ref.read(storageServiceProvider);
+    final token = storage.getFromSession("pg_admin");
+    if (token == null || token.isEmpty) {
+      debugPrint("⏸️ [Notifications] Skipping init - user not logged in");
+      return;
+    }
+
     state = state.copyWith(isLoading: true);
 
     Future.microtask(() async {

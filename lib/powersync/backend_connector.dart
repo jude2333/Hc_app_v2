@@ -11,13 +11,13 @@ class BackendConnector extends PowerSyncBackendConnector {
   final StorageService storage;
 
   // Platform-adaptive API URLs
-  static String get apiUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5000';
-    } else {
-      return 'http://10.0.2.2:5000';
-    }
-  }
+  // static String get apiUrl {
+  //   if (kIsWeb) {
+  //     return 'http://localhost:5000';
+  //   } else {
+  //     return 'http://10.0.2.2:5000';
+  //   }
+  // }
 
   String get postgrestBaseUrl {
     return Settings.currentPostgresUrl;
@@ -86,6 +86,15 @@ class BackendConnector extends PowerSyncBackendConnector {
       final now = DateTime.now();
       final normalizedRole = roleName.toUpperCase();
       final expTime = now.add(const Duration(hours: 12));
+
+      // Calculate dynamic date window: 7 days ago to 10 days ahead
+      // final minDate = now.subtract(const Duration(days: 7));
+      // final maxDate = now.add(const Duration(days: 10));
+
+      // Format dates as YYYY-MM-DD strings for PostgreSQL
+      // String formatDate(DateTime date) {
+      //   return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      // }
 
       final claims = JsonWebTokenClaims.fromJson({
         'sub': 'emp-$empId',
@@ -199,10 +208,14 @@ class BackendConnector extends PowerSyncBackendConnector {
 
     switch (operation.op) {
       case UpdateType.put:
-        await _upsertWorkOrder(id, data!);
+        // Ensure sync_window is always true for new/edited work orders
+        data!['sync_window'] = true;
+        await _upsertWorkOrder(id, data);
         break;
       case UpdateType.patch:
-        await _updateWorkOrder(id, data!);
+        // Ensure sync_window is always true for updated work orders
+        data!['sync_window'] = true;
+        await _updateWorkOrder(id, data);
         break;
       case UpdateType.delete:
         await _deleteWorkOrder(id);
@@ -275,7 +288,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
-
     if (token.isNotEmpty && !Settings.development) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -338,7 +350,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     if (token.isNotEmpty && !Settings.development) {
       headers['Authorization'] = 'Bearer $token';
     }
-
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -373,7 +384,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     if (token.isNotEmpty && !Settings.development) {
       headers['Authorization'] = 'Bearer $token';
     }
-
     final response = await http.patch(
       Uri.parse(url),
       headers: headers,
@@ -401,7 +411,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     if (token.isNotEmpty && !Settings.development) {
       headers['Authorization'] = 'Bearer $token';
     }
-
     final response = await http.patch(
       Uri.parse(url),
       headers: headers,
@@ -416,17 +425,17 @@ class BackendConnector extends PowerSyncBackendConnector {
     debugPrint('[BackendConnector] Price list soft deleted: $id');
   }
 
-  Future<bool> checkConnection() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$apiUrl/health'))
-          .timeout(const Duration(seconds: 5));
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('[BackendConnector] Connection check failed: $e');
-      return false;
-    }
-  }
+  // Future<bool> checkConnection() async {
+  //   try {
+  //     final response = await http
+  //         .get(Uri.parse('$apiUrl/health'))
+  //         .timeout(const Duration(seconds: 5));
+  //     return response.statusCode == 200;
+  //   } catch (e) {
+  //     debugPrint('[BackendConnector] Connection check failed: $e');
+  //     return false;
+  //   }
+  // }
 
   // Temp Uploads Handlers (for prescription photos)
   Future<void> _handleTempUploadSync(CrudEntry operation) async {

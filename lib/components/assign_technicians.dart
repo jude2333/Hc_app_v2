@@ -260,8 +260,14 @@ class _AssignTechnicianDialogState
                             return;
                           }
 
-                          widget.onAssign(techId, techName);
+                          // Close dialog first, then trigger callback
                           Navigator.of(context).pop();
+
+                          // Use Future.microtask to ensure dialog is fully closed
+                          // before showing the notification dialog
+                          Future.microtask(() {
+                            widget.onAssign(techId, techName);
+                          });
                         },
                       );
                     },
@@ -370,15 +376,15 @@ void showAssignTechnicianDialog(
   Function(String techId, String techName) onAssign,
 ) {
   final appointmentDate = workOrder.visitDate;
-  if (Util.isPassedDate(ref, appointmentDate.toString())) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Passed work orders cannot be assigned.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
+  // if (Util.isPassedDate(appointmentDate.toString())) {
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(
+  //       content: Text('Passed work orders cannot be assigned.'),
+  //       backgroundColor: Colors.red,
+  //     ),
+  //   );
+  //   return;
+  // }
 
   final status = workOrder.status.toLowerCase();
   if (status == 'cancelled') {

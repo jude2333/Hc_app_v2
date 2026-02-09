@@ -79,6 +79,7 @@ class TechPatientRow extends ConsumerWidget {
     final isCash = paymentMethod == 'cash' && amount > 0;
     final hcCharges = doc['hc_charges']?.toString() ?? '0';
     final status = order['status'] ?? '';
+    final isFinished = status == 'Finished';
     final gpayRef = doc['gpay_ref']?.toString() ?? '';
 
     String timeOrDate = order['visit_time']?.toString() ?? '';
@@ -117,8 +118,8 @@ class TechPatientRow extends ConsumerWidget {
           Expanded(
             flex: 1,
             child: Center(
-              child: _buildRemittanceCell(
-                  ref, isCash, paymentMethod, accepted, gpayRef, order),
+              child: _buildRemittanceCell(ref, isCash, isFinished,
+                  paymentMethod, accepted, gpayRef, order),
             ),
           ),
         ],
@@ -126,8 +127,14 @@ class TechPatientRow extends ConsumerWidget {
     );
   }
 
-  Widget _buildRemittanceCell(WidgetRef ref, bool isCash, String paymentMethod,
-      bool accepted, String gpayRef, Map<String, dynamic> order) {
+  Widget _buildRemittanceCell(
+      WidgetRef ref,
+      bool isCash,
+      bool isFinished,
+      String paymentMethod,
+      bool accepted,
+      String gpayRef,
+      Map<String, dynamic> order) {
     if (paymentMethod == 'gpay') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -141,7 +148,7 @@ class TechPatientRow extends ConsumerWidget {
           textAlign: TextAlign.center,
         ),
       );
-    } else if (isCash) {
+    } else if (isCash && isFinished) {
       return RemittanceToggle(
         accepted: accepted,
         onToggle: () {

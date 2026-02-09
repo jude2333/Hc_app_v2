@@ -393,7 +393,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
       final bytes = await prescriptionImage.readAsBytes();
       final fileName = prescriptionImage.name;
 
-      debugPrint('📷 Saving prescription to temp_uploads: $fileName');
+      debugPrint('Saving prescription to temp_uploads: $fileName');
 
       await tempUploadRepo.saveOfflinePhoto(
         workOrderId: workOrderDocId,
@@ -404,9 +404,9 @@ class AddWorkOrderController extends StateNotifier<bool> {
         createdBy: int.tryParse(storage.getFromSession('logged_in_emp_id')),
       );
 
-      debugPrint('✅ Prescription saved to temp_uploads: $workOrderDocId');
+      debugPrint(' Prescription saved to temp_uploads: $workOrderDocId');
     } catch (e) {
-      debugPrint('❌ Failed to save prescription to temp_uploads: $e');
+      debugPrint(' Failed to save prescription to temp_uploads: $e');
       // Don't throw - allow work order creation to continue
     }
   }

@@ -30,6 +30,7 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('last_updated_by'),
     Column.text('last_updated_at'),
+    Column.integer('sync_window'), // 1 = true (in date window), 0 = false
   ], indexes: [
     // Performance indexes for common queries
     Index('idx_assigned_id', [IndexedColumn('assigned_id')]),

@@ -41,8 +41,16 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
 
     await _repo.ensureInitialized();
 
+    // DEBUG: Check sync status
+    debugPrint(
+        '🔍 [Manager DEBUG] Sync status - connected: ${_repo.isConnected}, syncing: ${_repo.isSyncing}');
+    debugPrint('🔍 [Manager DEBUG] Full sync status: ${_repo.syncStatus}');
+
     try {
       await _ordersSubscription?.cancel();
+
+      final dateStr = selectedDate.toIso8601String().split('T')[0];
+      debugPrint('[Manager DEBUG] Query date string: $dateStr');
 
       final stream = fromDateOnwards
           ? _repo.watchWorkOrdersFromDate(selectedDate)
@@ -50,6 +58,12 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
 
       _ordersSubscription = stream.listen(
         (orders) {
+          debugPrint(
+              '[Manager DEBUG] Stream emitted ${orders.length} work orders');
+          if (orders.isNotEmpty) {
+            debugPrint(
+                ' [Manager DEBUG] First order: id=${orders.first.id}, date=${orders.first.visitDate}, name=${orders.first.patientName}');
+          }
           debugPrint('Manager UI notified with ${orders.length} work orders');
           _workOrders = orders;
           _errorMessage = null;

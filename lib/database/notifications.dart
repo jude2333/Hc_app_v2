@@ -22,7 +22,9 @@ List<Map<String, dynamic>> _parseAndSortInBackground(
     if (row['doc'] != null) {
       final doc = row['doc'];
 
-      if (doc['from_name'] != null && doc['to_id'] == criteria) {
+      // final docToId = int.tryParse(doc['to_id']?.toString() ?? '') ?? 0;
+
+      if (doc['from_name'] != null && doc['to_id'] == criteria.toString()) {
         final Map<String, dynamic> cleanDoc = Map<String, dynamic>.from(doc);
 
         try {
@@ -155,123 +157,21 @@ class NotificationDB {
     }
   }
 
-  Future<List<Map<String, dynamic>>> list(String status, String today) async {
+  /// Fetches notifications from remote CouchDB
+  /// Matches Vue's notification_db.js list() logic:
+  /// - Uses 1-day lookback (yesterday + today)
+  /// - Filters by employee ID (to_id)
+  /// - Sorts by updated_at descending
+  Future<List<Map<String, dynamic>>> listRemoteData(String status) async {
     try {
-      debugPrint("list() today from state: $today");
-      DateTime calendar;
+      // Match Vue's date logic: calendar.subtract(1, "days")
+      final DateTime now = DateTime.now();
+      final String endDate = DateFormat('yyyy-MM-dd').format(now);
+      final String startDate = DateFormat('yyyy-MM-dd').format(
+        now.subtract(const Duration(days: 1)),
+      );
 
-      try {
-        calendar = DateTime.parse(today);
-      } catch (e) {
-        debugPrint("Invalid today format '$today', using current date");
-        calendar = DateTime.now();
-      }
-
-      String endDate = DateFormat('yyyy-MM-dd').format(calendar);
-      calendar = calendar.subtract(const Duration(days: 1));
-      String startDate = DateFormat('yyyy-MM-dd').format(calendar);
-
-      debugPrint("Notification data > list() > $startDate till $endDate");
-
-      String empIdStr = await _storage.getSessionItem("logged_in_emp_id") ?? "";
-      int criteria = int.tryParse(empIdStr) ?? 0;
-
-      String departmentName =
-          await _storage.getSessionItem("department_name") ?? "";
-      String roleName = await _storage.getSessionItem("role_name") ?? "";
-
-      if (departmentName == "HOME COLLECTION" && roleName == "TECHNICIAN") {
-        criteria = int.tryParse(
-                await _storage.getSessionItem("logged_in_emp_id") ?? "0") ??
-            0;
-      }
-
-      Box? localDb = await _dbHandler.getDb("notifications");
-
-      if (localDb != null) {
-        List<Map<String, dynamic>> newItems = [];
-        List<Map<String, dynamic>> allItems = [];
-        Map<dynamic, dynamic> allDocs = localDb.toMap();
-
-        for (var entry in allDocs.entries) {
-          String key = entry.key.toString();
-
-          if (key.startsWith("notifications:") &&
-              key.compareTo("notifications:$startDate") >= 0 &&
-              key.compareTo("notifications:$endDate\ufff0") <= 0) {
-            try {
-              Map<String, dynamic> doc = Map<String, dynamic>.from(entry.value);
-
-              if (doc['from_name'] != null && doc['to_id'] == criteria) {
-                String updated = _safeFormatDate(doc['updated_at']);
-                doc['updated'] = updated;
-
-                if (doc['status'] == status) {
-                  newItems.add(doc);
-                }
-                allItems.add(doc);
-              }
-            } catch (e) {
-              debugPrint("Error processing notification entry: $e");
-              continue;
-            }
-          }
-        }
-
-        allItems.sort((a, b) {
-          try {
-            DateTime dateA =
-                DateTime.tryParse(a['updated_at']?.toString() ?? '') ??
-                    DateTime.now();
-            DateTime dateB =
-                DateTime.tryParse(b['updated_at']?.toString() ?? '') ??
-                    DateTime.now();
-            return dateB.compareTo(dateA);
-          } catch (e) {
-            debugPrint("Error sorting notifications: $e");
-            return 0;
-          }
-        });
-
-        if (allItems.isEmpty && status != "New") {
-          allItems.add({
-            'from_name': "No Notifications Found.",
-            'msg_header': "NA",
-            'status': "NA",
-            'msg_body': "NA",
-            '_id': 'placeholder',
-          });
-        }
-
-        debugPrint("items length: ${allItems.length}");
-
-        return status == "New" ? newItems : allItems;
-      } else {
-        debugPrint("Db is null here....notifications db list");
-        return [];
-      }
-    } catch (e) {
-      debugPrint("Critical error in notifications list: $e");
-      return [];
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> listRemoteData(
-      String status, String today) async {
-    try {
-      DateTime calendar;
-      try {
-        calendar = DateTime.parse(today);
-      } catch (e) {
-        calendar = DateTime.now();
-      }
-
-      String endDate = DateFormat('yyyy-MM-dd').format(calendar);
-
-      int daysBack = status == "New" ? 1 : 30;
-      calendar = calendar.subtract(Duration(days: daysBack));
-      String startDate = DateFormat('yyyy-MM-dd').format(calendar);
-
+      // Get employee ID for filtering (same as Vue's criteria)
       String empIdStr =
           await _storage.getSessionItem("logged_in_emp_id") ?? "0";
       int criteria = int.tryParse(empIdStr) ?? 0;
@@ -287,12 +187,16 @@ class NotificationDB {
       }
 
       String? name = _dbHandler.resolveName("hc_notifications");
-      if (name == null) return [];
+      if (name == null) {
+        debugPrint("❌ [Notifications] Could not resolve db name");
+        return [];
+      }
 
       Dio? remoteDb = await _couchDB.getDB(name);
-      // if (remoteDb == null) return []; // getDB throws or returns Dio
 
-      debugPrint("📥 Fetching Remote Notifications (Raw String)...");
+      debugPrint("📥 [Notifications] Fetching for emp_id: $criteria");
+      debugPrint(
+          "📅 [Notifications] Date range: $startDate to $endDate (1-day lookback like Vue)");
 
       Response response = await remoteDb.get(
         "/_all_docs",
@@ -304,14 +208,29 @@ class NotificationDB {
         },
       );
 
+      // Parse raw response to check total docs
+      final rawData = jsonDecode(response.data.toString());
+      final totalRows = rawData['total_rows'] ?? 0;
+      final fetchedRows = (rawData['rows'] as List?)?.length ?? 0;
+      debugPrint(
+          "📦 [Notifications] Total in DB: $totalRows, Fetched: $fetchedRows");
+
       List<Map<String, dynamic>> allItems = await compute(
           _parseAndSortInBackground,
           {'body': response.data.toString(), 'criteria': criteria});
 
+      debugPrint(
+          "✅ [Notifications] After filtering by emp_id: ${allItems.length} items");
+
+      // If status is "New", filter to only new items (matches Vue logic)
       if (status == "New") {
-        return allItems.where((doc) => doc['status'] == 'New').toList();
+        final newItems =
+            allItems.where((doc) => doc['status'] == 'New').toList();
+        debugPrint("🔔 [Notifications] New status items: ${newItems.length}");
+        return newItems;
       }
 
+      // For "All" status, return all items (matches Vue returning all_items)
       if (allItems.isEmpty) {
         allItems.add({
           'from_name': "No Notifications Found.",
@@ -322,10 +241,10 @@ class NotificationDB {
         });
       }
 
-      debugPrint(" Loaded ${allItems.length} notifications via Isolate.");
+      debugPrint("✅ [Notifications] Returning ${allItems.length} items");
       return allItems;
     } catch (e) {
-      debugPrint(" Error fetching remote notifications IN LISTREMOTEDATA: $e");
+      debugPrint("❌ [Notifications] Error in listRemoteData: $e");
       return [];
     }
   }
@@ -351,27 +270,6 @@ class NotificationDB {
   }
 
   Future<String> doUpdate(Map<String, dynamic> doc) async {
-    Box? localDb = await _dbHandler.getDb("notifications");
-
-    if (localDb != null) {
-      try {
-        String key = doc['_id'] ??
-            'notifications:${DateTime.now().millisecondsSinceEpoch}';
-
-        await localDb.put(key, doc);
-        debugPrint("updated doc successfully.");
-        return "OK";
-      } catch (err) {
-        debugPrint("Error updating document: $err");
-        return "ERROR:$err";
-      }
-    } else {
-      debugPrint("Db is null here....");
-      return "ERROR";
-    }
-  }
-
-  Future<String> doUpdate2(Map<String, dynamic> doc) async {
     try {
       final remotedb = await getServerDB("notifications");
       // if (remotedb == null) {
@@ -435,29 +333,12 @@ class NotificationDB {
       if (doc != null) {
         doc['status'] = 'Seen';
         doc['updated_at'] = DateTime.now().toIso8601String();
-        await doUpdate2(doc);
+        await doUpdate(doc);
         debugPrint(' Successfully marked $docId as seen.');
       }
     } catch (e) {
       debugPrint(' Failed to mark $docId as seen: $e');
     }
-  }
-
-  Future<Map<String, dynamic>?> getWithId(String id) async {
-    Box? localBox = await _dbHandler.getDb("notifications");
-
-    if (localBox != null) {
-      try {
-        dynamic doc = localBox.get(id);
-        if (doc != null) {
-          return Map<String, dynamic>.from(doc);
-        }
-      } catch (err) {
-        debugPrint("Error fetching notification: $err");
-      }
-    }
-
-    return null;
   }
 
   Future<Map<String, dynamic>?> getWithIdRemote(String id) async {
@@ -493,75 +374,5 @@ class NotificationDB {
       debugPrint(" Error fetching remote notification IN getWithIdRemote: $e");
       return null;
     }
-  }
-
-  Future<List<Map<String, dynamic>>> listAll(String today) async {
-    DateTime calendar = DateFormat('yyyy-MM-dd HH:mm:ss').parse(today);
-    String endDate = DateFormat('yyyy-MM-dd').format(calendar);
-    calendar = calendar.subtract(const Duration(days: 7));
-    String startDate = DateFormat('yyyy-MM-dd').format(calendar);
-
-    debugPrint("All Notification data > list() > $startDate till $endDate");
-
-    int criteria = int.tryParse(
-            await _storage.getSessionItem("logged_in_emp_id") ?? "0") ??
-        0;
-    String departmentName =
-        await _storage.getSessionItem("department_name") ?? "";
-    String roleName = await _storage.getSessionItem("role_name") ?? "";
-
-    if (departmentName == "HOME COLLECTION" && roleName == "TECHNICIAN") {
-      criteria = int.tryParse(
-              await _storage.getSessionItem("logged_in_emp_id") ?? "0") ??
-          0;
-    }
-
-    Box? localBox = await _dbHandler.getDb("notifications");
-
-    if (localBox != null) {
-      try {
-        List<Map<String, dynamic>> allItems = [];
-
-        List<String> keys = localBox.keys.cast<String>().toList();
-
-        for (String key in keys) {
-          if (key.startsWith("notifications:$startDate") &&
-              key.compareTo("notifications:$endDate\ufff0") <= 0) {
-            dynamic doc = localBox.get(key);
-            if (doc != null && doc['from_name'] != null) {
-              if (doc['to_id'] == criteria) {
-                String updated = Util.formatDate(doc['updated_at']);
-                doc['updated'] = updated;
-                allItems.add(Map<String, dynamic>.from(doc));
-              }
-            }
-          }
-        }
-
-        allItems.sort((a, b) {
-          DateTime dateA = DateTime.parse(b['updated_at']);
-          DateTime dateB = DateTime.parse(a['updated_at']);
-          return dateA.compareTo(dateB);
-        });
-
-        if (allItems.isEmpty) {
-          allItems.add({
-            "from_name": "No Notifications Found.",
-            "msg_header": "NA",
-            "status": "NA",
-            "msg_body": "NA",
-          });
-        }
-
-        debugPrint("items length: ${allItems.length}");
-        return allItems;
-      } catch (e) {
-        debugPrint("Error fetching all notifications: $e");
-      }
-    } else {
-      debugPrint("Db is null here....notifications db list all");
-    }
-
-    return [];
   }
 }
