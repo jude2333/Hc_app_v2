@@ -155,48 +155,56 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     ref.listen<Map<String, dynamic>?>(latestNotificationTriggerProvider,
         (previous, next) {
-      if (next != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.black87,
-            duration: const Duration(seconds: 4),
-            content: Row(
-              children: [
-                const Icon(Icons.notifications_active,
-                    color: Colors.orange, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        next['from_name'] ?? 'New Notification',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.white),
+      if (next != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          try {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.black87,
+                duration: const Duration(seconds: 4),
+                content: Row(
+                  children: [
+                    const Icon(Icons.notifications_active,
+                        color: Colors.orange, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            next['from_name'] ?? 'New Notification',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                          Text(
+                            next['msg_header'] ?? 'You have a new message',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.white70),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        next['msg_header'] ?? 'You have a new message',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.white70),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            action: SnackBarAction(
-              label: 'VIEW',
-              textColor: Colors.orange,
-              onPressed: () {
-                context.go('/notifications');
-              },
-            ),
-          ),
-        );
+                action: SnackBarAction(
+                  label: 'VIEW',
+                  textColor: Colors.orange,
+                  onPressed: () {
+                    context.go('/notifications');
+                  },
+                ),
+              ),
+            );
+          } catch (e) {
+            debugPrint('[MainShell] Error showing notification snackbar: $e');
+          }
+        });
 
         ref.read(latestNotificationTriggerProvider.notifier).state = null;
       }

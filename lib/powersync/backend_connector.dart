@@ -254,9 +254,11 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Prefer': 'resolution=merge-duplicates,return=minimal',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
 
     try {
       final response = await http.post(
@@ -288,9 +290,11 @@ class BackendConnector extends PowerSyncBackendConnector {
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -315,9 +319,11 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Content-Type': 'application/json',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
 
     final response = await http.delete(
       Uri.parse(url),
@@ -347,9 +353,12 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Prefer': 'resolution=merge-duplicates,return=minimal',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
+
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -381,9 +390,12 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Content-Type': 'application/json',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
+
     final response = await http.patch(
       Uri.parse(url),
       headers: headers,
@@ -408,9 +420,12 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Content-Type': 'application/json',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
+
     final response = await http.patch(
       Uri.parse(url),
       headers: headers,
@@ -457,7 +472,7 @@ class BackendConnector extends PowerSyncBackendConnector {
 
   Future<void> _upsertTempUpload(String id, Map<String, dynamic> data) async {
     final baseUrl = Settings.currentPostgresUrl;
-    final url = '$baseUrl/data.temp_uploads';
+    final url = '$baseUrl/temp_uploads';
 
     final dataWithId = {...data, 'id': id};
 
@@ -469,9 +484,11 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Prefer': 'resolution=merge-duplicates,return=minimal',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
 
     try {
       final response = await http.post(
@@ -495,7 +512,7 @@ class BackendConnector extends PowerSyncBackendConnector {
 
   Future<void> _updateTempUpload(String id, Map<String, dynamic> data) async {
     final baseUrl = Settings.currentPostgresUrl;
-    final url = '$baseUrl/data.temp_uploads?id=eq.$id';
+    final url = '$baseUrl/temp_uploads?id=eq.$id';
 
     debugPrint('[BackendConnector] Updating temp upload: $id');
 
@@ -504,9 +521,11 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Content-Type': 'application/json',
     };
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -524,16 +543,18 @@ class BackendConnector extends PowerSyncBackendConnector {
 
   Future<void> _deleteTempUpload(String id) async {
     final baseUrl = Settings.currentPostgresUrl;
-    final url = '$baseUrl/data.temp_uploads?id=eq.$id';
+    final url = '$baseUrl/temp_uploads?id=eq.$id';
 
     debugPrint('[BackendConnector] Deleting temp upload: $id');
 
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{};
 
-    if (token.isNotEmpty && !Settings.development) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    // if (token.isNotEmpty && !Settings.development) {
+    //   headers['Authorization'] = 'Bearer $token';
+    // }
+
+    headers['Authorization'] = 'Bearer $token';
 
     final response = await http.delete(Uri.parse(url), headers: headers);
 
