@@ -7,6 +7,20 @@ import 'package:jose/jose.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import '../../config/settings.dart';
 
+/// Structured exception for PostgREST HTTP errors.
+/// Enables reliable status code checking in _isPermanentError.
+class PostgRESTException implements Exception {
+  final String message;
+  final int statusCode;
+  final String responseBody;
+
+  PostgRESTException(this.message, this.statusCode, this.responseBody);
+
+  @override
+  String toString() =>
+      'PostgRESTException($statusCode): $message - $responseBody';
+}
+
 class BackendConnector extends PowerSyncBackendConnector {
   final StorageService storage;
 
@@ -159,21 +173,25 @@ class BackendConnector extends PowerSyncBackendConnector {
           }
         }
 
-        // Rethrow to let PowerSync handle retry logic
         rethrow;
       }
     }
   }
 
+  /// Check if an error is permanent (should not be retried).
+  /// Uses structured HTTP status codes instead of fragile string matching.
   bool _isPermanentError(dynamic error) {
-    final errorStr = error.toString().toLowerCase();
-
-    return errorStr.contains('400') ||
-        errorStr.contains('401') ||
-        errorStr.contains('403') ||
-        errorStr.contains('404') ||
-        errorStr.contains('422') ||
-        errorStr.contains('validation');
+    if (error is PostgRESTException) {
+      return error.statusCode >= 400 && error.statusCode < 500;
+    }
+    // Fallback: check for known permanent error patterns
+    final errorStr = error.toString();
+    if (errorStr.contains('FormatException') ||
+        errorStr.contains('type \'') ||
+        errorStr.contains('is not a subtype')) {
+      return true;
+    }
+    return false;
   }
 
   Future<void> _processOperation(CrudEntry operation) async {
@@ -252,20 +270,17 @@ class BackendConnector extends PowerSyncBackendConnector {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates,return=minimal',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: jsonEncode(data),
-      );
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: headers,
+            body: jsonEncode(data),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('[BackendConnector] Work order upserted: $id');
@@ -274,8 +289,8 @@ class BackendConnector extends PowerSyncBackendConnector {
 
       debugPrint('[BackendConnector] Upsert failed: ${response.statusCode}');
       debugPrint('[BackendConnector] Response: ${response.body}');
-      throw Exception(
-          'WorkOrder upsert failed: ${response.statusCode} - ${response.body}');
+      throw PostgRESTException(
+          'WorkOrder upsert failed', response.statusCode, response.body);
     } catch (e) {
       debugPrint('[BackendConnector] Upsert exception: $e');
       rethrow;
@@ -289,25 +304,34 @@ class BackendConnector extends PowerSyncBackendConnector {
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      'Authorization': 'Bearer $token',
     };
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
 
-    headers['Authorization'] = 'Bearer $token';
+    final response = await http
+        .patch(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonEncode(data),
+        )
+        .timeout(const Duration(seconds: 15));
 
-    final response = await http.patch(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-
-    if (response.statusCode != 204 && response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      // Verify at least one row was updated
+      final rows = jsonDecode(response.body);
+      if (rows is List && rows.isEmpty) {
+        debugPrint(
+            '[BackendConnector] WARNING: PATCH matched 0 rows for id=$id');
+        throw PostgRESTException(
+            'WorkOrder not found in PostgreSQL', 404, 'id=$id');
+      }
+      debugPrint('[BackendConnector] Work order updated: $id');
+    } else {
       debugPrint(
           '[BackendConnector] Update failed: ${response.statusCode} - ${response.body}');
-      throw Exception('WorkOrder update failed: ${response.statusCode}');
+      throw PostgRESTException(
+          'WorkOrder update failed', response.statusCode, response.body);
     }
-    debugPrint('[BackendConnector] Work order updated: $id');
   }
 
   Future<void> _deleteWorkOrder(String id) async {
@@ -317,23 +341,21 @@ class BackendConnector extends PowerSyncBackendConnector {
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
-    final response = await http.delete(
-      Uri.parse(url),
-      headers: headers,
-    );
+    final response = await http
+        .delete(
+          Uri.parse(url),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       debugPrint(
           '[BackendConnector] Delete failed: ${response.statusCode} - ${response.body}');
-      throw Exception('WorkOrder delete failed: ${response.statusCode}');
+      throw PostgRESTException(
+          'WorkOrder delete failed', response.statusCode, response.body);
     }
     debugPrint('[BackendConnector] Work order deleted: $id');
   }
@@ -342,7 +364,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     final baseUrl = Settings.currentPostgresUrl;
     final url = '$baseUrl/price_list';
 
-    // Ensure data has the ID
     final dataWithId = {...data, 'id': id};
 
     debugPrint('[BackendConnector] Upserting price_list: $id');
@@ -351,20 +372,17 @@ class BackendConnector extends PowerSyncBackendConnector {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates,return=minimal',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: jsonEncode(dataWithId),
-      );
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: headers,
+            body: jsonEncode(dataWithId),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('[BackendConnector] Price list upserted: $id');
@@ -372,9 +390,8 @@ class BackendConnector extends PowerSyncBackendConnector {
       }
 
       debugPrint('[BackendConnector] Upsert failed: ${response.statusCode}');
-      debugPrint('[BackendConnector] Response: ${response.body}');
-      throw Exception(
-          'PriceList upsert failed: ${response.statusCode} - ${response.body}');
+      throw PostgRESTException(
+          'PriceList upsert failed', response.statusCode, response.body);
     } catch (e) {
       debugPrint('[BackendConnector] Upsert exception: $e');
       rethrow;
@@ -388,54 +405,49 @@ class BackendConnector extends PowerSyncBackendConnector {
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
-    final response = await http.patch(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonEncode(data),
-    );
+    final response = await http
+        .patch(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonEncode(data),
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       debugPrint(
           '[BackendConnector] Update failed: ${response.statusCode} - ${response.body}');
-      throw Exception('PriceList update failed: ${response.statusCode}');
+      throw PostgRESTException(
+          'PriceList update failed', response.statusCode, response.body);
     }
     debugPrint('[BackendConnector] Price list updated: $id');
   }
 
   Future<void> _deletePriceList(String id) async {
-    // Soft delete: set visible = 0 (integer for PostgreSQL)
     final baseUrl = Settings.currentPostgresUrl;
     final url = '$baseUrl/price_list?id=eq.$id';
 
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
-    final response = await http.patch(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonEncode({'visible': 0}), // 0 for integer column
-    );
+    final response = await http
+        .patch(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonEncode({'visible': 0}),
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       debugPrint(
           '[BackendConnector] Delete failed: ${response.statusCode} - ${response.body}');
-      throw Exception('PriceList soft delete failed: ${response.statusCode}');
+      throw PostgRESTException(
+          'PriceList soft delete failed', response.statusCode, response.body);
     }
     debugPrint('[BackendConnector] Price list soft deleted: $id');
   }
@@ -482,27 +494,25 @@ class BackendConnector extends PowerSyncBackendConnector {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates,return=minimal',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: jsonEncode(dataWithId),
-      );
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: headers,
+            body: jsonEncode(dataWithId),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         debugPrint('[BackendConnector] Temp upload synced: $id');
       } else {
         debugPrint(
             '[BackendConnector] Temp upload sync failed: ${response.statusCode} - ${response.body}');
-        throw Exception('TempUpload upsert failed: ${response.statusCode}');
+        throw PostgRESTException(
+            'TempUpload upsert failed', response.statusCode, response.body);
       }
     } catch (e) {
       debugPrint('[BackendConnector] Temp upload sync error: $e');
@@ -519,24 +529,22 @@ class BackendConnector extends PowerSyncBackendConnector {
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
     };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
-    final response = await http.patch(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonEncode(data),
-    );
+    final response = await http
+        .patch(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonEncode(data),
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       debugPrint(
           '[BackendConnector] Temp upload update failed: ${response.statusCode}');
-      throw Exception('TempUpload update failed: ${response.statusCode}');
+      throw PostgRESTException(
+          'TempUpload update failed', response.statusCode, response.body);
     }
     debugPrint('[BackendConnector] Temp upload updated: $id');
   }
@@ -548,20 +556,22 @@ class BackendConnector extends PowerSyncBackendConnector {
     debugPrint('[BackendConnector] Deleting temp upload: $id');
 
     final token = await storage.getFromSessionAsync('pg_admin');
-    final headers = <String, String>{};
+    final headers = <String, String>{
+      'Authorization': 'Bearer $token',
+    };
 
-    // if (token.isNotEmpty && !Settings.development) {
-    //   headers['Authorization'] = 'Bearer $token';
-    // }
-
-    headers['Authorization'] = 'Bearer $token';
-
-    final response = await http.delete(Uri.parse(url), headers: headers);
+    final response = await http
+        .delete(
+          Uri.parse(url),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       debugPrint(
           '[BackendConnector] Temp upload delete failed: ${response.statusCode}');
-      throw Exception('TempUpload delete failed: ${response.statusCode}');
+      throw PostgRESTException(
+          'TempUpload delete failed', response.statusCode, response.body);
     }
     debugPrint('[BackendConnector] Temp upload deleted: $id');
   }

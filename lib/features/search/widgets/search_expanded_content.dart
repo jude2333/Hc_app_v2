@@ -1,18 +1,7 @@
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'dart:html' as html;
-
-import 'dart:ui_web' as ui;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
-import 'package:anderson_crm_flutter/services/s3_file_service.dart';
 import 'package:anderson_crm_flutter/components/time_line_page.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 
@@ -439,7 +428,7 @@ class SearchExpandedContent extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => _FullScreenPdfViewer(
+            builder: (_) => PdfViewerPage(
               s3Path: path,
               title: fileName,
             ),
@@ -449,7 +438,7 @@ class SearchExpandedContent extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => _FullScreenImageViewer(
+            builder: (_) => ImageViewerPage(
               s3Path: path,
               title: fileName,
             ),
@@ -591,7 +580,6 @@ class _ActionLinkChip extends StatelessWidget {
   }
 }
 
-class _FullScreenImageViewer extends ConsumerStatefulWidget {
   final String s3Path;
   final String title;
 
@@ -610,6 +598,7 @@ class _FullScreenImageViewerState
   bool _isLoading = true;
   String? _error;
   Uint8List? _imageBytes;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -618,23 +607,45 @@ class _FullScreenImageViewerState
   }
 
   Future<void> _loadImage() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       final s3Service = ref.read(s3FileServiceProvider);
       final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
-      if (bytes.length < 1000) {
-        throw Exception('Invalid response from server');
+      // Validate image content using magic bytes
+      if (!S3FileService.isValidImage(bytes)) {
+        throw S3DownloadException(
+          'The downloaded file is not a valid image.',
+          isNotFound: true,
+        );
       }
 
-      setState(() {
-        _imageBytes = bytes;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _imageBytes = bytes;
+          _isLoading = false;
+        });
+      }
+    } on S3DownloadException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.message;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Failed to load image: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Failed to load image. Please try again.';
+        });
+      }
+      debugPrint('[SearchImageViewer] Load error: $e');
     }
   }
 
@@ -647,14 +658,21 @@ class _FullScreenImageViewerState
         foregroundColor: Colors.white,
         title: Text(widget.title, style: const TextStyle(fontSize: 14)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Downloading ${widget.title}...')),
-              );
-            },
-          ),
+          if (_imageBytes != null)
+            _isDownloading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download),
+                    onPressed: () => _downloadFile(context),
+                  ),
         ],
       ),
       body: _buildBody(),
@@ -682,23 +700,30 @@ class _FullScreenImageViewerState
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.image_outlined, size: 64, color: Colors.grey),
+              const Icon(Icons.broken_image, size: 56, color: Colors.grey),
               const SizedBox(height: 16),
               Text(
-                'Image Preview',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 18),
+                _error!,
+                style: const TextStyle(color: Colors.white, fontSize: 15),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                widget.s3Path,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                FileService.getFileName(widget.s3Path),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Go Back'),
+                onPressed: _isLoading ? null : _loadImage,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
               ),
             ],
           ),
@@ -720,6 +745,26 @@ class _FullScreenImageViewerState
     return const Center(
       child: Text('No image data', style: TextStyle(color: Colors.white)),
     );
+  }
+
+  Future<void> _downloadFile(BuildContext context) async {
+    if (_imageBytes == null) return;
+
+    setState(() => _isDownloading = true);
+
+    try {
+      await FileService.saveOrOpenFile(
+        context,
+        bytes: _imageBytes!,
+        fileName: FileService.getFileName(widget.s3Path),
+        mimeType:
+            'image/${FileService.getExtension(widget.s3Path).replaceAll('.', '')}',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
   }
 }
 
@@ -745,6 +790,9 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
   String? _localPdfPath;
   int _currentPage = 0;
   int _totalPages = 0;
+  bool _isDownloading = false;
+
+  static final Set<String> _registeredViewTypes = {};
 
   @override
   void initState() {
@@ -754,41 +802,66 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
 
   @override
   void dispose() {
-    if (_blobUrl != null && kIsWeb) {}
+    if (_blobUrl != null && kIsWeb) {
+      html.Url.revokeObjectUrl(_blobUrl!);
+    }
     super.dispose();
   }
 
   Future<void> _loadPdf() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       final s3Service = ref.read(s3FileServiceProvider);
       final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
-      if (bytes.length < 1000) {
-        throw Exception('Invalid response from server');
+      // Validate PDF content using magic bytes
+      if (!S3FileService.isValidPdf(bytes)) {
+        throw S3DownloadException(
+          'The downloaded file is not a valid PDF.',
+          isNotFound: true,
+        );
       }
 
+      _pdfBytes = bytes;
+
       if (kIsWeb) {
-        _pdfBytes = bytes;
         _blobUrl = _createBlobUrl(bytes);
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       } else {
         final dir = await getTemporaryDirectory();
         final fileName = FileService.getFileName(widget.s3Path);
         final file = File('${dir.path}/$fileName');
         await file.writeAsBytes(bytes);
 
+        if (mounted) {
+          setState(() {
+            _localPdfPath = file.path;
+            _isLoading = false;
+          });
+        }
+      }
+    } on S3DownloadException catch (e) {
+      if (mounted) {
         setState(() {
-          _localPdfPath = file.path;
           _isLoading = false;
+          _error = e.message;
         });
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Failed to load PDF: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Failed to load PDF. Please try again.';
+        });
+      }
+      debugPrint('[SearchPdfViewer] Load error: $e');
     }
   }
 
@@ -819,14 +892,21 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Downloading ${widget.title}...')),
-              );
-            },
-          ),
+          if (_pdfBytes != null)
+            _isDownloading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download),
+                    onPressed: () => _downloadFile(context),
+                  ),
         ],
       ),
       body: _buildBody(),
@@ -854,23 +934,30 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.picture_as_pdf, size: 64, color: Colors.grey),
+              const Icon(Icons.picture_as_pdf, size: 56, color: Colors.grey),
               const SizedBox(height: 16),
               Text(
-                'PDF Preview',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 18),
+                _error!,
+                style: const TextStyle(color: Colors.white, fontSize: 15),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                widget.s3Path,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                FileService.getFileName(widget.s3Path),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Go Back'),
+                onPressed: _isLoading ? null : _loadPdf,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
               ),
             ],
           ),
@@ -879,15 +966,21 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
     }
 
     if (kIsWeb && _blobUrl != null) {
-      ui.platformViewRegistry.registerViewFactory(
-        'pdf-viewer-${widget.s3Path.hashCode}',
-        (int viewId) => html.IFrameElement()
-          ..src = _blobUrl!
-          ..style.border = 'none'
-          ..style.width = '100%'
-          ..style.height = '100%',
-      );
-      return HtmlElementView(viewType: 'pdf-viewer-${widget.s3Path.hashCode}');
+      final String viewType = 'pdf-viewer-${widget.s3Path.hashCode}';
+
+      if (!_registeredViewTypes.contains(viewType)) {
+        ui.platformViewRegistry.registerViewFactory(
+          viewType,
+          (int viewId) => html.IFrameElement()
+            ..src = _blobUrl!
+            ..style.border = 'none'
+            ..style.width = '100%'
+            ..style.height = '100%',
+        );
+        _registeredViewTypes.add(viewType);
+      }
+
+      return HtmlElementView(viewType: viewType);
     }
 
     if (_localPdfPath != null) {
@@ -899,12 +992,35 @@ class _FullScreenPdfViewerState extends ConsumerState<_FullScreenPdfViewer> {
         pageFling: true,
         onRender: (pages) => setState(() => _totalPages = pages ?? 0),
         onPageChanged: (page, _) => setState(() => _currentPage = page ?? 0),
-        onError: (error) => setState(() => _error = error.toString()),
+        onError: (error) {
+          debugPrint('[SearchPdfViewer] PDFView render error: $error');
+          setState(() =>
+              _error = 'Failed to render PDF. The file may be corrupted.');
+        },
       );
     }
 
     return const Center(
       child: Text('No PDF data', style: TextStyle(color: Colors.white)),
     );
+  }
+
+  Future<void> _downloadFile(BuildContext context) async {
+    if (_pdfBytes == null) return;
+
+    setState(() => _isDownloading = true);
+
+    try {
+      await FileService.saveOrOpenFile(
+        context,
+        bytes: _pdfBytes!,
+        fileName: FileService.getFileName(widget.s3Path),
+        mimeType: 'application/pdf',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
   }
 }

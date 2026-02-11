@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
+
+import 'dart:html' as html;
 
 class FileService {
   final Dio _dio;
@@ -47,6 +50,13 @@ class FileService {
     return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].contains(ext);
   }
 
+  /// Get a user-friendly content type label for a file
+  static String getContentType(String path) {
+    if (isPdf(path)) return 'PDF';
+    if (isImage(path)) return 'Image';
+    return 'File';
+  }
+
   Future<Uint8List?> downloadBytes(String s3Path,
       {void Function(int, int)? onProgress}) async {
     try {
@@ -60,7 +70,11 @@ class FileService {
           'key': key,
           'jwt_token': token,
         },
-        options: Options(responseType: ResponseType.bytes),
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 30),
+        ),
         onReceiveProgress: onProgress,
       );
 
@@ -111,6 +125,53 @@ class FileService {
         const SnackBar(
             content: Text('Download failed'), backgroundColor: Colors.red),
       );
+    }
+  }
+
+  /// Download file bytes and trigger a browser download (web) or save + open (mobile)
+  static Future<void> saveOrOpenFile(
+    BuildContext context, {
+    required Uint8List bytes,
+    required String fileName,
+    String? mimeType,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      if (kIsWeb) {
+        _webDownload(bytes, fileName, mimeType ?? 'application/octet-stream');
+        messenger.showSnackBar(
+          SnackBar(content: Text('Downloading: $fileName')),
+        );
+      } else {
+        final dir = await getApplicationDocumentsDirectory();
+        final filePath = '${dir.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+        await OpenFilex.open(filePath);
+        messenger.showSnackBar(
+          SnackBar(content: Text('Opened: $fileName')),
+        );
+      }
+    } catch (e) {
+      debugPrint('FileService saveOrOpen error: $e');
+      messenger.showSnackBar(
+        SnackBar(
+            content: Text('Failed to save file: $e'),
+            backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  /// Trigger a file download in the browser
+  static void _webDownload(Uint8List bytes, String fileName, String mimeType) {
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], mimeType);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute('download', fileName)
+        ..click();
+      html.Url.revokeObjectUrl(url);
     }
   }
 }

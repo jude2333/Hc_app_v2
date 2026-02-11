@@ -19,11 +19,12 @@ class NotificationDesktopView extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.all(16),
       elevation: 1,
+      color: Colors.white,
       child: Column(
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: Colors.orange[50],
               border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
             ),
             child: Row(

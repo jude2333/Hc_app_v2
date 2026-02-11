@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,12 +11,11 @@ import 'controllers/add_work_order_controller.dart';
 import 'providers.dart';
 
 import 'widgets/patient_details_section.dart';
-import 'widgets/appointment_section.dart';
 import 'widgets/contact_info_section.dart';
-import 'widgets/service_details_section.dart';
 import 'widgets/image_upload_section.dart';
 import 'widgets/cancellation_section.dart';
 import 'widgets/work_order_section_card.dart';
+import 'widgets/work_order_form_styles.dart';
 import 'dialogs/pincode_search_dialog.dart';
 import 'dialogs/b2b_client_dialog.dart';
 import 'dialogs/settings_dialog.dart';
@@ -106,11 +103,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
 
   void _initializeControllers() {
     _nameController = TextEditingController();
-    _ageController = TextEditingController();
+    _ageController = TextEditingController(text: 'NA');
     _mobileController = TextEditingController();
-    _emailController = TextEditingController();
+    _emailController = TextEditingController(text: 'NA');
     _doctorController = TextEditingController();
-    _addressController = TextEditingController();
+    _addressController = TextEditingController(text: 'NA');
     _pincodeController = TextEditingController();
     _freeTextController = TextEditingController();
     _cancellationReasonController = TextEditingController();
@@ -337,7 +334,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
 
     if (result['success'] == true) {
       if (!mounted) return;
-      Navigator.pop(context, 'refresh');
+      Navigator.pop(context, _isCancelled ? 'cancelled' : 'refresh');
       Future.microtask(() {
         if (mounted) _showSnackBar(result['message']);
       });
@@ -414,14 +411,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             '${result['first_name']} ${result['last_name']}${clientName.isNotEmpty ? ' ($clientName)' : ''}';
         _isB2B = true;
 
-        // Auto-disable notifications for B2B clients (Vue: selected_client L595-597)
         _sendSms = false;
         _sendWhatsapp = false;
         _sendEmail = false;
       });
     } else {
-      // If dialog cancelled without selection, reset B2B state and enable notifications
-      // (Vue: closeSheet2 L610-616)
       if (_selectedB2BClientId == null) {
         setState(() {
           _isB2B = false;
@@ -655,7 +649,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
       children: [
         DropdownButtonFormField<String>(
           value: _collectionDate.isNotEmpty ? _collectionDate : null,
-          decoration: _inputDecoration('Collection Date', icon: Icons.event),
+          decoration: WorkOrderFormStyles.inputDecoration('Collection Date',
+              icon: Icons.event),
           items: _suitableDates
               .map((date) => DropdownMenuItem(value: date, child: Text(date)))
               .toList(),
@@ -727,7 +722,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
       children: [
         TextFormField(
           controller: _doctorController,
-          decoration: _inputDecoration('Referring Doctor',
+          decoration: WorkOrderFormStyles.inputDecoration('Referring Doctor',
               icon: Icons.medical_services_outlined, prefix: 'Dr. '),
         ),
         SizedBox(height: AppSpacing.md),
@@ -756,17 +751,19 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             ),
           ),
         SizedBox(height: AppSpacing.md),
-        TextFormField(
-          controller: _freeTextController,
-          decoration: _inputDecoration('Remarks / Notes', icon: Icons.notes),
-          maxLines: 3,
-        ),
+        // TextFormField(
+        //   controller: _freeTextController,
+        //   decoration: WorkOrderFormStyles.inputDecoration('Remarks / Notes',
+        //       icon: Icons.notes),
+        //   maxLines: 3,
+        // ),
         SizedBox(height: AppSpacing.md),
         _buildTagsRow(),
         SizedBox(height: AppSpacing.md),
         DropdownButtonFormField<String>(
           value: _creditSelect,
-          decoration: _inputDecoration('Payment Type', icon: Icons.payment),
+          decoration: WorkOrderFormStyles.inputDecoration('Payment Type',
+              icon: Icons.payment),
           items: ['None', 'Credit', 'Trial']
               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
               .toList(),
@@ -812,7 +809,6 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               setState(() {
                 _isB2B = v;
                 if (!v) {
-                  // Reset B2B state and re-enable notifications (Vue: closeSheet2 L610-616)
                   _selectedB2BClientId = null;
                   _selectedB2BClientName = '';
                   _sendSms = true;
@@ -894,8 +890,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
       children: [
         TextFormField(
           controller: _addressController,
-          decoration:
-              _inputDecoration('Address', icon: Icons.location_on_outlined),
+          decoration: WorkOrderFormStyles.inputDecoration('Address',
+              icon: Icons.location_on_outlined),
           maxLines: 3,
           validator: (v) => v!.isEmpty ? 'Required' : null,
         ),
@@ -906,8 +902,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               flex: 3,
               child: TextFormField(
                 controller: _emailController,
-                decoration:
-                    _inputDecoration('Email', icon: Icons.email_outlined),
+                decoration: WorkOrderFormStyles.inputDecoration('Email',
+                    icon: Icons.email_outlined),
                 keyboardType: TextInputType.emailAddress,
               ),
             ),
@@ -920,7 +916,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _pincodeController,
-                      decoration: _inputDecoration('Pincode'),
+                      decoration:
+                          WorkOrderFormStyles.inputDecoration('Pincode'),
                       keyboardType: TextInputType.number,
                       maxLength: 6,
                       validator: (v) => v!.length != 6 ? 'Invalid' : null,
@@ -946,41 +943,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: _freeTextController,
-          decoration: _inputDecoration('Remarks / Notes', icon: Icons.notes),
+          decoration: WorkOrderFormStyles.inputDecoration('Remarks / Notes',
+              icon: Icons.notes),
           maxLines: 2,
         ),
       ],
-    );
-  }
-
-  InputDecoration _inputDecoration(String label,
-      {IconData? icon, String? prefix}) {
-    return InputDecoration(
-      labelText: label,
-      prefixText: prefix,
-      prefixIcon: icon != null ? Icon(icon, size: 20) : null,
-      filled: true,
-      fillColor: AppColors.surfaceAlt,
-      border: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.divider),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.error),
-      ),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
     );
   }
 

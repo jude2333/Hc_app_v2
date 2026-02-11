@@ -226,6 +226,117 @@ class ManagerAssignmentController {
       rethrow;
     }
   }
+
+  /// Send cancellation notifications to the patient and assigned technician.
+  /// Mirrors Vue's `send_cancellation_sms()` in desktop_view.vue.
+  Future<void> sendCancellationMessages({
+    required WorkOrder workOrder,
+    required bool sendSms,
+    required bool sendWhatsApp,
+    required bool sendEmail,
+  }) async {
+    try {
+      final comCenter = _ref.read(comCenterProvider);
+
+      // 1. Send in-app notification to the assigned technician
+      if (workOrder.assignedTo.isNotEmpty) {
+        final notificationCenter = _ref.read(notificationCenterServiceProvider);
+
+        final appointmentDate =
+            DateFormat('dd-MM-yyyy').format(workOrder.visitDate);
+        final msgHeader =
+            "Cancelled Collection on $appointmentDate ${workOrder.visitTime}.";
+        final msgBody = "Cancelled home collection for ${workOrder.patientName}"
+            "(${workOrder.age}/${workOrder.gender}) "
+            "address:${workOrder.address} mobile:${workOrder.mobile} pincode:${workOrder.pincode}"
+            " ${workOrder.freeText}";
+
+        final notification = {
+          '_id': 'notifications:${Util.getDateForId()}:${Util.uuidv4()}',
+          'from_id': _storage.getFromSession('logged_in_emp_id'),
+          'from_name': _storage.getFromSession('logged_in_emp_name'),
+          'to_id': workOrder.assignedId.toString(),
+          'to_name': workOrder.assignedTo,
+          'msg_header': msgHeader,
+          'msg_body': msgBody,
+          'msg_attachment': {},
+          'status': 'New',
+          'msg_time': Util.getTodayWithTime(),
+          'updated_at': Util.getTimeStamp(),
+        };
+
+        final result = await notificationCenter.sendNotification(notification);
+        debugPrint(result == "OK"
+            ? ' Cancellation notification sent to ${workOrder.assignedTo}'
+            : ' Failed to send cancellation notification: $result');
+      }
+
+      // 2. Build base message for SMS/WhatsApp/Email
+      final rescheduleUrl = '${Settings.msgUrl}reshedule';
+
+      final baseMessage = {
+        'center_id': _storage.getFromSession('logged_in_tenant_id'),
+        'center_name': _storage.getFromSession('logged_in_tenant_name'),
+        'department_id': _storage.getFromSession('department_id'),
+        'department_name': _storage.getFromSession('department_name'),
+        'role_id': _storage.getFromSession('role_id'),
+        'role_name': _storage.getFromSession('role_name'),
+        'emp_id': _storage.getFromSession('logged_in_emp_id'),
+        'emp_name': _storage.getFromSession('logged_in_emp_name'),
+        'recipient_mobile': workOrder.mobile,
+        'recipient_name': workOrder.patientName,
+        'status': '0',
+        'msg_time': Util.getTodayWithTime(),
+        'updated_at': Util.getTimeStamp(),
+      };
+
+      // 3. Send cancellation SMS
+      if (sendSms) {
+        final smsMsg = SmsTemplate.homeCollectionCancellation(rescheduleUrl);
+        final smsMessage = Map<String, dynamic>.from(baseMessage);
+        smsMessage['_id'] =
+            'sms_center:${Util.getDateForId()}:${Util.uuidv4()}';
+        smsMessage['message'] = smsMsg;
+
+        debugPrint(' Sending cancellation SMS to ${workOrder.mobile}');
+        final result = await comCenter.sendMsg(smsMessage);
+        debugPrint(result == 'OK'
+            ? ' Cancellation SMS sent'
+            : ' Cancellation SMS failed: $result');
+      }
+
+      // 4. Send cancellation WhatsApp
+      if (sendWhatsApp) {
+        final waMessage = Map<String, dynamic>.from(baseMessage);
+        waMessage['_id'] =
+            'whatsapp_center:${Util.getDateForId()}:${Util.uuidv4()}';
+        waMessage['message'] = [rescheduleUrl];
+        waMessage['template'] = 'hc_cancellation';
+
+        debugPrint(' Sending cancellation WhatsApp to ${workOrder.mobile}');
+        final result = await comCenter.sendMsg(waMessage);
+        debugPrint(result == 'OK'
+            ? ' Cancellation WhatsApp sent'
+            : ' Cancellation WhatsApp failed: $result');
+      }
+
+      // 5. Send cancellation Email
+      if (sendEmail) {
+        final emailMessage = Map<String, dynamic>.from(baseMessage);
+        emailMessage['_id'] =
+            'email_center:${Util.getDateForId()}:${Util.uuidv4()}';
+
+        debugPrint(' Sending cancellation Email to ${workOrder.email}');
+        final result = await comCenter.sendMsg(emailMessage);
+        debugPrint(result == 'OK'
+            ? ' Cancellation Email sent'
+            : ' Cancellation Email failed: $result');
+      }
+    } catch (e) {
+      debugPrint(' Error sending cancellation messages: $e');
+      rethrow;
+    }
+  }
 }
 
 final managerAssignmentControllerProvider =

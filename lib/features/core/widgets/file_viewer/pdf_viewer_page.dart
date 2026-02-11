@@ -52,6 +52,7 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
   String? _error;
   int _currentPage = 0;
   int _totalPages = 0;
+  bool _isDownloading = false;
 
   static final Set<String> _registeredViewTypes = {};
 
@@ -73,6 +74,12 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
   }
 
   Future<void> _loadPdf() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       Uint8List? bytes = widget.preloadedBytes;
 
@@ -81,8 +88,14 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
         bytes = await s3Service.downloadFile(filePath: widget.s3Path);
       }
 
-      if (bytes.length < 1000 && bytes.toString().contains('Error')) {
-        throw Exception('Invalid PDF data');
+      // Validate PDF content
+      if (!S3FileService.isValidPdf(bytes)) {
+        debugPrint(
+            '[PdfViewer] Invalid PDF data: ${bytes.length} bytes, header: ${bytes.take(4).toList()}');
+        throw S3DownloadException(
+          'The downloaded file is not a valid PDF.',
+          isNotFound: true,
+        );
       }
 
       _pdfBytes = bytes;
@@ -90,9 +103,7 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       if (kIsWeb) {
         _blobUrl = _createBlobUrl(bytes);
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+          setState(() => _isLoading = false);
         }
       } else {
         final dir = await getTemporaryDirectory();
@@ -107,13 +118,21 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
           });
         }
       }
-    } catch (e) {
+    } on S3DownloadException catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load PDF: $e';
+          _error = e.message;
           _isLoading = false;
         });
       }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load PDF. Please try again.';
+          _isLoading = false;
+        });
+      }
+      debugPrint('[PdfViewer] Load error: $e');
     }
   }
 
@@ -146,11 +165,22 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            tooltip: 'Download',
-            onPressed: () => _downloadFile(context),
-          ),
+          if (_pdfBytes != null)
+            _isDownloading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download),
+                    tooltip: 'Download',
+                    onPressed: () => _downloadFile(context),
+                  ),
         ],
       ),
       body: _buildBody(),
@@ -172,16 +202,7 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: Colors.white)),
-          ],
-        ),
-      );
+      return _buildError();
     }
 
     if (kIsWeb && _blobUrl != null) {
@@ -199,15 +220,11 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
         _registeredViewTypes.add(viewType);
       }
 
-      return HtmlElementView(
-        viewType: viewType,
-      );
+      return HtmlElementView(viewType: viewType);
     }
 
     if (_localPath == null) {
-      return const Center(
-          child: Text('Unexpected error: No file path',
-              style: TextStyle(color: Colors.white)));
+      return _buildError();
     }
 
     return PDFView(
@@ -218,34 +235,66 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       pageFling: true,
       onRender: (pages) => setState(() => _totalPages = pages ?? 0),
       onPageChanged: (page, _) => setState(() => _currentPage = page ?? 0),
-      onError: (error) => setState(() => _error = error.toString()),
+      onError: (error) {
+        debugPrint('[PdfViewer] PDFView render error: $error');
+        setState(
+            () => _error = 'Failed to render PDF. The file may be corrupted.');
+      },
     );
   }
 
-  void _downloadFile(BuildContext context) {
-    if (kIsWeb) {
-      if (_pdfBytes != null) {
-        final blob = html.Blob([_pdfBytes!], 'application/pdf');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        html.AnchorElement(href: url)
-          ..setAttribute('download', FileService.getFileName(widget.s3Path))
-          ..click();
-        html.Url.revokeObjectUrl(url);
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.picture_as_pdf, size: 56, color: AppColors.error),
+            const SizedBox(height: 16),
+            Text(
+              _error ?? 'Failed to load PDF',
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              FileService.getFileName(widget.s3Path),
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : _loadPdf,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Downloading: ${FileService.getFileName(widget.s3Path)}')),
-        );
-      }
-    } else {
-      if (_localPath != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('PDF saved: ${FileService.getFileName(widget.s3Path)}')),
-        );
-      }
+  Future<void> _downloadFile(BuildContext context) async {
+    if (_pdfBytes == null) return;
+
+    setState(() => _isDownloading = true);
+
+    try {
+      await FileService.saveOrOpenFile(
+        context,
+        bytes: _pdfBytes!,
+        fileName: FileService.getFileName(widget.s3Path),
+        mimeType: 'application/pdf',
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
     }
   }
 }

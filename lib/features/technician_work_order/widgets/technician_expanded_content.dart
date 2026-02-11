@@ -1,11 +1,17 @@
+import 'dart:io';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'dart:html' as html;
+import 'dart:ui_web' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 
@@ -23,7 +29,6 @@ class _TechnicianExpandedContentState
     extends ConsumerState<TechnicianExpandedContent> {
   late bool _remittance;
   bool _isUploading = false;
-  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -45,6 +50,7 @@ class _TechnicianExpandedContentState
     final reportStatus = wo.parsedDoc['report_status']?.toString() ?? '';
     final reportPath = wo.parsedDoc['report_path']?.toString() ?? '';
     final proformaPath = wo.parsedDoc['second_step']?.toString() ?? '';
+    final prescriptionPath = wo.prescriptionPath;
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
@@ -59,42 +65,62 @@ class _TechnicianExpandedContentState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isCancelled) ...[
+            // Test Items
             _buildActionRow('Test Items', testItems != null ? 'View' : 'Nil',
                 showAction: testItems != null,
                 onAction:
                     testItems != null ? () => _viewTests(testItems) : null),
+
+            // GPay
             if (isFinished && gpayRef == 'Later')
               _buildActionRow('GPay', 'Edit',
                   showAction: true, onAction: _editGPay)
             else
               _buildInfoRow('GPay', gpayRef.isEmpty ? 'Nil' : gpayRef),
-            _buildActionRow('Proforma',
-                proformaPath.isEmpty ? 'Nil' : _getFileName(proformaPath),
-                showAction: proformaPath.isNotEmpty,
-                onAction: proformaPath.isNotEmpty
-                    ? () => _downloadFile(proformaPath)
-                    : null),
+
+            // Prescription Photo - NEW: with view/download
+            _buildFileRow(
+              'Prescription',
+              prescriptionPath,
+              showUpload: false,
+            ),
+
+            // Proforma - with view/download
+            _buildFileRow(
+              'Proforma',
+              proformaPath,
+              showUpload: false,
+            ),
+
+            // Remittance Toggle
             if (isFinished && !acceptRemittance)
               _buildRemittanceRow()
             else if (acceptRemittance)
               _buildInfoRow('Remittance', 'Accepted ✓',
                   valueColor: AppColors.success),
+
+            // Lab Samples - with upload/view/download
             if (labSampleAccepted)
               _buildInfoRow('Lab Samples', 'Accepted ✓',
                   valueColor: AppColors.success)
             else
               _buildLabSamplesRow(labSamplePics),
+
+            // Remarks
             _buildActionRow('Remarks', remarks.isEmpty ? 'Add' : 'Edit',
                 showAction: true, onAction: () => _editRemarks(remarks)),
+
+            // Report Status
             if (reportStatus.isNotEmpty)
               _buildReportStatusRow(wo, reportStatus),
-            _buildActionRow(
-                'Report PDF', reportPath.isEmpty ? 'Nil' : 'Download',
-                showAction: reportPath.isNotEmpty,
-                onAction: reportPath.isNotEmpty
-                    ? () => _downloadFile(reportPath)
-                    : null,
-                icon: reportPath.isNotEmpty ? Icons.cloud_download : null),
+
+            // Report PDF - with view/download
+            _buildFileRow(
+              'Report PDF',
+              reportPath,
+              showUpload: false,
+              icon: Icons.picture_as_pdf,
+            ),
           ],
         ],
       ),
@@ -171,6 +197,59 @@ class _TechnicianExpandedContentState
     );
   }
 
+  /// Generic file row with view/download capability
+  Widget _buildFileRow(String label, String path,
+      {bool showUpload = false, IconData? icon}) {
+    final hasFile = path.isNotEmpty;
+    final fileName = hasFile ? _getFileName(path) : 'Nil';
+    final fileCount = hasFile && path.contains(',')
+        ? '${path.split(',').length} files'
+        : fileName;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          SizedBox(
+              width: 120,
+              child: Text(label,
+                  style:
+                      TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+          if (hasFile)
+            InkWell(
+              onTap: () => _viewFile(path),
+              borderRadius: AppRadius.smAll,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.1),
+                  borderRadius: AppRadius.smAll,
+                  border: Border.all(color: AppColors.secondary),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon ?? Icons.open_in_new,
+                        size: 12, color: AppColors.secondary),
+                    SizedBox(width: AppSpacing.xs),
+                    Text(fileCount,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.secondary,
+                            fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            )
+          else
+            Text('Nil',
+                style: TextStyle(fontSize: 13, color: AppColors.textHint)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRemittanceRow() {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -216,12 +295,31 @@ class _TechnicianExpandedContentState
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Upload'),
           if (existingPics.isNotEmpty)
-            IconButton(
-                icon:
-                    Icon(Icons.visibility, color: AppColors.success, size: 20),
-                onPressed: () => _viewLabSamples(existingPics),
-                visualDensity: VisualDensity.compact,
-                tooltip: 'View/Download'),
+            InkWell(
+              onTap: () => _viewFile(existingPics),
+              borderRadius: AppRadius.smAll,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: AppRadius.smAll,
+                  border: Border.all(color: AppColors.success),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.visibility, size: 12, color: AppColors.success),
+                    SizedBox(width: AppSpacing.xs),
+                    Text(_getFileCount(existingPics),
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -229,6 +327,12 @@ class _TechnicianExpandedContentState
 
   String _getFileName(String path) =>
       path.contains('/') ? path.substring(path.lastIndexOf('/') + 1) : path;
+
+  String _getFileCount(String path) {
+    if (path.isEmpty) return '';
+    final files = path.split(',').where((f) => f.trim().isNotEmpty).toList();
+    return files.length > 1 ? '${files.length} files' : 'View';
+  }
 
   Color _getReportStatusColor(String status) {
     final s = status.toLowerCase();
@@ -273,6 +377,117 @@ class _TechnicianExpandedContentState
       ),
     );
   }
+
+  // ========================
+  // FILE VIEW/DOWNLOAD LOGIC
+  // ========================
+
+  /// View file(s) - handles single or multiple files
+  void _viewFile(String path) {
+    if (path.isEmpty) return;
+
+    final files = path.contains(',')
+        ? path
+            .split(',')
+            .map((f) => f.trim())
+            .where((f) => f.isNotEmpty)
+            .toList()
+        : [path];
+
+    if (files.length == 1) {
+      _openFileViewer(files.first);
+    } else {
+      FilePickerDialog.show(
+        context,
+        files: files,
+        title: 'View / Download Files',
+        onAction: (selectedPath, action) {
+          if (action == 'view') {
+            _openFileViewer(selectedPath);
+          } else {
+            _downloadAndSave(selectedPath);
+          }
+        },
+      );
+    }
+  }
+
+  /// Opens fullscreen viewer for image or PDF
+  void _openFileViewer(String path) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final fileName = FileService.getFileName(path);
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white)),
+            const SizedBox(width: 12),
+            Text('Loading $fileName...'),
+          ],
+        ),
+        duration: const Duration(seconds: 30),
+      ),
+    );
+
+    try {
+      messenger.hideCurrentSnackBar();
+
+      if (FileService.isPdf(path)) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                _TechFullScreenPdfViewer(s3Path: path, title: fileName),
+          ),
+        );
+      } else if (FileService.isImage(path)) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                _TechFullScreenImageViewer(s3Path: path, title: fileName),
+          ),
+        );
+      } else {
+        // Unknown file type - try to download
+        _downloadAndSave(path);
+      }
+    } catch (e) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _downloadAndSave(String path) async {
+    try {
+      final s3Service = ref.read(s3FileServiceProvider);
+      await s3Service.downloadFile(filePath: path);
+      final fileName = _getFileName(path);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Downloaded: $fileName'),
+            backgroundColor: AppColors.success));
+      }
+    } catch (e) {
+      debugPrint('Download error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: AppColors.error));
+      }
+    }
+  }
+
+  // ========================
+  // ACTIONS
+  // ========================
 
   Future<void> _toggleRemittance(bool value) async {
     final storage = ref.read(storageServiceProvider);
@@ -430,158 +645,330 @@ class _TechnicianExpandedContentState
       }
     }
   }
+}
 
-  void _viewLabSamples(String pics) {
-    final files = pics.split(',').where((f) => f.trim().isNotEmpty).toList();
-    showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-              title: Text('Lab Sample Photos (${files.length})'),
-              content: SingleChildScrollView(
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: files
-                        .map((f) => Card(
-                              margin: EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: ListTile(
-                                leading:
-                                    Icon(Icons.image, color: AppColors.primary),
-                                title: Text(_getFileName(f.trim()),
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 13)),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                        icon: Icon(Icons.visibility,
-                                            color: AppColors.primary, size: 20),
-                                        tooltip: 'View',
-                                        onPressed: () {
-                                          Navigator.pop(ctx);
-                                          _viewImage(f.trim());
-                                        }),
-                                    IconButton(
-                                        icon: Icon(Icons.cloud_download,
-                                            color: AppColors.success, size: 20),
-                                        tooltip: 'Download',
-                                        onPressed: () =>
-                                            _downloadAndSave(f.trim())),
-                                  ],
-                                ),
-                              ),
-                            ))
-                        .toList()),
+// ======================================
+// FULLSCREEN IMAGE VIEWER (Same as Manager)
+// ======================================
+
+class _TechFullScreenImageViewer extends ConsumerStatefulWidget {
+  final String s3Path;
+  final String title;
+
+  const _TechFullScreenImageViewer({
+    required this.s3Path,
+    required this.title,
+  });
+
+  @override
+  ConsumerState<_TechFullScreenImageViewer> createState() =>
+      _TechFullScreenImageViewerState();
+}
+
+class _TechFullScreenImageViewerState
+    extends ConsumerState<_TechFullScreenImageViewer> {
+  bool _isLoading = true;
+  String? _error;
+  Uint8List? _imageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    try {
+      final s3Service = ref.read(s3FileServiceProvider);
+      final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
+
+      if (bytes.length < 1000) {
+        throw Exception('Invalid response from server');
+      }
+
+      setState(() {
+        _imageBytes = bytes;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Failed to load image: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(widget.title, style: const TextStyle(fontSize: 14)),
+        actions: [
+          if (_imageBytes != null)
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: () => _downloadImage(),
+            ),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  void _downloadImage() {
+    if (kIsWeb && _imageBytes != null) {
+      final blob = html.Blob([_imageBytes!]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      (html.AnchorElement(href: url)..setAttribute('download', widget.title))
+          .click();
+      html.Url.revokeObjectUrl(url);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Downloaded: ${widget.title}')),
+      );
+    }
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(height: 16),
+            Text('Loading image...', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.image_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text('Image Preview',
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text(widget.s3Path,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Go Back'),
               ),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(ctx), child: Text('Close'))
-              ],
-            ));
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_imageBytes != null) {
+      return InteractiveViewer(
+        panEnabled: true,
+        minScale: 0.5,
+        maxScale: 4.0,
+        child: Center(child: Image.memory(_imageBytes!)),
+      );
+    }
+
+    return const Center(
+        child: Text('No image data', style: TextStyle(color: Colors.white)));
+  }
+}
+
+// ======================================
+// FULLSCREEN PDF VIEWER (Same as Manager)
+// ======================================
+
+class _TechFullScreenPdfViewer extends ConsumerStatefulWidget {
+  final String s3Path;
+  final String title;
+
+  const _TechFullScreenPdfViewer({
+    required this.s3Path,
+    required this.title,
+  });
+
+  @override
+  ConsumerState<_TechFullScreenPdfViewer> createState() =>
+      _TechFullScreenPdfViewerState();
+}
+
+class _TechFullScreenPdfViewerState
+    extends ConsumerState<_TechFullScreenPdfViewer> {
+  bool _isLoading = true;
+  String? _error;
+  Uint8List? _pdfBytes;
+  String? _blobUrl;
+  String? _localPdfPath;
+  int _currentPage = 0;
+  int _totalPages = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPdf();
   }
 
-  Future<void> _viewImage(String path) async {
+  Future<void> _loadPdf() async {
     try {
-      setState(() => _isDownloading = true);
       final s3Service = ref.read(s3FileServiceProvider);
-      final bytes = await s3Service.downloadFile(filePath: path);
-      setState(() => _isDownloading = false);
+      final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
-      if (mounted) {
-        final fileName = _getFileName(path);
-        showDialog(
-            context: context,
-            builder: (ctx) => Dialog(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppBar(
-                        title: Text(fileName, style: TextStyle(fontSize: 14)),
-                        automaticallyImplyLeading: false,
-                        actions: [
-                          IconButton(
-                              icon: Icon(Icons.close),
-                              onPressed: () => Navigator.pop(ctx))
-                        ],
-                      ),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.7,
-                          maxWidth: MediaQuery.of(context).size.width * 0.9,
-                        ),
-                        child: InteractiveViewer(
-                            child: Image.memory(bytes, fit: BoxFit.contain)),
-                      ),
-                    ],
-                  ),
-                ));
+      if (bytes.length < 1000) {
+        throw Exception('Invalid response from server');
+      }
+
+      if (kIsWeb) {
+        _pdfBytes = bytes;
+        _blobUrl = _createBlobUrl(bytes);
+        setState(() => _isLoading = false);
+      } else {
+        final dir = await getTemporaryDirectory();
+        final fileName = FileService.getFileName(widget.s3Path);
+        final file = File('${dir.path}/$fileName');
+        await file.writeAsBytes(bytes);
+
+        setState(() {
+          _localPdfPath = file.path;
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      debugPrint('View error: $e');
-      if (mounted) {
-        setState(() => _isDownloading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Failed to load: $e'),
-            backgroundColor: AppColors.error));
-      }
+      setState(() {
+        _isLoading = false;
+        _error = 'Failed to load PDF: $e';
+      });
     }
   }
 
-  Future<void> _downloadAndSave(String path) async {
-    try {
-      final s3Service = ref.read(s3FileServiceProvider);
-      await s3Service.downloadFile(filePath: path);
-      final fileName = _getFileName(path);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Downloaded: $fileName'),
-            backgroundColor: AppColors.success));
-      }
-    } catch (e) {
-      debugPrint('Download error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Download failed: $e'),
-            backgroundColor: AppColors.error));
-      }
+  String _createBlobUrl(Uint8List bytes) {
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], 'application/pdf');
+      return html.Url.createObjectUrlFromBlob(blob);
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade900,
+      appBar: AppBar(
+        backgroundColor: Colors.grey.shade900,
+        foregroundColor: Colors.white,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.title, style: const TextStyle(fontSize: 14)),
+            if (_totalPages > 0 && !kIsWeb)
+              Text('Page ${_currentPage + 1} of $_totalPages',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+          ],
+        ),
+        actions: [
+          if (_pdfBytes != null)
+            IconButton(
+                icon: const Icon(Icons.download), onPressed: _downloadPdf),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  void _downloadPdf() {
+    if (kIsWeb && _pdfBytes != null) {
+      final blob = html.Blob([_pdfBytes!], 'application/pdf');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      (html.AnchorElement(href: url)..setAttribute('download', widget.title))
+          .click();
+      html.Url.revokeObjectUrl(url);
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Downloaded: ${widget.title}')));
     }
   }
 
-  Future<void> _downloadFile(String path) async {
-    try {
-      setState(() => _isDownloading = true);
-      final s3Service = ref.read(s3FileServiceProvider);
-      final bytes = await s3Service.downloadFile(filePath: path);
-      setState(() => _isDownloading = false);
-
-      if (mounted) {
-        final fileName = _getFileName(path);
-        final isImage = ['.jpg', '.jpeg', '.png', '.gif']
-            .any((ext) => fileName.toLowerCase().endsWith(ext));
-        if (isImage) {
-          showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                    title: Text(fileName),
-                    content: Image.memory(bytes),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: Text('Close'))
-                    ],
-                  ));
-        } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Downloaded: $fileName')));
-        }
-      }
-    } catch (e) {
-      debugPrint('Download error: $e');
-      if (mounted) {
-        setState(() => _isDownloading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Download failed: $e'),
-            backgroundColor: AppColors.error));
-      }
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(height: 16),
+            Text('Loading PDF...', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      );
     }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.picture_as_pdf, size: 64, color: Colors.red.shade400),
+              const SizedBox(height: 16),
+              Text('PDF Preview',
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text(_error!,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (kIsWeb && _blobUrl != null) {
+      ui.platformViewRegistry.registerViewFactory(
+        'pdf-viewer-tech-${widget.s3Path.hashCode}',
+        (int viewId) => html.IFrameElement()
+          ..src = _blobUrl!
+          ..style.border = 'none'
+          ..style.width = '100%'
+          ..style.height = '100%',
+      );
+
+      return HtmlElementView(
+          viewType: 'pdf-viewer-tech-${widget.s3Path.hashCode}');
+    }
+
+    if (_localPdfPath != null) {
+      return PDFView(
+        filePath: _localPdfPath!,
+        enableSwipe: true,
+        swipeHorizontal: false,
+        autoSpacing: true,
+        pageFling: true,
+        onRender: (pages) => setState(() => _totalPages = pages ?? 0),
+        onPageChanged: (page, _) => setState(() => _currentPage = page ?? 0),
+        onError: (error) => setState(() => _error = error.toString()),
+      );
+    }
+
+    return const Center(
+        child: Text('No PDF data', style: TextStyle(color: Colors.white)));
   }
 }

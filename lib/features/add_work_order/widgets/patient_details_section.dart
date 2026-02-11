@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../features/theme/theme.dart';
+import 'work_order_form_styles.dart';
 
 class PatientDetailsSection extends StatelessWidget {
   final TextEditingController nameController;
@@ -32,7 +33,7 @@ class PatientDetailsSection extends StatelessWidget {
         if (isMobile) ...[
           DropdownButtonFormField<String>(
             value: salutation.isEmpty ? null : salutation,
-            decoration: _inputDecoration('Title'),
+            decoration: WorkOrderFormStyles.inputDecoration('Title'),
             items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),
@@ -42,8 +43,8 @@ class PatientDetailsSection extends StatelessWidget {
           SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: nameController,
-            decoration:
-                _inputDecoration('Full Name', icon: Icons.person_outline),
+            decoration: WorkOrderFormStyles.inputDecoration('Full Name',
+                icon: Icons.person_outline),
             textCapitalization: TextCapitalization.words,
             validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
           ),
@@ -54,7 +55,7 @@ class PatientDetailsSection extends StatelessWidget {
                 flex: 2,
                 child: DropdownButtonFormField<String>(
                   value: salutation.isEmpty ? null : salutation,
-                  decoration: _inputDecoration('Title'),
+                  decoration: WorkOrderFormStyles.inputDecoration('Title'),
                   items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
@@ -66,8 +67,8 @@ class PatientDetailsSection extends StatelessWidget {
                 flex: 5,
                 child: TextFormField(
                   controller: nameController,
-                  decoration:
-                      _inputDecoration('Full Name', icon: Icons.person_outline),
+                  decoration: WorkOrderFormStyles.inputDecoration('Full Name',
+                      icon: Icons.person_outline),
                 ),
               ),
             ],
@@ -80,7 +81,8 @@ class PatientDetailsSection extends StatelessWidget {
               child: TextFormField(
                 controller: ageController,
                 keyboardType: TextInputType.number,
-                decoration: _inputDecoration('Age', icon: Icons.cake_outlined),
+                decoration: WorkOrderFormStyles.inputDecoration('Age',
+                    icon: Icons.cake_outlined),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
             ),
@@ -88,8 +90,8 @@ class PatientDetailsSection extends StatelessWidget {
             Expanded(
               child: DropdownButtonFormField<String>(
                 value: gender,
-                decoration:
-                    _inputDecoration('Gender', icon: Icons.people_outline),
+                decoration: WorkOrderFormStyles.inputDecoration('Gender',
+                    icon: Icons.people_outline),
                 items: ['Male', 'Female', 'Other']
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                     .toList(),
@@ -103,9 +105,9 @@ class PatientDetailsSection extends StatelessWidget {
           controller: mobileController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
-          decoration:
-              _inputDecoration('Mobile Number', icon: Icons.phone_android)
-                  .copyWith(counterText: ""),
+          decoration: WorkOrderFormStyles.inputDecoration('Mobile Number',
+                  icon: Icons.phone_android)
+              .copyWith(counterText: ""),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Mobile is required';
             if (v.length != 10) return 'Enter valid 10-digit number';
@@ -113,43 +115,14 @@ class PatientDetailsSection extends StatelessWidget {
           },
         ),
         SizedBox(height: AppSpacing.md),
-        TextFormField(
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: _inputDecoration('Email Address (Optional)',
-              icon: Icons.email_outlined),
-        ),
+        // TextFormField(
+        //   controller: emailController,
+        //   keyboardType: TextInputType.emailAddress,
+        //   decoration: WorkOrderFormStyles.inputDecoration(
+        //       'Email Address (Optional)',
+        //       icon: Icons.email_outlined),
+        // ),
       ],
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, {IconData? icon}) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon:
-          icon != null ? Icon(icon, size: 20, color: AppColors.textHint) : null,
-      filled: true,
-      fillColor: AppColors.surfaceAlt,
-      border: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.divider),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.error),
-      ),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
     );
   }
 }

@@ -274,6 +274,11 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
     ScaffoldMessengerState messenger, {
     bool isReassignment = false,
   }) {
+    // Capture controller BEFORE showing dialog to avoid ref-after-dispose.
+    // The widget tree may rebuild (disposing this widget) while the dialog
+    // is open, making ref.read() inside the callback crash.
+    final controller = ref.read(managerAssignmentControllerProvider);
+
     bool sendSms = true;
     bool sendWhatsApp = true;
     bool sendEmail = workOrder.email.isNotEmpty;
@@ -320,8 +325,6 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
                 onPressed: () async {
                   Navigator.pop(dialogContext);
 
-                  final controller =
-                      ref.read(managerAssignmentControllerProvider);
                   try {
                     await controller.sendAssignmentMessages(
                       workOrder: workOrder,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../features/theme/theme.dart';
+import 'work_order_form_styles.dart';
 
 class ContactInfoSection extends StatelessWidget {
   final TextEditingController addressController;
@@ -24,7 +25,8 @@ class ContactInfoSection extends StatelessWidget {
           controller: addressController,
           maxLines: 2,
           textCapitalization: TextCapitalization.words,
-          decoration: _inputDecoration('Address', icon: Icons.home_outlined),
+          decoration: WorkOrderFormStyles.inputDecoration('Address',
+              icon: Icons.home_outlined),
           validator: (v) =>
               v == null || v.isEmpty ? 'Address is required' : null,
         ),
@@ -35,7 +37,7 @@ class ContactInfoSection extends StatelessWidget {
           child: IgnorePointer(
             child: TextFormField(
               controller: pincodeController,
-              decoration: _inputDecoration('Pincode',
+              decoration: WorkOrderFormStyles.inputDecoration('Pincode',
                       icon: Icons.pin_drop_outlined)
                   .copyWith(
                       suffixIcon: Icon(Icons.search, color: AppColors.primary)),
@@ -47,40 +49,11 @@ class ContactInfoSection extends StatelessWidget {
         SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: freeTextController,
-          decoration: _inputDecoration('Landmark / Free Text',
+          decoration: WorkOrderFormStyles.inputDecoration(
+              'Landmark / Free Text',
               icon: Icons.note_alt_outlined),
         ),
       ],
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, {IconData? icon}) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon:
-          icon != null ? Icon(icon, size: 20, color: AppColors.textHint) : null,
-      filled: true,
-      fillColor: AppColors.surfaceAlt,
-      border: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.divider),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.error),
-      ),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
     );
   }
 }

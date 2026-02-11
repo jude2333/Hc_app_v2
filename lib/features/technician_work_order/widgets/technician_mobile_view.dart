@@ -244,8 +244,9 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
             _tableRow(
                 'Prescription',
                 wo.prescriptionPath.isNotEmpty
-                    ? _getFileName(wo.prescriptionPath)
-                    : 'Nil'),
+                    ? '${_getFileName(wo.prescriptionPath)} ⤵'
+                    : 'Nil',
+                isViewable: wo.prescriptionPath.isNotEmpty),
           ],
         ],
       ),

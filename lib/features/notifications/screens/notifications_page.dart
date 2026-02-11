@@ -8,6 +8,7 @@ import '../widgets/notification_search.dart';
 import '../widgets/notification_skeleton.dart';
 import '../widgets/notification_mobile_view.dart';
 import '../widgets/notification_desktop_view.dart';
+import '../../theme/theme.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
@@ -27,6 +28,8 @@ class NotificationsPage extends ConsumerWidget {
     }
 
     return Scaffold(
+      // backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.backgroundLight,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

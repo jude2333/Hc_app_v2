@@ -13,7 +13,6 @@ import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/models/technician_process_doc.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/providers/notificationCenter_provider.dart';
 import 'package:anderson_crm_flutter/providers/com_center_provider.dart';
 import 'package:anderson_crm_flutter/repositories/temp_upload_repository.dart';
@@ -87,43 +86,85 @@ class HCProcessController {
     final powerSync = _ref.read(powerSyncServiceProvider);
     final storage = _ref.read(storageServiceProvider);
 
-    final currentMap = await powerSync.getWorkOrderById(workOrderId);
-    if (currentMap == null) throw Exception('Work order not found');
+    // Use writeTransaction for atomic read-modify-write
+    // This prevents data races when multiple technicians update concurrently
+    await powerSync.db.writeTransaction((tx) async {
+      final currentMap = await tx.getOptional(
+        'SELECT * FROM hc_patient_visit_detail WHERE doc_id = ? LIMIT 1',
+        [workOrderId],
+      );
+      if (currentMap == null) throw Exception('Work order not found');
 
-    final currentOrder = WorkOrder.fromRow(currentMap);
-    final updatedDocMap = Map<String, dynamic>.from(currentOrder.parsedDoc);
-    updatedDocMap.addAll(updatedProcessDoc.toJson());
+      final currentOrder =
+          WorkOrder.fromRow(Map<String, dynamic>.from(currentMap));
+      final updatedDocMap = Map<String, dynamic>.from(currentOrder.parsedDoc);
+      updatedDocMap.addAll(updatedProcessDoc.toJson());
 
-    String docDbs = storage.getFromSession('doc_dbs') ?? '';
-    if (docDbs.isNotEmpty) updatedDocMap['doc_dbs'] = docDbs;
-    updatedDocMap['updated_at'] = DateTime.now().toIso8601String();
+      String docDbs = storage.getFromSession('doc_dbs') ?? '';
+      if (docDbs.isNotEmpty) updatedDocMap['doc_dbs'] = docDbs;
+      updatedDocMap['updated_at'] = DateTime.now().toIso8601String();
 
-    double newBillAmount = updatedProcessDoc.total ?? currentOrder.billAmount;
-    double newDiscount =
-        updatedProcessDoc.discount ?? currentOrder.discountAmount;
-    double newReceived = currentOrder.receivedAmount;
-    if (updatedProcessDoc.amountReceived != null) {
-      newReceived =
-          double.tryParse(updatedProcessDoc.amountReceived.toString()) ?? 0.0;
-    }
+      double newBillAmount = updatedProcessDoc.total ?? currentOrder.billAmount;
+      double newDiscount =
+          updatedProcessDoc.discount ?? currentOrder.discountAmount;
+      double newReceived = currentOrder.receivedAmount;
+      if (updatedProcessDoc.amountReceived != null) {
+        newReceived =
+            double.tryParse(updatedProcessDoc.amountReceived.toString()) ?? 0.0;
+      }
 
-    final updatedOrder = currentOrder.copyWith(
-      status: updatedProcessDoc.status ?? currentOrder.status,
-      serverStatus: updatedProcessDoc.serverStatus ?? currentOrder.serverStatus,
-      doc: jsonEncode(updatedDocMap),
-      lastUpdatedBy: storage.getFromSession('logged_in_emp_name'),
-      lastUpdatedAt: DateTime.now(),
-      billAmount: newBillAmount,
-      discountAmount: newDiscount,
-      receivedAmount: newReceived,
-    );
+      final now = DateTime.now().toIso8601String();
+      final empName = storage.getFromSession('logged_in_emp_name');
 
-    final workOrdersProvider = _ref.read(workOrderProvider);
-    await workOrdersProvider.updateWorkOrder(updatedOrder,
-        customDoc: updatedDocMap);
+      await tx.execute(
+        '''
+        UPDATE hc_patient_visit_detail 
+        SET patient_name = ?, visit_date = ?, visit_time = ?, doctor_name = ?,
+            manager_id = ?, manager_name = ?, assigned_id = ?, assigned_to = ?,
+            b2b_client_id = ?, b2b_client_name = ?,
+            status = ?, server_status = ?, bill_amount = ?, received_amount = ?,
+            discount_amount = ?, doc = ?, last_updated_by = ?, last_updated_at = ?
+        WHERE id = ?
+        ''',
+        [
+          currentOrder.patientName,
+          currentOrder.visitDate.toIso8601String().split('T')[0],
+          currentOrder.visitTime,
+          currentOrder.doctorName,
+          currentOrder.managerId,
+          currentOrder.managerName,
+          currentOrder.assignedId,
+          currentOrder.assignedTo,
+          currentOrder.b2bClientId,
+          currentOrder.b2bClientName,
+          updatedProcessDoc.status ?? currentOrder.status,
+          updatedProcessDoc.serverStatus ?? currentOrder.serverStatus,
+          newBillAmount,
+          newReceived,
+          newDiscount,
+          jsonEncode(updatedDocMap),
+          empName,
+          now,
+          currentOrder.id,
+        ],
+      );
 
-    _notifier.updateProcessDoc(updatedProcessDoc);
-    _notifier.updateWorkOrder(updatedOrder);
+      // Update in-memory state
+      final updatedOrder = currentOrder.copyWith(
+        status: updatedProcessDoc.status ?? currentOrder.status,
+        serverStatus:
+            updatedProcessDoc.serverStatus ?? currentOrder.serverStatus,
+        doc: jsonEncode(updatedDocMap),
+        lastUpdatedBy: empName,
+        lastUpdatedAt: DateTime.now(),
+        billAmount: newBillAmount,
+        discountAmount: newDiscount,
+        receivedAmount: newReceived,
+      );
+
+      _notifier.updateProcessDoc(updatedProcessDoc);
+      _notifier.updateWorkOrder(updatedOrder);
+    });
   }
 
   Future<void> _beforeFirstStep() async {
@@ -638,7 +679,17 @@ class HCProcessController {
       try {
         await _updateWorkOrderViaPowerSync(processDoc);
       } catch (e) {
-        if (!e.toString().contains("LegacyJavaScriptObject")) {
+        if (e.toString().contains("LegacyJavaScriptObject")) {
+          debugPrint('[HCProcess] Web interop error (may be benign): $e');
+          // Verify the write actually went through
+          final powerSync = _ref.read(powerSyncServiceProvider);
+          final verify = await powerSync.getWorkOrderById(workOrderId);
+          if (verify == null || verify['status'] != processDoc.status) {
+            throw Exception(
+                'Work order update failed silently after web interop error');
+          }
+          debugPrint('[HCProcess] Verified: write succeeded despite web error');
+        } else {
           rethrow;
         }
       }

@@ -46,6 +46,7 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
   bool _isLoading = true;
   String? _error;
   Uint8List? _imageBytes;
+  bool _isDownloading = false;
 
   @override
   void initState() {
@@ -54,6 +55,13 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
   }
 
   Future<void> _loadImage() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    // Use preloaded bytes if available
     if (widget.preloadedBytes != null) {
       if (mounted) {
         setState(() {
@@ -64,21 +72,27 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       return;
     }
 
+    // Use URL if available (no bytes needed)
     if (widget.imageUrl != null) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
       return;
     }
 
+    // Download from S3
     try {
       final s3Service = ref.read(s3FileServiceProvider);
       final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
 
-      if (bytes.length < 1000 && bytes.toString().contains('Error')) {
-        throw Exception('Invalid image data');
+      // Validate image content
+      if (!S3FileService.isValidImage(bytes)) {
+        debugPrint(
+            '[ImageViewer] Invalid image data: ${bytes.length} bytes, header: ${bytes.take(4).toList()}');
+        throw S3DownloadException(
+          'The downloaded file is not a valid image.',
+          isNotFound: true,
+        );
       }
 
       if (mounted) {
@@ -87,13 +101,21 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } on S3DownloadException catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load image: $e';
+          _error = e.message;
           _isLoading = false;
         });
       }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load image. Please try again.';
+          _isLoading = false;
+        });
+      }
+      debugPrint('[ImageViewer] Load error: $e');
     }
   }
 
@@ -108,11 +130,22 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
         foregroundColor: Colors.white,
         title: Text(fileName, style: const TextStyle(fontSize: 16)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            tooltip: 'Download',
-            onPressed: () => _downloadFile(context),
-          ),
+          if (_imageBytes != null)
+            _isDownloading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download),
+                    tooltip: 'Download',
+                    onPressed: () => _downloadFile(context),
+                  ),
         ],
       ),
       body: _buildBody(),
@@ -168,32 +201,57 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
 
   Widget _buildError() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.broken_image, size: 48, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text(_error ?? 'Failed to load image',
-              style: const TextStyle(color: Colors.white)),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                textAlign: TextAlign.center,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.broken_image, size: 56, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              _error ?? 'Failed to load image',
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              FileService.getFileName(widget.s3Path),
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : _loadImage,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  void _downloadFile(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content:
-              Text('Image saved: ${FileService.getFileName(widget.s3Path)}')),
-    );
+  Future<void> _downloadFile(BuildContext context) async {
+    if (_imageBytes == null) return;
+
+    setState(() => _isDownloading = true);
+
+    try {
+      await FileService.saveOrOpenFile(
+        context,
+        bytes: _imageBytes!,
+        fileName: FileService.getFileName(widget.s3Path),
+        mimeType:
+            'image/${FileService.getExtension(widget.s3Path).replaceAll('.', '')}',
+      );
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
   }
 }

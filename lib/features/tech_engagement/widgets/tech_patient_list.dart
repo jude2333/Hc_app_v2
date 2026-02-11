@@ -71,7 +71,7 @@ class TechPatientRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(techEngagementProvider);
-    final doc = jsonDecode(order['doc'] ?? '{}');
+    final doc = _parseDoc(order['doc']);
     final accepted = doc['accept_remittance'] == true;
     final amount =
         double.tryParse(order['received_amount']?.toString() ?? '0') ?? 0;
@@ -164,5 +164,19 @@ class TechPatientRow extends ConsumerWidget {
         textAlign: TextAlign.center,
       );
     }
+  }
+
+  Map<String, dynamic> _parseDoc(dynamic doc) {
+    try {
+      if (doc == null) return {};
+      if (doc is Map) return Map<String, dynamic>.from(doc);
+      if (doc is String) {
+        if (doc.isEmpty) return {};
+        return jsonDecode(doc) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error parsing doc in TechPatientRow: $e');
+    }
+    return {};
   }
 }

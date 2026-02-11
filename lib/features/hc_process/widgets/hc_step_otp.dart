@@ -68,7 +68,7 @@ class _HCStepOtpState extends ConsumerState<HCStepOtp> {
         const SizedBox(height: 8),
         Text('OTP sent to: ${state.clientMobile}'),
         const SizedBox(height: 16),
-        if (Settings.development && state.generatedOtp.isNotEmpty)
+        if (!Settings.development && state.generatedOtp.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),

@@ -58,8 +58,10 @@ class PowerSyncService {
       _initialized = true;
       _initCompleter!.complete();
 
-      // DEBUG: Check what's in the local PowerSync database
-      _debugCheckLocalDatabase();
+      // Only run debug checks in development mode
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
+        _debugCheckLocalDatabase();
+      }
     } catch (e) {
       _initCompleter!.completeError(e);
       _initCompleter = null;
@@ -184,7 +186,7 @@ class PowerSyncService {
     final data = order.toMap();
 
     await db.execute('''
-    INSERT INTO hc_patient_visit_detail (
+    INSERT OR REPLACE INTO hc_patient_visit_detail (
       id, tenant_id, hcpm_id, doc_id, patient_name, visit_date, visit_time,
       doctor_name, pro_id, manager_id, manager_name, assigned_id, assigned_to,
       b2b_client_id, b2b_client_name, status, server_status, 
@@ -365,8 +367,31 @@ class PowerSyncService {
     ).map((rows) => rows.map((r) => Map<String, dynamic>.from(r)).toList());
   }
 
-  Future<void> waitForSync() async {
-    await Future.delayed(const Duration(seconds: 3));
+  /// Wait for the upload queue to fully drain (all local writes synced to server).
+  /// Falls back to a timeout to avoid hanging indefinitely.
+  Future<void> waitForSync(
+      {Duration timeout = const Duration(seconds: 15)}) async {
+    // If not uploading and connected, already synced
+    final current = db.currentStatus;
+    if (!current.uploading && current.connected) return;
+
+    final completer = Completer<void>();
+    late StreamSubscription<SyncStatus> sub;
+
+    sub = db.statusStream.listen((status) {
+      if (!status.uploading && status.connected) {
+        if (!completer.isCompleted) completer.complete();
+        sub.cancel();
+      }
+    });
+
+    try {
+      await completer.future.timeout(timeout, onTimeout: () {
+        debugPrint('[PowerSync] waitForSync timed out after $timeout');
+      });
+    } finally {
+      await sub.cancel();
+    }
   }
 
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(

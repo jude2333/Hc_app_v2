@@ -31,6 +31,7 @@ class NotificationMobileView extends ConsumerWidget {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             elevation: 2,
+            color: Colors.white,
             child: Column(
               children: [
                 ListTile(

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../config/settings.dart';
 import 'package:flutter/widgets.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
-import 'package:anderson_crm_flutter/config/settings.dart';
 
 class PostgresDB {
   final StorageRepository _storage;
@@ -1167,7 +1166,16 @@ class PostgresDB {
       }
 
       final record = (getResponse.data as List).first;
-      final docMap = jsonDecode(record['doc'] as String);
+      final docRaw = record['doc'];
+      final Map<String, dynamic> docMap;
+
+      if (docRaw is Map) {
+        docMap = Map<String, dynamic>.from(docRaw);
+      } else if (docRaw is String) {
+        docMap = jsonDecode(docRaw);
+      } else {
+        docMap = {};
+      }
 
       // Update doc fields
       docMap['accept_remittance'] = acceptRemittance;

@@ -207,7 +207,7 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
 
           times.add(order['visit_time'] ?? '');
 
-          final doc = jsonDecode(order['doc'] ?? '{}');
+          final doc = _parseDoc(order['doc']);
           final amountReceived =
               double.tryParse(order['received_amount']?.toString() ?? '0') ?? 0;
           final hcCharge =
@@ -276,9 +276,23 @@ class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
             totalAccounted: gTotalAccounted));
   }
 
+  Map<String, dynamic> _parseDoc(dynamic doc) {
+    try {
+      if (doc == null) return {};
+      if (doc is Map) return Map<String, dynamic>.from(doc);
+      if (doc is String) {
+        if (doc.isEmpty) return {};
+        return jsonDecode(doc) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error parsing doc: $e');
+    }
+    return {};
+  }
+
   bool _isGlucosePPOnly(Map<String, dynamic> order) {
     try {
-      final doc = jsonDecode(order['doc'] ?? '{}');
+      final doc = _parseDoc(order['doc']);
       if (doc['test_items'] != null) {
         List items = doc['test_items'];
         if (items.length == 1) {
