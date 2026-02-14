@@ -1,14 +1,13 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
+import 'package:anderson_crm_flutter/features/session/storage_provider.dart';
 
-import 'dart:html' as html;
+import 'file_saver.dart';
 
 class FileService {
   final Dio _dio;
@@ -61,7 +60,7 @@ class FileService {
       {void Function(int, int)? onProgress}) async {
     try {
       final (bucket, key) = parseS3Path(s3Path);
-      final token = _storage.getSessionItem('pg_admin');
+      final token = await _storage.getSessionItem('pg_admin');
 
       final response = await _dio.post<List<int>>(
         '${Settings.nodeUrl}/s3/get_file_v2',
@@ -87,43 +86,37 @@ class FileService {
     return null;
   }
 
-  Future<String?> downloadToDevice(String s3Path,
-      {void Function(int, int)? onProgress}) async {
-    try {
-      final bytes = await downloadBytes(s3Path, onProgress: onProgress);
-      if (bytes == null) return null;
-
-      final fileName = getFileName(s3Path);
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = '${dir.path}/$fileName';
-      final file = File(filePath);
-      await file.writeAsBytes(bytes);
-
-      return filePath;
-    } catch (e) {
-      debugPrint('FileService save error: $e');
-    }
-    return null;
-  }
-
-  Future<void> downloadAndOpen(BuildContext context, String s3Path) async {
+  Future<void> downloadAndOpen(BuildContext context, String s3Path,
+      {String? saveAsFileName}) async {
     final messenger = ScaffoldMessenger.of(context);
+    final fileName = saveAsFileName ?? getFileName(s3Path);
 
     messenger.showSnackBar(
-      const SnackBar(
-          content: Text('Downloading...'), duration: Duration(seconds: 10)),
+      SnackBar(
+          content: Text('Downloading $fileName...'),
+          duration: const Duration(seconds: 2)),
     );
 
-    final filePath = await downloadToDevice(s3Path);
+    try {
+      final bytes = await downloadBytes(s3Path);
 
-    messenger.hideCurrentSnackBar();
-
-    if (filePath != null) {
-      await OpenFilex.open(filePath);
-    } else {
+      if (bytes != null && bytes.isNotEmpty) {
+        await FileSaver.saveAndLaunch(bytes, fileName);
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(content: Text('Opened: $fileName')),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+              content: Text('Download failed or file empty'),
+              backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      debugPrint('downloadAndOpen error: $e');
       messenger.showSnackBar(
-        const SnackBar(
-            content: Text('Download failed'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -138,21 +131,10 @@ class FileService {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      if (kIsWeb) {
-        _webDownload(bytes, fileName, mimeType ?? 'application/octet-stream');
-        messenger.showSnackBar(
-          SnackBar(content: Text('Downloading: $fileName')),
-        );
-      } else {
-        final dir = await getApplicationDocumentsDirectory();
-        final filePath = '${dir.path}/$fileName';
-        final file = File(filePath);
-        await file.writeAsBytes(bytes);
-        await OpenFilex.open(filePath);
-        messenger.showSnackBar(
-          SnackBar(content: Text('Opened: $fileName')),
-        );
-      }
+      await FileSaver.saveAndLaunch(bytes, fileName);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Opened: $fileName')),
+      );
     } catch (e) {
       debugPrint('FileService saveOrOpen error: $e');
       messenger.showSnackBar(
@@ -162,16 +144,10 @@ class FileService {
       );
     }
   }
-
-  /// Trigger a file download in the browser
-  static void _webDownload(Uint8List bytes, String fileName, String mimeType) {
-    if (kIsWeb) {
-      final blob = html.Blob([bytes], mimeType);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', fileName)
-        ..click();
-      html.Url.revokeObjectUrl(url);
-    }
-  }
 }
+
+final fileServiceProvider = Provider<FileService>((ref) {
+  final dio = Dio();
+  final storage = ref.watch(storageRepositoryProvider);
+  return FileService(dio: dio, storage: storage);
+});

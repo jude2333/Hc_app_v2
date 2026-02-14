@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -168,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           style: TextStyle(
             fontSize: 14,
             fontStyle: FontStyle.italic,
-            color: Color(0xFFF7941D),
+            color: AppColors.primary,
             letterSpacing: 0.5,
           ),
         ),
@@ -178,7 +179,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           style: TextStyle(
             fontSize: 12,
             fontStyle: FontStyle.italic,
-            color: Colors.white.withOpacity(0.7),
+            color: AppColors.surface,
             letterSpacing: 0.3,
           ),
         ),
@@ -325,19 +326,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      '🇮🇳 +91',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                    Container(
-                      height: 24,
-                      width: 1,
-                      margin: const EdgeInsets.only(left: 12),
-                      color: Colors.white.withOpacity(0.3),
-                    ),
+                    // Text(
+                    //   '🇮🇳 +91',
+                    //   style: TextStyle(
+                    //     color: Colors.white.withOpacity(0.8),
+                    //     fontSize: 14,
+                    //   ),
+                    // ),
+                    // Container(
+                    //   height: 24,
+                    //   width: 1,
+                    //   margin: const EdgeInsets.only(left: 12),
+                    //   color: Colors.white.withOpacity(0.3),
+                    // ),
                   ],
                 ),
               ),
@@ -491,8 +492,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: OutlinedButton(
         onPressed: authState.isLoading ? null : notifier.sendOtp,
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFF00669B)),
-          foregroundColor: const Color(0xFF00669B),
+          side: const BorderSide(color: AppColors.surface),
+          foregroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -500,14 +501,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.sms_outlined, size: 18, color: Color(0xFF00669B)),
+            Icon(Icons.sms_outlined, size: 18, color: AppColors.surface),
             SizedBox(width: 8),
             Text(
               'Login with OTP',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF00669B),
+                color: AppColors.surface,
               ),
             ),
           ],
@@ -520,9 +521,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       children: [
         Text(
-          'Version 1.0.0',
+          Settings.version,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.surface,
             fontSize: 12,
           ),
         ),
@@ -530,7 +531,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Text(
           '© 2024 Anderson Healthcare',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.surface,
             fontSize: 12,
           ),
         ),

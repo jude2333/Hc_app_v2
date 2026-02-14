@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
 import '../../theme/theme.dart';
-import '../providers/technician_work_order_provider.dart';
 
 /// Technician-specific action buttons for work order rows.
 /// Includes: Copy, Start HC Process, Edit, Cancel actions.
@@ -76,21 +74,13 @@ class TechnicianActions extends ConsumerWidget {
       ),
     )
         .then((result) async {
-      if (result == 'refresh') {
-        final storage = ref.read(storageServiceProvider);
-        final techId =
-            storage.getFromSession('logged_in_emp_id')?.toString() ?? '';
-        await ref
-            .read(technicianWorkOrderProvider)
-            .loadTechnicianWorkOrders(techId);
-        if (context.mounted) {
-          parentMessenger.showSnackBar(
-            SnackBar(
-              content: Text('Copied Successfully'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
+      if (result == 'refresh' && context.mounted) {
+        parentMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Copied Successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     });
   }
@@ -101,13 +91,7 @@ class TechnicianActions extends ConsumerWidget {
       context: context,
       builder: (context) => EditWorkOrderDialog(workOrder: workOrder),
     ).then((result) async {
-      if (result == true) {
-        final storage = ref.read(storageServiceProvider);
-        final techId =
-            storage.getFromSession('logged_in_emp_id')?.toString() ?? '';
-        await ref
-            .read(technicianWorkOrderProvider)
-            .loadTechnicianWorkOrders(techId);
+      if (result == true && context.mounted) {
         parentMessenger.showSnackBar(
           SnackBar(
             content: Text('Updated Successfully'),
@@ -124,13 +108,7 @@ class TechnicianActions extends ConsumerWidget {
       context: context,
       builder: (context) => CancelWorkOrderDialog(workOrder: workOrder),
     ).then((result) async {
-      if (result == true) {
-        final storage = ref.read(storageServiceProvider);
-        final techId =
-            storage.getFromSession('logged_in_emp_id')?.toString() ?? '';
-        await ref
-            .read(technicianWorkOrderProvider)
-            .loadTechnicianWorkOrders(techId);
+      if (result == true && context.mounted) {
         parentMessenger.showSnackBar(
           SnackBar(
             content: Text('Cancelled Successfully'),

@@ -250,7 +250,7 @@
     },
     {
       "name": "powersync",
-      "version": "1.16.1",
+      "version": "1.17.0",
       "dependencies": [
         "collection",
         "flutter",
@@ -1056,14 +1056,14 @@
     },
     {
       "name": "powersync_flutter_libs",
-      "version": "0.4.12",
+      "version": "0.4.14",
       "dependencies": [
         "flutter"
       ]
     },
     {
       "name": "powersync_core",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "dependencies": [
         "args",
         "async",
@@ -1074,7 +1074,6 @@
         "path",
         "pub_semver",
         "pubspec_parse",
-        "sqlite3",
         "sqlite3_web",
         "sqlite_async",
         "typed_data",
@@ -1613,28 +1612,17 @@
     },
     {
       "name": "sqlite3_web",
-      "version": "0.3.2",
+      "version": "0.4.1",
       "dependencies": [
+        "meta",
         "sqlite3",
         "stream_channel",
         "web"
       ]
     },
     {
-      "name": "sqlite3",
-      "version": "2.9.4",
-      "dependencies": [
-        "collection",
-        "ffi",
-        "meta",
-        "path",
-        "typed_data",
-        "web"
-      ]
-    },
-    {
       "name": "sqlite_async",
-      "version": "0.12.2",
+      "version": "0.13.1",
       "dependencies": [
         "async",
         "collection",
@@ -1707,6 +1695,18 @@
       "name": "vm_service",
       "version": "15.0.2",
       "dependencies": []
+    },
+    {
+      "name": "sqlite3",
+      "version": "2.9.4",
+      "dependencies": [
+        "collection",
+        "ffi",
+        "meta",
+        "path",
+        "typed_data",
+        "web"
+      ]
     },
     {
       "name": "mutex",

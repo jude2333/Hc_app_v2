@@ -54,6 +54,12 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
   int _totalPages = 0;
   bool _isDownloading = false;
 
+  /// Cache blob URLs by viewType key so they survive across widget instances.
+  /// Once registered, a platformViewFactory can never be updated, so the blob
+  /// URL it references must remain valid.
+  static final Map<String, String> _blobUrlCache = {};
+
+  /// Track which viewType factories are actually registered (one-shot per key).
   static final Set<String> _registeredViewTypes = {};
 
   String? _blobUrl;
@@ -67,9 +73,9 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
 
   @override
   void dispose() {
-    if (_blobUrl != null && kIsWeb) {
-      html.Url.revokeObjectUrl(_blobUrl!);
-    }
+    // Do NOT revoke _blobUrl here.
+    // registerViewFactory is permanent — the IFrame factory closure
+    // captures _blobUrl, so revoking it breaks reopens of the same PDF.
     super.dispose();
   }
 
@@ -101,7 +107,31 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       _pdfBytes = bytes;
 
       if (kIsWeb) {
-        _blobUrl = _createBlobUrl(bytes);
+        final viewType = 'pdf-viewer-${widget.s3Path.hashCode}';
+
+        // Reuse existing blob URL if the factory was previously registered
+        if (_blobUrlCache.containsKey(viewType)) {
+          _blobUrl = _blobUrlCache[viewType];
+        } else {
+          _blobUrl = _createBlobUrl(bytes);
+          _blobUrlCache[viewType] = _blobUrl!;
+        }
+
+        // Register the factory ONCE per viewType — must happen here (not in build)
+        // because registerViewFactory is one-shot and the blob URL must be ready.
+        if (!_registeredViewTypes.contains(viewType)) {
+          final urlForFactory = _blobUrl!;
+          ui.platformViewRegistry.registerViewFactory(
+            viewType,
+            (int viewId) => html.IFrameElement()
+              ..src = urlForFactory
+              ..style.border = 'none'
+              ..style.width = '100%'
+              ..style.height = '100%',
+          );
+          _registeredViewTypes.add(viewType);
+        }
+
         if (mounted) {
           setState(() => _isLoading = false);
         }
@@ -206,20 +236,8 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
     }
 
     if (kIsWeb && _blobUrl != null) {
-      final String viewType = 'pdf-viewer-${widget.s3Path.hashCode}';
-
-      if (!_registeredViewTypes.contains(viewType)) {
-        ui.platformViewRegistry.registerViewFactory(
-          viewType,
-          (int viewId) => html.IFrameElement()
-            ..src = _blobUrl!
-            ..style.border = 'none'
-            ..style.width = '100%'
-            ..style.height = '100%',
-        );
-        _registeredViewTypes.add(viewType);
-      }
-
+      // Factory was already registered in _loadPdf() — just reference it.
+      final viewType = 'pdf-viewer-${widget.s3Path.hashCode}';
       return HtmlElementView(viewType: viewType);
     }
 

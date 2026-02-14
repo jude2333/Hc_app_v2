@@ -200,22 +200,22 @@ class WorkOrder {
   String get doc => _rawDocString ?? jsonEncode(parsedDocMap);
 
   //  OPTIMIZATION 4: Robust Equality Check
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+  // @override
+  // bool operator ==(Object other) {
+  //   if (identical(this, other)) return true;
 
-    return other is WorkOrder &&
-        other.id == id &&
-        // Normalize time to seconds to avoid millisecond redraws
-        other.lastUpdatedAt.millisecondsSinceEpoch ~/ 1000 ==
-            lastUpdatedAt.millisecondsSinceEpoch ~/ 1000 &&
-        other.status == status &&
-        other.serverStatus == serverStatus &&
-        other.assignedId == assignedId &&
-        // Normalize doubles to avoid micro-precision diffs
-        (other.billAmount - billAmount).abs() < 0.01 &&
-        (other.receivedAmount - receivedAmount).abs() < 0.01;
-  }
+  //   return other is WorkOrder &&
+  //       other.id == id &&
+  //       // Normalize time to seconds to avoid millisecond redraws
+  //       other.lastUpdatedAt.millisecondsSinceEpoch ~/ 1000 ==
+  //           lastUpdatedAt.millisecondsSinceEpoch ~/ 1000 &&
+  //       other.status == status &&
+  //       other.serverStatus == serverStatus &&
+  //       other.assignedId == assignedId &&
+  //       // Normalize doubles to avoid micro-precision diffs
+  //       (other.billAmount - billAmount).abs() < 0.01 &&
+  //       (other.receivedAmount - receivedAmount).abs() < 0.01;
+  // }
 
   @override
   int get hashCode {
@@ -305,7 +305,7 @@ class WorkOrder {
       'bill_amount': billAmount,
       'received_amount': receivedAmount,
       'discount_amount': discountAmount,
-      'doc': jsonEncode(buildDoc()), // Encode only when saving
+      'doc': buildDoc(), // Raw Map — PostgREST handles jsonb encoding
       'bill_number': billNumber,
       'lab_number': labNumber,
       'visible': visible ? 1 : 0,
@@ -566,7 +566,14 @@ class WorkOrder {
       final parsedDocString = _parseString(row, 'doc');
 
       // Parse once here (in Isolate)
-      final Map<String, dynamic> parsedMap = jsonDecode(parsedDocString);
+      // Handle both: plain JSON string (text era) and double-encoded (jsonb transition)
+      dynamic decoded = jsonDecode(parsedDocString);
+      if (decoded is String) {
+        decoded = jsonDecode(decoded);
+      }
+      final Map<String, dynamic> parsedMap = decoded is Map<String, dynamic>
+          ? decoded
+          : Map<String, dynamic>.from(decoded as Map);
 
       return WorkOrder(
         id: parsedId,
@@ -635,7 +642,8 @@ class WorkOrder {
   }) {
     final appointmentDate = DateFormat('dd-MM-yyyy').format(visitDate);
     final docId = 'work_order:$appointmentDate:${const Uuid().v4()}';
-    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    // Use doc_id as the PowerSync id — matches sync rules (doc_id as id)
+    final id = docId;
     final now = DateTime.now().toIso8601String();
     final createdEntry = '$appointmentDate | $managerName | Work Order Created';
 

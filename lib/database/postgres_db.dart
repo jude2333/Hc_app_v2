@@ -66,7 +66,6 @@ class PostgresDB {
           "count=estimated,resolution=merge-duplicates,return=representation",
     };
 
-    // Always add Authorization header if token exists
     if (_token.isNotEmpty) {
       headers["Authorization"] = "Bearer $_token";
     }
@@ -123,7 +122,7 @@ class PostgresDB {
     await _setup();
 
     try {
-      final response = await _client!.post("/rpc/refresh_token_v2");
+      final response = await _client!.post("/rpc/refresh_token_v2", data: {});
 
       if (response.statusCode == 200 && response.data['token'] != null) {
         _token = response.data['token'];
@@ -137,6 +136,9 @@ class PostgresDB {
         await _setup();
 
         return "OK";
+      } else {
+        debugPrint(
+            "refresh_token_v2 failed: ${response.statusCode} ${response.data}");
       }
     } catch (e) {
       debugPrint("in refresh token: $e");
@@ -896,7 +898,10 @@ class PostgresDB {
 
   Future<List<Map<String, dynamic>>> searchPatients(
       String str, String mode) async {
-    if (_client == null) await _setup();
+    if (_client == null ||
+        _client!.options.baseUrl != Settings.currentPostgresUrl) {
+      await _setup();
+    }
 
     String query;
     switch (mode) {
@@ -920,13 +925,22 @@ class PostgresDB {
     }
 
     try {
-      final res = await _client!.get(query);
-      if (res.statusCode != 200 && res.statusCode != 206) return [];
+      var res = await _client!.get(query);
+
+      // If we get a 401 (expired JWT), refresh the token and retry once
+      if (res.statusCode == 401) {
+        debugPrint('[Search] Token expired — refreshing and retrying...');
+        await refreshToken();
+        res = await _client!.get(query);
+      }
+
+      if (res.statusCode != 200 && res.statusCode != 206) {
+        debugPrint('[Search] Unexpected status: ${res.statusCode}');
+        return [];
+      }
 
       final body = res.data;
       List<Map<String, dynamic>> processedResults = [];
-
-      debugPrint('Raw API response type: ${body.runtimeType}');
 
       // All queries now return flat results from hc_patient_visit_detail
       List<dynamic> dataList = [];
@@ -964,7 +978,6 @@ class PostgresDB {
       debugPrint(
           'Processed ${processedResults.length} search results for $mode');
       if (processedResults.isNotEmpty) {
-        debugPrint('First result keys: ${processedResults.first.keys}');
         debugPrint(
             'Sample - name: ${processedResults.first['name']}, mobile: ${processedResults.first['mobile']}');
       }
@@ -980,13 +993,24 @@ class PostgresDB {
   /// This queries PostgreSQL directly (not PowerSync) to get all work orders
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(
       String dateStr) async {
-    if (_client == null) await _setup();
+    if (_client == null ||
+        _client!.options.baseUrl != Settings.currentPostgresUrl) {
+      await _setup();
+    }
 
     try {
       final query =
           '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,assigned_id,received_amount,doc&visit_date=eq.$dateStr&visible=is.true';
 
-      final res = await _client!.get(query);
+      var res = await _client!.get(query);
+
+      // Auto-refresh on expired JWT
+      if (res.statusCode == 401) {
+        debugPrint('[PostgreSQL] Token expired — refreshing and retrying...');
+        await refreshToken();
+        res = await _client!.get(query);
+      }
+
       if (res.statusCode != 200 && res.statusCode != 206) return [];
 
       List<dynamic> dataList = [];
@@ -1009,13 +1033,24 @@ class PostgresDB {
   /// Get all work orders for a date range - for Tech Engagement monthly queries
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDateRange(
       String startDate, String endDate) async {
-    if (_client == null) await _setup();
+    if (_client == null ||
+        _client!.options.baseUrl != Settings.currentPostgresUrl) {
+      await _setup();
+    }
 
     try {
       final query =
           '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,assigned_id,received_amount,doc&visit_date=gte.$startDate&visit_date=lte.$endDate&visible=is.true';
 
-      final res = await _client!.get(query);
+      var res = await _client!.get(query);
+
+      // Auto-refresh on expired JWT
+      if (res.statusCode == 401) {
+        debugPrint('[PostgreSQL] Token expired — refreshing and retrying...');
+        await refreshToken();
+        res = await _client!.get(query);
+      }
+
       if (res.statusCode != 200 && res.statusCode != 206) return [];
 
       List<dynamic> dataList = [];
@@ -1040,7 +1075,20 @@ class PostgresDB {
       Map<String, dynamic> workOrderData = {};
 
       if (doc is String) {
-        workOrderData = json.decode(doc) as Map<String, dynamic>;
+        final decoded = json.decode(doc);
+        if (decoded is Map<String, dynamic>) {
+          workOrderData = decoded;
+        } else {
+          // Handle double-encoded jsonb strings
+          if (decoded is String) {
+            try {
+              final decoded2 = json.decode(decoded);
+              if (decoded2 is Map<String, dynamic>) {
+                workOrderData = decoded2;
+              }
+            } catch (_) {}
+          }
+        }
       } else if (doc is Map<String, dynamic>) {
         workOrderData = Map<String, dynamic>.from(doc);
       } else {
@@ -1195,7 +1243,8 @@ class PostgresDB {
       final response = await _client!.patch(
         "/hc_patient_visit_detail?id=eq.$workOrderId",
         data: {
-          'doc': jsonEncode(docMap),
+          'doc':
+              docMap, // Send as Map — Dio serializes it as a proper JSON object for jsonb
           'last_updated_by': user,
           'last_updated_at': now,
         },

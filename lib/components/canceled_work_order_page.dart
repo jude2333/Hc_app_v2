@@ -8,8 +8,12 @@ import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import '../features/core/widgets/common/common_widgets.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
+// final cancelledDatePod = StateProvider<DateTime>((ref) {
+//   return Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+// });
+
 final cancelledDatePod = StateProvider<DateTime>((ref) {
-  return Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+  return DateTime.now();
 });
 
 final cancelledOrdersProvider =

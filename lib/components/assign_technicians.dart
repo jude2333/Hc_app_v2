@@ -376,15 +376,15 @@ void showAssignTechnicianDialog(
   Function(String techId, String techName) onAssign,
 ) {
   final appointmentDate = workOrder.visitDate;
-  // if (Util.isPassedDate(appointmentDate.toString())) {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(
-  //       content: Text('Passed work orders cannot be assigned.'),
-  //       backgroundColor: Colors.red,
-  //     ),
-  //   );
-  //   return;
-  // }
+  if (Util.isPassedDate(appointmentDate.toString())) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Passed work orders cannot be assigned.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
   final status = workOrder.status.toLowerCase();
   if (status == 'cancelled') {

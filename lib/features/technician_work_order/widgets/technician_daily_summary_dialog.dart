@@ -7,12 +7,16 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 
-final _selectedDateProvider = StateProvider<DateTime>(
-  (ref) {
-    final now = Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  },
-);
+// final _selectedDateProvider = StateProvider<DateTime>(
+//   (ref) {
+//     final now = Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+//     return DateTime(now.year, now.month, now.day);
+//   },
+// );
+
+final _selectedDateProvider = StateProvider<DateTime>((ref) {
+  return DateTime.now();
+});
 
 final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,
     ({String techId, String dateStr})>((ref, params) async {

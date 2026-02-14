@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import '../providers/manager_work_order_provider.dart';
 import '../controllers/manager_assignment_controller.dart';
@@ -51,7 +50,7 @@ class ManagerActions extends ConsumerWidget {
         fullscreenDialog: true,
       ),
     ).then((res) async {
-      if (res == 'refresh') _refresh(context, ref, 'Copied');
+      if (res == 'refresh') _showSuccess(context, 'Copied');
     });
   }
 
@@ -64,9 +63,9 @@ class ManagerActions extends ConsumerWidget {
       ),
     ).then((res) async {
       if (res == 'refresh') {
-        _refresh(context, ref, 'Updated');
+        _showSuccess(context, 'Updated');
       } else if (res == 'cancelled') {
-        _refresh(context, ref, 'Cancelled');
+        _showSuccess(context, 'Cancelled');
         if (context.mounted) {
           _showCancellationNotificationDialog(context, ref);
         }
@@ -170,11 +169,10 @@ class ManagerActions extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(context);
               final success = await ref
-                  .read(workOrderProvider)
+                  .read(managerWorkOrderProvider)
                   .softDeleteWorkOrder(int.parse(workOrder.id), 'Manager');
               if (success) {
-                final date = ref.read(managerSelectedDatePod);
-                await ref.read(workOrderProvider).loadWorkOrdersByDate(date);
+                // No loadWorkOrdersByDate needed — db.watch() auto-detects the delete
                 messenger.showSnackBar(
                   SnackBar(
                     content: Text('Deleted'),
@@ -190,9 +188,9 @@ class ManagerActions extends ConsumerWidget {
     );
   }
 
-  Future<void> _refresh(BuildContext context, WidgetRef ref, String msg) async {
-    final date = ref.read(managerSelectedDatePod);
-    await ref.read(workOrderProvider).loadWorkOrdersByDate(date);
+  /// Show success snackbar — no loadWorkOrdersByDate needed because
+  /// db.watch() automatically re-emits when the table changes.
+  void _showSuccess(BuildContext context, String msg) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

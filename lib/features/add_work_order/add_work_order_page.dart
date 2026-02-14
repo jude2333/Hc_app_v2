@@ -116,8 +116,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   void _initializeDates() {
     if (!mounted) return;
     setState(() {
-      final today =
-          Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+      // final today =
+      //     Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+      final today = DateTime.now();
       for (int i = 0; i <= 9; i++) {
         final date = today.add(Duration(days: i));
         _suitableDates.add(DateFormat('EEEE d MMM yyyy').format(date));
@@ -130,8 +131,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   void _initializeDatesForEdit(DateTime existingDate) {
     if (!mounted) return;
     setState(() {
-      final today =
-          Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+      // final today =
+      //     Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+      final today = DateTime.now();
       for (int i = 0; i <= 9; i++) {
         final date = today.add(Duration(days: i));
         _suitableDates.add(DateFormat('EEEE d MMM yyyy').format(date));

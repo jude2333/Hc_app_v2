@@ -6,6 +6,8 @@ import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/services/postgresService.dart';
+import 'package:anderson_crm_flutter/providers/postgres_provider.dart';
 
 List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   return rows.map((row) {
@@ -33,13 +35,18 @@ class TechnicianWorkOrderRepository {
   final PowerSyncService _powerSync = PowerSyncService.instance;
   final StorageService storage;
 
+  final PostgresService postgresService;
+
   StreamSubscription<SyncStatus>? _statusSubscription;
   SyncStatus? _syncStatus;
 
   bool _isInitializing = true;
   Completer<void>? _initCompleter;
 
-  TechnicianWorkOrderRepository({required this.storage}) {
+  TechnicianWorkOrderRepository({
+    required this.storage,
+    required this.postgresService,
+  }) {
     debugPrint('🏭 TechnicianWorkOrderRepository CONSTRUCTOR called');
   }
 
@@ -68,7 +75,13 @@ class TechnicianWorkOrderRepository {
 
   Future<void> _initializeInternal() async {
     try {
-      await _powerSync.initialize(storage);
+      await _powerSync.initialize(
+        storage,
+        onRefreshToken: () async {
+          debugPrint(' TechnicianWorkOrderRepository calling refreshToken...');
+          await postgresService.refreshToken();
+        },
+      );
 
       _statusSubscription = _powerSync.watchStatus().listen((status) {
         _syncStatus = status;
@@ -90,13 +103,29 @@ class TechnicianWorkOrderRepository {
     }
   }
 
+  /// Wait for the CRUD upload queue to fully drain.
+  Future<void> waitForSync(
+      {Duration timeout = const Duration(seconds: 10)}) async {
+    await ensureInitialized();
+    await _powerSync.waitForSync(timeout: timeout);
+  }
+
+  /// Actively wait for the checkpoint to apply after CRUD drain.
+  Future<void> waitForCheckpointOrReconnect(
+      {Duration timeout = const Duration(seconds: 3)}) async {
+    await _powerSync.waitForCheckpointOrReconnect(timeout: timeout);
+  }
+
   Stream<List<WorkOrder>> watchTechnicianWorkOrders(String techId) {
     return _powerSync
         .watchTechnicianWorkOrders(techId)
         .asyncMap((rawRows) async {
-      debugPrint(
-          '📊 Parsing ${rawRows.length} technician work orders in isolate...');
-      return await compute(_parseWorkOrdersIsolate, rawRows);
+      try {
+        return await compute(_parseWorkOrdersIsolate, rawRows);
+      } catch (e) {
+        debugPrint('[TechRepo] Error parsing work orders: $e');
+        return <WorkOrder>[];
+      }
     });
   }
 
@@ -156,7 +185,11 @@ class TechnicianWorkOrderRepository {
 final technicianWorkOrderRepositoryProvider =
     Provider<TechnicianWorkOrderRepository>((ref) {
   final storage = ref.read(storageServiceProvider);
-  final repo = TechnicianWorkOrderRepository(storage: storage);
+  final postgresService = ref.read(postgresServiceProvider);
+  final repo = TechnicianWorkOrderRepository(
+    storage: storage,
+    postgresService: postgresService,
+  );
   ref.onDispose(() => repo.dispose());
   return repo;
 });

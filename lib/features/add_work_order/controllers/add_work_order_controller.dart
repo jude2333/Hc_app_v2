@@ -7,13 +7,14 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../features/core/util.dart';
 import '../../../../models/work_order.dart';
 import '../../../../providers/storage_provider.dart';
-import '../../../../providers/work_order_provider.dart';
+import '../../../../features/manager_work_order/repositories/manager_work_order_repository.dart';
 import '../../../../providers/com_center_provider.dart';
 import '../../../../providers/notificationCenter_provider.dart';
 import '../../../../config/settings.dart';
 import '../../../../repositories/temp_upload_repository.dart';
 
 import '../../../../database/sms_template.dart';
+import '../../../../features/manager_work_order/providers/manager_work_order_provider.dart';
 
 final addWorkOrderControllerProvider =
     StateNotifierProvider<AddWorkOrderController, bool>((ref) {
@@ -143,8 +144,13 @@ class AddWorkOrderController extends StateNotifier<bool> {
         }
 
         final success = await ref
-            .read(workOrderProvider)
+            .read(managerWorkOrderRepositoryProvider)
             .updateWorkOrder(updatedOrder, customDoc: customDoc);
+
+        if (success) {
+          // Wait for CRUD queue to drain so db.watch() resumes
+          await ref.read(managerWorkOrderProvider).syncAfterMutation();
+        }
 
         if (success && isCancelled && existingWorkOrder.status != 'cancelled') {
           await _sendCancellationNotifications(
@@ -201,18 +207,25 @@ class AddWorkOrderController extends StateNotifier<bool> {
           docMap['time_line'] = [log];
           final finalOrder = workOrder.copyWith(doc: jsonEncode(docMap));
 
-          final success =
-              await ref.read(workOrderProvider).createWorkOrder(finalOrder);
+          final success = await ref
+              .read(managerWorkOrderRepositoryProvider)
+              .createWorkOrder(finalOrder);
+
+          if (success) {
+            await ref.read(managerWorkOrderProvider).syncAfterMutation();
+          }
           setLoading(false);
           return {
             'success': success,
             'message': 'Work Order Copied Successfully'
           };
         } else {
-          final success =
-              await ref.read(workOrderProvider).createWorkOrder(workOrder);
+          final success = await ref
+              .read(managerWorkOrderRepositoryProvider)
+              .createWorkOrder(workOrder);
 
           if (success) {
+            await ref.read(managerWorkOrderProvider).syncAfterMutation();
             await _sendConfirmationSms(workOrder, sendSms);
           }
 

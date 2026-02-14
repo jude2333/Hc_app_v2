@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
@@ -53,6 +54,7 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
   final Ref _ref;
   BillingWorkOrderRepository? _repository;
   bool _powerSyncInitStarted = false;
+  StreamSubscription<List<WorkOrder>>? _ordersSubscription;
 
   BillingWorkOrderNotifier(this._ref) : super(const BillingWorkOrderState());
 
@@ -127,22 +129,27 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       }
     }
 
+    // Cancel any previous subscription before starting a new one
+    await _ordersSubscription?.cancel();
+
     state = state.copyWith(isLoading: true, selectedTab: 'unbilled');
-    try {
-      final orders = await repo.getUnbilledOrders();
-      state = state.copyWith(
-        isLoading: false,
-        orders: orders,
-        errorMessage: null,
-      );
-      debugPrint('[BillingProvider] Loaded ${orders.length} unbilled orders');
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
-      debugPrint('[BillingProvider] Error loading unbilled: $e');
-    }
+
+    _ordersSubscription = repo.watchUnbilledOrders().listen(
+      (orders) {
+        state = state.copyWith(
+          isLoading: false,
+          orders: orders,
+          errorMessage: null,
+        );
+      },
+      onError: (error) {
+        debugPrint('[Billing] Unbilled stream error: $error');
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        );
+      },
+    );
   }
 
   Future<void> loadBilled() async {
@@ -155,21 +162,38 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       return;
     }
 
+    // Cancel any previous subscription before starting a new one
+    await _ordersSubscription?.cancel();
+
     state = state.copyWith(isLoading: true, selectedTab: 'billed');
+
+    _ordersSubscription = repo.watchBilledOrders().listen(
+      (orders) {
+        state = state.copyWith(
+          isLoading: false,
+          orders: orders,
+          errorMessage: null,
+        );
+      },
+      onError: (error) {
+        debugPrint('[Billing] Billed stream error: $error');
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: error.toString(),
+        );
+      },
+    );
+  }
+
+  /// After a local mutation, wait for CRUD drain + checkpoint.
+  Future<void> _syncAfterMutation() async {
     try {
-      final orders = await repo.getBilledOrders();
-      state = state.copyWith(
-        isLoading: false,
-        orders: orders,
-        errorMessage: null,
-      );
-      debugPrint('[BillingProvider] Loaded ${orders.length} billed orders');
+      await PowerSyncService.instance
+          .waitForSync(timeout: const Duration(seconds: 10));
+      await PowerSyncService.instance
+          .waitForCheckpointOrReconnect(timeout: const Duration(seconds: 3));
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
-      debugPrint('[BillingProvider] Error loading billed: $e');
+      debugPrint('[Billing] syncAfterMutation failed: $e');
     }
   }
 
@@ -188,11 +212,7 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
         labNumber: labNumber,
       );
 
-      if (state.selectedTab == 'unbilled') {
-        await loadUnbilled();
-      } else {
-        await loadBilled();
-      }
+      _syncAfterMutation();
 
       return 'OK';
     } catch (e) {
@@ -276,6 +296,12 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       debugPrint('[BillingProvider] Error sending: $e');
       return 'Error: $e';
     }
+  }
+
+  @override
+  void dispose() {
+    _ordersSubscription?.cancel();
+    super.dispose();
   }
 }
 

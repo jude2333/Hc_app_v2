@@ -6,6 +6,7 @@ import 'package:anderson_crm_flutter/database/couch_db.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
+import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 
 List<WorkOrder> _parseWorkOrdersIsolate(List<Map<String, dynamic>> rows) {
   return rows.map((row) => WorkOrder.fromRow(row)).toList();
@@ -15,13 +16,14 @@ class BillingWorkOrderRepository {
   final PowerSyncDatabase _db;
   final CouchDBClient _couchClient;
   final StorageRepository _storage;
+  final PowerSyncService _powerSync = PowerSyncService.instance;
 
   BillingWorkOrderRepository(this._db, this._couchClient, this._storage);
 
   DateTime _getBaseDate() {
-    if (Settings.development) {
-      return DateTime(2022, 12, 14);
-    }
+    // if (Settings.development) {
+    //   return DateTime(2022, 12, 14);
+    // }
     return DateTime.now();
   }
 
@@ -76,6 +78,48 @@ class BillingWorkOrderRepository {
     }
 
     return results.map((row) => WorkOrder.fromRow(row)).toList();
+  }
+
+  /// Reactive stream: emits updated unbilled orders whenever underlying data changes
+  Stream<List<WorkOrder>> watchUnbilledOrders() {
+    final baseDate = _getBaseDate();
+    final sevenDaysAgo = baseDate.subtract(const Duration(days: 7));
+    final dateStr = DateFormat('yyyy-MM-dd').format(sevenDaysAgo);
+
+    return _powerSync.createRecoverableWatch('''
+      SELECT * FROM hc_patient_visit_detail
+      WHERE status = 'Finished'
+        AND server_status = 'Received'
+        AND visible = 1
+        AND visit_date >= ?
+      ORDER BY last_updated_at ASC
+    ''', [dateStr]).asyncMap((rows) async {
+      if (rows.length > 50) {
+        return compute(_parseWorkOrdersIsolate, rows);
+      }
+      return rows.map((row) => WorkOrder.fromRow(row)).toList();
+    });
+  }
+
+  /// Reactive stream: emits updated billed orders whenever underlying data changes
+  Stream<List<WorkOrder>> watchBilledOrders() {
+    final baseDate = _getBaseDate();
+    final sevenDaysAgo = baseDate.subtract(const Duration(days: 7));
+    final dateStr = DateFormat('yyyy-MM-dd').format(sevenDaysAgo);
+
+    return _powerSync.createRecoverableWatch('''
+      SELECT * FROM hc_patient_visit_detail
+      WHERE status = 'Finished'
+        AND server_status = 'Billed'
+        AND visible = 1
+        AND visit_date >= ?
+      ORDER BY last_updated_at DESC
+    ''', [dateStr]).asyncMap((rows) async {
+      if (rows.length > 50) {
+        return compute(_parseWorkOrdersIsolate, rows);
+      }
+      return rows.map((row) => WorkOrder.fromRow(row)).toList();
+    });
   }
 
   Future<Map<String, dynamic>?> fetchBillingDoc({

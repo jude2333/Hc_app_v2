@@ -6,6 +6,8 @@ import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/services/postgresService.dart';
+import 'package:anderson_crm_flutter/providers/postgres_provider.dart';
 
 List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   return rows.map((row) {
@@ -32,6 +34,7 @@ class _FilterParams {
 class ManagerWorkOrderRepository {
   final PowerSyncService _powerSync = PowerSyncService.instance;
   final StorageService storage;
+  final PostgresService postgresService; // Added dependency
 
   StreamSubscription<SyncStatus>? _statusSubscription;
   SyncStatus? _syncStatus;
@@ -39,7 +42,10 @@ class ManagerWorkOrderRepository {
   bool _isInitializing = true;
   Completer<void>? _initCompleter;
 
-  ManagerWorkOrderRepository({required this.storage}) {
+  ManagerWorkOrderRepository({
+    required this.storage,
+    required this.postgresService, // Added parameter
+  }) {
     debugPrint(' ManagerWorkOrderRepository CONSTRUCTOR called');
   }
 
@@ -78,7 +84,13 @@ class ManagerWorkOrderRepository {
 
   Future<void> _initializeInternal() async {
     try {
-      await _powerSync.initialize(storage);
+      await _powerSync.initialize(
+        storage,
+        onRefreshToken: () async {
+          debugPrint(' ManagerWorkOrderRepository calling refreshToken...');
+          await postgresService.refreshToken();
+        },
+      );
 
       _statusSubscription = _powerSync.watchStatus().listen((status) {
         _syncStatus = status;
@@ -100,28 +112,58 @@ class ManagerWorkOrderRepository {
     }
   }
 
+  /// Wait for the CRUD upload queue to fully drain.
+  /// This ensures checkpoints can apply and db.watch() resumes for remote changes.
+  Future<void> waitForSync(
+      {Duration timeout = const Duration(seconds: 10)}) async {
+    await ensureInitialized();
+    await _powerSync.waitForSync(timeout: timeout);
+  }
+
+  /// Actively wait for the checkpoint to apply after CRUD drain.
+  /// If it doesn't advance within timeout, force a reconnect.
+  Future<void> waitForCheckpointOrReconnect(
+      {Duration timeout = const Duration(seconds: 3)}) async {
+    await _powerSync.waitForCheckpointOrReconnect(timeout: timeout);
+  }
+
   Stream<List<WorkOrder>> watchWorkOrdersByDate(DateTime date) {
-    debugPrint('🔍 [Manager DEBUG] watchWorkOrdersByDate called for: $date');
     return _powerSync.watchWorkOrdersByDate(date).asyncMap((rawRows) async {
-      debugPrint('🔍 [Manager DEBUG] Raw rows received: ${rawRows.length}');
-      // if (rawRows.isNotEmpty) {
-      //   debugPrint('🔍 [Manager DEBUG] First raw row: ${rawRows.first}');
-      // }
-      debugPrint(' Parsing ${rawRows.length} work orders in isolate...');
-      final parsed = await compute(_parseWorkOrdersIsolate, rawRows);
-      debugPrint(
-          '🔍 [Manager DEBUG] Parsed ${parsed.length} WorkOrder objects');
-      return parsed;
+      try {
+        return await compute(_parseWorkOrdersIsolate, rawRows);
+      } catch (e) {
+        debugPrint('[Repo] Error parsing work orders: $e');
+        return <WorkOrder>[];
+      }
     });
+  }
+
+  /// One-shot query — fetches current data WITHOUT creating a stream.
+  /// Used by refreshWorkOrders to update the UI immediately while keeping
+  /// the existing db.watch() stream alive.
+  Future<List<WorkOrder>> getWorkOrdersByDate(DateTime date) async {
+    await ensureInitialized();
+    try {
+      final rawRows = await _powerSync.getAllWorkOrdersForDate(
+        date.toIso8601String().split('T')[0],
+      );
+      return await compute(_parseWorkOrdersIsolate, rawRows);
+    } catch (e) {
+      debugPrint('[Repo] getWorkOrdersByDate failed: $e');
+      return <WorkOrder>[];
+    }
   }
 
   Stream<List<WorkOrder>> watchWorkOrdersFromDate(DateTime startDate) {
     return _powerSync
         .watchWorkOrdersFromDate(startDate)
         .asyncMap((rawRows) async {
-      debugPrint(
-          ' Parsing ${rawRows.length} work orders (6+ days) in isolate...');
-      return await compute(_parseWorkOrdersIsolate, rawRows);
+      try {
+        return await compute(_parseWorkOrdersIsolate, rawRows);
+      } catch (e) {
+        debugPrint('[Repo] Error parsing (fromDate): $e');
+        return <WorkOrder>[];
+      }
     });
   }
 
@@ -186,7 +228,11 @@ class ManagerWorkOrderRepository {
 final managerWorkOrderRepositoryProvider =
     Provider<ManagerWorkOrderRepository>((ref) {
   final storage = ref.read(storageServiceProvider);
-  final repo = ManagerWorkOrderRepository(storage: storage);
+  final postgresService = ref.read(postgresServiceProvider);
+  final repo = ManagerWorkOrderRepository(
+    storage: storage,
+    postgresService: postgresService,
+  );
   ref.onDispose(() => repo.dispose());
   return repo;
 });

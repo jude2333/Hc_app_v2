@@ -73,6 +73,14 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
   PriceListRepository get _repo => ref.read(priceListRepositoryProvider);
 
+  Future<void> init() async {
+    if (state.items.isNotEmpty || state.deptNames.isNotEmpty) return;
+
+    debugPrint(' [PriceListNotifier] init()');
+    await loadComboData();
+    await search('');
+  }
+
   Future<void> loadComboData() async {
     debugPrint(' [PriceListNotifier] loadComboData()');
 
@@ -111,8 +119,10 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
     }
   }
 
-  Future<void> search(String query) async {
-    if (state.currentSearchQuery == query && state.items.isNotEmpty) {
+  Future<void> search(String query, {bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        state.currentSearchQuery == query &&
+        state.items.isNotEmpty) {
       debugPrint(' [PriceListNotifier] Skipping duplicate search: $query');
       return;
     }
@@ -160,7 +170,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final result = await _repo.insert(item);
 
       if (result == 'OK') {
-        await search('');
+        await search('', forceRefresh: true);
       }
 
       return result;
@@ -210,7 +220,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       final result = await _repo.update(updatedItem);
 
       if (result == 'OK') {
-        await search(state.currentSearchQuery);
+        await search(state.currentSearchQuery, forceRefresh: true);
       }
 
       return result;
@@ -232,8 +242,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
       if (result == 'OK') {
         final currentQuery = state.currentSearchQuery;
-        state = state.copyWith(currentSearchQuery: '___force_refresh___');
-        await search(currentQuery);
+        await search(currentQuery, forceRefresh: true);
         debugPrint(' [PriceListNotifier] Delete successful, list refreshed');
       }
 

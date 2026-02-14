@@ -58,6 +58,10 @@ class ManagerAssignmentController {
 
       await _provider.updateWorkOrder(updatedOrder, customDoc: customDoc);
 
+      // Wait for CRUD queue to drain so checkpoints resume and
+      // db.watch() naturally picks up remote changes again.
+      await _provider.syncAfterMutation();
+
       debugPrint(" About to send in-app notification...");
       await sendInAppNotification(workOrder, techId, techName);
 
@@ -151,27 +155,32 @@ class ManagerAssignmentController {
       };
 
       if (sendSms) {
-        String smsMsg;
-        if (isReassignment) {
-          smsMsg = SmsTemplate.homeCollectionTechChange(
-              techName, techMobile, msgUrl);
+        if (Settings.development) {
+          debugPrint(' Skipping assignment SMS in development mode');
+          return;
         } else {
-          final appTime =
-              "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}";
-          smsMsg = SmsTemplate.sampleCollection(
-              workOrder.patientName, techName, appTime, techMobile, msgUrl);
-        }
+          String smsMsg;
+          if (isReassignment) {
+            smsMsg = SmsTemplate.homeCollectionTechChange(
+                techName, techMobile, msgUrl);
+          } else {
+            final appTime =
+                "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}";
+            smsMsg = SmsTemplate.sampleCollection(
+                workOrder.patientName, techName, appTime, techMobile, msgUrl);
+          }
 
-        final smsMessage = Map<String, dynamic>.from(baseMessage);
-        smsMessage['_id'] = 'sms_center:$idPart:${Util.uuidv4()}';
-        smsMessage['message'] = smsMsg;
+          final smsMessage = Map<String, dynamic>.from(baseMessage);
+          smsMessage['_id'] = 'sms_center:$idPart:${Util.uuidv4()}';
+          smsMessage['message'] = smsMsg;
 
-        debugPrint(' Sending assignment SMS to ${workOrder.mobile}');
-        final result = await comCenter.sendMsg(smsMessage);
-        if (result == 'OK') {
-          debugPrint(' SMS sent successfully');
-        } else {
-          debugPrint(' SMS failed: $result');
+          debugPrint(' Sending assignment SMS to ${workOrder.mobile}');
+          final result = await comCenter.sendMsg(smsMessage);
+          if (result == 'OK') {
+            debugPrint(' SMS sent successfully');
+          } else {
+            debugPrint(' SMS failed: $result');
+          }
         }
       }
 
@@ -292,17 +301,21 @@ class ManagerAssignmentController {
 
       // 3. Send cancellation SMS
       if (sendSms) {
-        final smsMsg = SmsTemplate.homeCollectionCancellation(rescheduleUrl);
-        final smsMessage = Map<String, dynamic>.from(baseMessage);
-        smsMessage['_id'] =
-            'sms_center:${Util.getDateForId()}:${Util.uuidv4()}';
-        smsMessage['message'] = smsMsg;
+        if (Settings.development) {
+          debugPrint(' Skipping cancellation SMS in development mode');
+        } else {
+          final smsMsg = SmsTemplate.homeCollectionCancellation(rescheduleUrl);
+          final smsMessage = Map<String, dynamic>.from(baseMessage);
+          smsMessage['_id'] =
+              'sms_center:${Util.getDateForId()}:${Util.uuidv4()}';
+          smsMessage['message'] = smsMsg;
 
-        debugPrint(' Sending cancellation SMS to ${workOrder.mobile}');
-        final result = await comCenter.sendMsg(smsMessage);
-        debugPrint(result == 'OK'
-            ? ' Cancellation SMS sent'
-            : ' Cancellation SMS failed: $result');
+          debugPrint(' Sending cancellation SMS to ${workOrder.mobile}');
+          final result = await comCenter.sendMsg(smsMessage);
+          debugPrint(result == 'OK'
+              ? ' Cancellation SMS sent'
+              : ' Cancellation SMS failed: $result');
+        }
       }
 
       // 4. Send cancellation WhatsApp

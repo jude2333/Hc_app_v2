@@ -9,9 +9,7 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
 
   TechnicianWorkOrderProvider(
       {required TechnicianWorkOrderRepository repository})
-      : _repo = repository {
-    debugPrint('🏭 TechnicianWorkOrderProvider CONSTRUCTOR called');
-  }
+      : _repo = repository;
 
   List<WorkOrder> _workOrders = [];
   bool _isLoading = false;
@@ -35,8 +33,6 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
   }
 
   Future<void> loadTechnicianWorkOrders(String techId) async {
-    debugPrint('👨‍🔧 Technician loading orders for: $techId');
-
     await _repo.ensureInitialized();
 
     try {
@@ -44,22 +40,31 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
 
       _ordersSubscription = _repo.watchTechnicianWorkOrders(techId).listen(
         (orders) {
-          debugPrint(
-              '✅ Technician UI notified with ${orders.length} work orders');
           _workOrders = orders;
           _errorMessage = null;
           notifyListeners();
         },
         onError: (error) {
-          debugPrint('❌ Technician Stream Error: $error');
+          debugPrint('[Tech] Stream Error: $error');
           _errorMessage = 'Failed to load: $error';
           notifyListeners();
         },
       );
     } catch (e) {
-      debugPrint('❌ loadTechnicianWorkOrders failed: $e');
+      debugPrint('[Tech] loadTechnicianWorkOrders failed: $e');
       _errorMessage = 'Error: $e';
       notifyListeners();
+    }
+  }
+
+  /// After a local mutation, wait for CRUD drain + checkpoint, then refresh.
+  Future<void> _syncAfterMutation() async {
+    try {
+      await _repo.waitForSync(timeout: const Duration(seconds: 10));
+      await _repo.waitForCheckpointOrReconnect(
+          timeout: const Duration(seconds: 3));
+    } catch (e) {
+      debugPrint('[Tech] syncAfterMutation failed: $e');
     }
   }
 
@@ -70,7 +75,9 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
       lastUpdatedBy: updatedBy,
       lastUpdatedAt: DateTime.now(),
     );
-    return await _repo.updateWorkOrder(updatedOrder);
+    final result = await _repo.updateWorkOrder(updatedOrder);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<bool> cancelWorkOrder(
@@ -84,16 +91,23 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
     final customDoc = updatedOrder.buildDoc();
     customDoc['cancel_reason'] = reason;
 
-    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    final result =
+        await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<bool> updateWorkOrder(WorkOrder order,
       {Map<String, dynamic>? customDoc}) async {
-    return await _repo.updateWorkOrder(order, customDoc: customDoc);
+    final result = await _repo.updateWorkOrder(order, customDoc: customDoc);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<bool> createWorkOrder(WorkOrder order) async {
-    return await _repo.createWorkOrder(order);
+    final result = await _repo.createWorkOrder(order);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<List<WorkOrder>> searchWorkOrdersAsync(String query) async {
@@ -123,7 +137,10 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
       lastUpdatedAt: DateTime.now(),
     );
 
-    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    final result =
+        await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<bool> updateGPayRef(
@@ -141,7 +158,10 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
       lastUpdatedAt: DateTime.now(),
     );
 
-    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    final result =
+        await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<bool> updateRemarks(
@@ -159,7 +179,10 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
       lastUpdatedAt: DateTime.now(),
     );
 
-    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    final result =
+        await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<bool> addLabSamplePhoto(
@@ -181,7 +204,10 @@ class TechnicianWorkOrderProvider extends ChangeNotifier {
       lastUpdatedAt: DateTime.now(),
     );
 
-    return await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    final result =
+        await _repo.updateWorkOrder(updatedOrder, customDoc: customDoc);
+    if (result) _syncAfterMutation();
+    return result;
   }
 
   Future<List<Map<String, dynamic>>> getDailyOrders(

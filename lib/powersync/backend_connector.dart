@@ -33,15 +33,15 @@ class BackendConnector extends PowerSyncBackendConnector {
   //   }
   // }
 
+  final Future<void> Function()? onRefreshToken;
+
   String get postgrestBaseUrl {
     return Settings.currentPostgresUrl;
   }
 
   final String powerSyncUrl = Settings.powerSyncUrl;
 
-  BackendConnector({required this.storage}) {
-    debugPrint('[BackendConnector] Initialized - PowerSync: $powerSyncUrl');
-  }
+  BackendConnector({required this.storage, this.onRefreshToken});
 
   @override
   Future<PowerSyncCredentials?> fetchCredentials() async {
@@ -55,7 +55,6 @@ class BackendConnector extends PowerSyncBackendConnector {
         return null;
       }
 
-      debugPrint('[BackendConnector] Token generated (${token.length} chars)');
       return PowerSyncCredentials(endpoint: powerSyncUrl, token: token);
     } catch (e) {
       debugPrint('[BackendConnector] fetchCredentials error: $e');
@@ -101,15 +100,6 @@ class BackendConnector extends PowerSyncBackendConnector {
       final normalizedRole = roleName.toUpperCase();
       final expTime = now.add(const Duration(hours: 12));
 
-      // Calculate dynamic date window: 7 days ago to 10 days ahead
-      // final minDate = now.subtract(const Duration(days: 7));
-      // final maxDate = now.add(const Duration(days: 10));
-
-      // Format dates as YYYY-MM-DD strings for PostgreSQL
-      // String formatDate(DateTime date) {
-      //   return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      // }
-
       final claims = JsonWebTokenClaims.fromJson({
         'sub': 'emp-$empId',
         'iat': now.millisecondsSinceEpoch ~/ 1000,
@@ -137,42 +127,41 @@ class BackendConnector extends PowerSyncBackendConnector {
   Future<void> uploadData(PowerSyncDatabase database) async {
     debugPrint('[BackendConnector] uploadData()');
 
-    while (true) {
-      CrudTransaction? transaction;
+    // Use getCrudBatch() for atomic batch completion.
+    // This ensures checkpoint advancement happens once after ALL operations
+    // succeed, preventing the "Could not apply checkpoint due to local data"
+    // blocking issue that kills db.watch() streams.
+    final batch = await database.getCrudBatch();
 
-      try {
-        // Get the next pending transaction
-        transaction = await database.getNextCrudTransaction();
+    if (batch == null) return;
 
-        if (transaction == null) {
-          // No more transactions to process
-          return;
-        }
+    debugPrint(
+        '[BackendConnector] Processing batch with ${batch.crud.length} operations');
 
+    try {
+      for (final operation in batch.crud) {
+        await _processOperation(operation);
+      }
+
+      // CRITICAL: Complete the entire batch at once.
+      // This allows the write checkpoint to advance properly.
+      await batch.complete();
+      debugPrint('[BackendConnector] Batch completed successfully ✅');
+
+      // Small delay to let the internal write checkpoint state settle
+      // before the next sync iteration evaluates the checkpoint.
+      await Future.delayed(const Duration(milliseconds: 100));
+    } catch (e) {
+      debugPrint('[BackendConnector] Upload error: $e');
+
+      if (_isPermanentError(e)) {
+        // Permanent errors (400, 404, 409, etc.) should NOT block the queue.
+        // Complete the batch to skip and unblock checkpoint advancement.
         debugPrint(
-            '[BackendConnector] Processing transaction with ${transaction.crud.length} operations');
-
-        // Process each operation in the transaction
-        for (final operation in transaction.crud) {
-          await _processOperation(operation);
-        }
-
-        // Mark transaction as complete - this removes it from the queue
-        await transaction.complete();
-        debugPrint('[BackendConnector] Transaction completed successfully');
-      } catch (e) {
-        debugPrint('[BackendConnector] Upload error: $e');
-
-        if (_isPermanentError(e)) {
-          if (transaction != null) {
-            try {
-              await transaction.complete();
-              debugPrint(
-                  '[BackendConnector] Skipped failed transaction (permanent error)');
-            } catch (_) {}
-          }
-        }
-
+            '[BackendConnector] ⚠️ Permanent error, completing batch to skip: $e');
+        await batch.complete();
+      } else {
+        // Transient errors (network, 5xx) — don't complete batch, let PowerSync retry
         rethrow;
       }
     }
@@ -182,6 +171,8 @@ class BackendConnector extends PowerSyncBackendConnector {
   /// Uses structured HTTP status codes instead of fragile string matching.
   bool _isPermanentError(dynamic error) {
     if (error is PostgRESTException) {
+      // 401 is Transient (Token Expired) -> Retry (with refresh)
+      if (error.statusCode == 401) return false;
       return error.statusCode >= 400 && error.statusCode < 500;
     }
     // Fallback: check for known permanent error patterns
@@ -264,79 +255,172 @@ class BackendConnector extends PowerSyncBackendConnector {
     final baseUrl = Settings.currentPostgresUrl;
     final url = '$baseUrl/hc_patient_visit_detail';
 
-    debugPrint('[BackendConnector] Upserting work order: $id');
-
-    final token = await storage.getFromSessionAsync('pg_admin');
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=minimal',
-      'Authorization': 'Bearer $token',
-    };
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse(url),
-            headers: headers,
-            body: jsonEncode(data),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('[BackendConnector] Work order upserted: $id');
-        return;
+    // Decode doc from String→Map to prevent double-encoding into jsonb
+    if (data['doc'] is String) {
+      try {
+        data['doc'] = jsonDecode(data['doc'] as String);
+      } catch (e) {
+        debugPrint('[BackendConnector] _upsertWorkOrder jsonDecode error: $e');
       }
+    }
 
-      debugPrint('[BackendConnector] Upsert failed: ${response.statusCode}');
-      debugPrint('[BackendConnector] Response: ${response.body}');
-      throw PostgRESTException(
-          'WorkOrder upsert failed', response.statusCode, response.body);
-    } catch (e) {
-      debugPrint('[BackendConnector] Upsert exception: $e');
-      rethrow;
+    final payload = Map<String, dynamic>.from(data);
+    payload.remove('id');
+
+    int retryCount = 0;
+    while (retryCount < 2) {
+      final token = await storage.getFromSessionAsync('pg_admin');
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+        'Authorization': 'Bearer $token',
+      };
+
+      try {
+        final response = await http
+            .post(
+              Uri.parse(url),
+              headers: headers,
+              body: jsonEncode(payload),
+            )
+            .timeout(const Duration(seconds: 15));
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return;
+        }
+
+        if (response.statusCode == 401 &&
+            retryCount == 0 &&
+            onRefreshToken != null) {
+          debugPrint('[BackendConnector] 401 detected, refreshing token...');
+          await onRefreshToken!();
+          retryCount++;
+          continue;
+        }
+
+        debugPrint('[BackendConnector] Upsert failed: ${response.statusCode}');
+        debugPrint('[BackendConnector] Response: ${response.body}');
+        throw PostgRESTException(
+            'WorkOrder upsert failed', response.statusCode, response.body);
+      } catch (e) {
+        if (e is PostgRESTException &&
+            e.statusCode == 401 &&
+            retryCount == 0 &&
+            onRefreshToken != null) {
+          debugPrint(
+              '[BackendConnector] 401 Exception detected, refreshing token...');
+          await onRefreshToken!();
+          retryCount++;
+          continue;
+        }
+        debugPrint('[BackendConnector] Upsert exception: $e');
+        rethrow;
+      }
     }
   }
 
   Future<void> _updateWorkOrder(String id, Map<String, dynamic> data) async {
     final baseUrl = Settings.currentPostgresUrl;
-    final url = '$baseUrl/hc_patient_visit_detail?id=eq.$id';
 
-    final token = await storage.getFromSessionAsync('pg_admin');
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-      'Authorization': 'Bearer $token',
-    };
-
-    final response = await http
-        .patch(
-          Uri.parse(url),
-          headers: headers,
-          body: jsonEncode(data),
-        )
-        .timeout(const Duration(seconds: 15));
-
-    if (response.statusCode == 200) {
-      // Verify at least one row was updated
-      final rows = jsonDecode(response.body);
-      if (rows is List && rows.isEmpty) {
-        debugPrint(
-            '[BackendConnector] WARNING: PATCH matched 0 rows for id=$id');
-        throw PostgRESTException(
-            'WorkOrder not found in PostgreSQL', 404, 'id=$id');
-      }
-      debugPrint('[BackendConnector] Work order updated: $id');
+    // Detect ID format:
+    // - All digits → old cached integer PK (before sync rule change)
+    // - Contains non-digits → doc_id string (after sync rule change: doc_id as id)
+    final isIntegerId = RegExp(r'^\d+$').hasMatch(id);
+    final String url;
+    if (isIntegerId) {
+      url = '$baseUrl/hc_patient_visit_detail?id=eq.$id';
+      debugPrint('[BackendConnector] PATCH using integer PK: $id');
     } else {
-      debugPrint(
-          '[BackendConnector] Update failed: ${response.statusCode} - ${response.body}');
-      throw PostgRESTException(
-          'WorkOrder update failed', response.statusCode, response.body);
+      url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
+    }
+
+    // Decode doc from String→Map to prevent double-encoding into jsonb
+    if (data['doc'] is String) {
+      try {
+        data['doc'] = jsonDecode(data['doc'] as String);
+      } catch (_) {}
+    }
+
+    int retryCount = 0;
+    while (retryCount < 2) {
+      final token = await storage.getFromSessionAsync('pg_admin');
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        'Authorization': 'Bearer $token',
+      };
+
+      try {
+        debugPrint('[BackendConnector] Sending PATCH to $url');
+        final body = jsonEncode(data);
+
+        final response = await http
+            .patch(
+              Uri.parse(url),
+              headers: headers,
+              body: body,
+            )
+            .timeout(const Duration(seconds: 15));
+
+        debugPrint(
+            '[BackendConnector] PATCH response status: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          // Verify at least one row was updated
+          final rows = jsonDecode(response.body);
+          if (rows is List && rows.isEmpty) {
+            // 0 rows matched — row may have been deleted. Log and move on.
+            // Don't upsert: PATCH data is partial (missing required fields).
+            debugPrint(
+                '[BackendConnector] ⚠️ PATCH matched 0 rows for id=$id — row may not exist on server');
+            return;
+          }
+          debugPrint('[BackendConnector] ✅ Work order updated: id=$id');
+          return;
+        }
+
+        if (response.statusCode == 401 &&
+            retryCount == 0 &&
+            onRefreshToken != null) {
+          debugPrint(
+              '[BackendConnector] 401 detected in PATCH, refreshing token...');
+          await onRefreshToken!();
+          retryCount++;
+          continue;
+        }
+
+        debugPrint(
+            '[BackendConnector] Update failed: ${response.statusCode} - ${response.body}');
+        throw PostgRESTException(
+            'WorkOrder update failed', response.statusCode, response.body);
+      } catch (e) {
+        if (e is PostgRESTException &&
+            e.statusCode == 401 &&
+            retryCount == 0 &&
+            onRefreshToken != null) {
+          debugPrint(
+              '[BackendConnector] 401 Exception detected in PATCH, refreshing token...');
+          await onRefreshToken!();
+          retryCount++;
+          continue;
+        }
+        debugPrint('[BackendConnector] Update exception: $e');
+        rethrow;
+      }
     }
   }
 
   Future<void> _deleteWorkOrder(String id) async {
     final baseUrl = Settings.currentPostgresUrl;
-    final url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
+
+    // Detect ID format: integer PK (old) vs doc_id string (new)
+    final isIntegerId = RegExp(r'^\d+$').hasMatch(id);
+    final String url;
+    if (isIntegerId) {
+      url = '$baseUrl/hc_patient_visit_detail?id=eq.$id';
+    } else {
+      url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
+    }
 
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{

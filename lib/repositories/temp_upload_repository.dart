@@ -73,7 +73,9 @@ class TempUploadRepository {
   Stream<int> watchPendingCount() {
     return db.watch(
         'SELECT COUNT(*) as count FROM temp_uploads WHERE status = ?',
-        parameters: ['pending']).map((results) {
+        parameters: ['pending']).handleError((e) {
+      debugPrint('[TempUpload] watch stream error (ignored): $e');
+    }).map((results) {
       if (results.isEmpty) return 0;
       return results.first['count'] as int? ?? 0;
     });
@@ -83,7 +85,9 @@ class TempUploadRepository {
     return db.watch(
       'SELECT * FROM temp_uploads WHERE work_order_id = ? ORDER BY created_at ASC',
       parameters: [workOrderId],
-    ).map((results) => results.map((row) => TempUpload.fromRow(row)).toList());
+    ).handleError((e) {
+      debugPrint('[TempUpload] watch stream error (ignored): $e');
+    }).map((results) => results.map((row) => TempUpload.fromRow(row)).toList());
   }
 
   Future<void> updateStatus(String id, String status,

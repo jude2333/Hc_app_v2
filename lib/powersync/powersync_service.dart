@@ -20,6 +20,9 @@ class PowerSyncService {
   bool _initialized = false;
   Completer<void>? _initCompleter;
 
+  /// Set to false for production to suppress verbose sync logging.
+  static const bool _debugSync = false;
+
   PowerSyncService._();
 
   static PowerSyncService get instance {
@@ -38,7 +41,10 @@ class PowerSyncService {
     }
   }
 
-  Future<void> initialize(StorageService storage) async {
+  Future<void> initialize(
+    StorageService storage, {
+    Future<void> Function()? onRefreshToken,
+  }) async {
     if (_initialized) return;
 
     if (_initCompleter != null) {
@@ -52,14 +58,27 @@ class PowerSyncService {
       db = PowerSyncDatabase(schema: schema, path: path);
       await db.initialize();
 
-      _connector = BackendConnector(storage: storage);
-      await db.connect(connector: _connector);
+      _connector = BackendConnector(
+        storage: storage,
+        onRefreshToken: onRefreshToken,
+      );
+      // await db.connect(connector: _connector);
+      await db.connect(
+        connector: _connector,
+        options: const SyncOptions(
+          syncImplementation: SyncClientImplementation.rust,
+        ),
+      );
+
+      // Monitor sync status and auto-reconnect on stalls
+      _setupSyncRecovery();
 
       _initialized = true;
       _initCompleter!.complete();
 
-      // Only run debug checks in development mode
-      if (const bool.fromEnvironment('dart.vm.product') == false) {
+      // Only run debug checks in development mode with debug flag
+      if (_debugSync &&
+          const bool.fromEnvironment('dart.vm.product') == false) {
         _debugCheckLocalDatabase();
       }
     } catch (e) {
@@ -99,41 +118,9 @@ class PowerSyncService {
       final status = db.currentStatus;
       debugPrint(
           ' [PowerSync DEBUG] Sync status: connected=${status.connected}, downloading=${status.downloading}, uploading=${status.uploading}');
-
-      // Watch for sync completion
-      _watchSyncCompletion();
     } catch (e) {
       debugPrint(' [PowerSync DEBUG] Error checking database: $e');
     }
-  }
-
-  /// Watch for sync to complete and re-check database
-  void _watchSyncCompletion() {
-    debugPrint(' [PowerSync DEBUG] Starting sync completion watcher...');
-    db.statusStream.listen((status) async {
-      debugPrint(
-          ' [PowerSync STATUS] connected=${status.connected}, downloading=${status.downloading}, hasSynced=${status.hasSynced}');
-
-      if (status.hasSynced == true) {
-        debugPrint('[PowerSync DEBUG] SYNC COMPLETE! hasSynced=true');
-
-        // Re-check database after sync
-        final count = await db.get(
-          'SELECT COUNT(*) as cnt FROM hc_patient_visit_detail',
-        );
-        debugPrint(
-            '[PowerSync DEBUG] After sync - Total records: ${count?['cnt'] ?? 0}');
-
-        // Show sample data
-        final sample = await db.getAll(
-          'SELECT id, visit_date, patient_name FROM hc_patient_visit_detail LIMIT 3',
-        );
-        for (var row in sample) {
-          debugPrint(
-              ' [PowerSync DEBUG] Sample: ${row['visit_date']} - ${row['patient_name']}');
-        }
-      }
-    });
   }
 
   Future<void> _ensureInitialized() async {
@@ -142,16 +129,175 @@ class PowerSyncService {
     }
   }
 
+  // ── Sync Recovery ────────────────────────────────────────────────
+
+  DateTime? _lastSyncedAtSeen;
+  DateTime? _stuckSince;
+  DateTime? _lastReconnectTime;
+
+  /// Monitors sync status and auto-reconnects when the checkpoint is stuck.
+  /// Detects: downloading=true for >5s but lastSyncedAt never advances.
+  void _setupSyncRecovery() {
+    db.statusStream.listen((status) async {
+      if (_debugSync) {
+        debugPrint('[PowerSync STATUS] connected=${status.connected}, '
+            'downloading=${status.downloading}, uploading=${status.uploading}, '
+            'lastSyncedAt=${status.lastSyncedAt}');
+      }
+
+      // Check if lastSyncedAt advanced → checkpoint applied successfully
+      if (status.lastSyncedAt != null &&
+          status.lastSyncedAt != _lastSyncedAtSeen) {
+        debugPrint(
+            '[PowerSync] ✅ Checkpoint applied at ${status.lastSyncedAt}');
+        _lastSyncedAtSeen = status.lastSyncedAt;
+        _stuckSince = null; // Reset stuck timer
+        return;
+      }
+
+      // Detect stuck checkpoint: connected + downloading but lastSyncedAt
+      // not advancing. This is the "Could not apply checkpoint" pattern.
+      if (status.connected && status.downloading && !status.uploading) {
+        _stuckSince ??= DateTime.now();
+        final stuckDuration = DateTime.now().difference(_stuckSince!);
+
+        if (stuckDuration > const Duration(seconds: 5)) {
+          // Cooldown: don't reconnect more than once per 10s
+          if (_lastReconnectTime != null &&
+              DateTime.now().difference(_lastReconnectTime!) <
+                  const Duration(seconds: 10)) {
+            return;
+          }
+
+          debugPrint(
+              '[PowerSync] ⚠️ Checkpoint stuck for ${stuckDuration.inSeconds}s '
+              '— forcing reconnect to clear internal state...');
+          _stuckSince = null;
+          await _reconnect();
+        }
+      }
+    });
+  }
+
+  /// Safely disconnect and reconnect to reset the sync stream.
+  Future<void> _reconnect() async {
+    try {
+      _lastReconnectTime = DateTime.now();
+      debugPrint('[PowerSync] Reconnecting...');
+      await db.disconnect();
+      await Future.delayed(const Duration(milliseconds: 500));
+      await db.connect(
+        connector: _connector,
+        options: const SyncOptions(
+          syncImplementation: SyncClientImplementation.rust,
+        ),
+      );
+      debugPrint('[PowerSync] Reconnected successfully ✅');
+    } catch (e) {
+      debugPrint('[PowerSync] Reconnect failed: $e');
+    }
+  }
+
+  /// Actively wait for the checkpoint to apply after CRUD drain.
+  /// If the checkpoint doesn't advance within [timeout], force a reconnect.
+  /// This is faster than waiting for the passive watchdog (5s detection).
+  Future<void> waitForCheckpointOrReconnect({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    final startLastSync = db.currentStatus.lastSyncedAt;
+    debugPrint(
+        '[PowerSync] Waiting for checkpoint advancement (current: $startLastSync)...');
+
+    try {
+      await db.statusStream
+          .where(
+              (s) => s.lastSyncedAt != null && s.lastSyncedAt != startLastSync)
+          .first
+          .timeout(timeout);
+
+      debugPrint('[PowerSync] ✅ Checkpoint advanced after CRUD drain');
+    } on TimeoutException {
+      debugPrint(
+          '[PowerSync] ⚠️ Checkpoint didn\'t advance in ${timeout.inSeconds}s — forcing reconnect...');
+
+      // Only reconnect if cooldown allows
+      if (_lastReconnectTime == null ||
+          DateTime.now().difference(_lastReconnectTime!) >
+              const Duration(seconds: 10)) {
+        await _reconnect();
+      }
+    } catch (e) {
+      debugPrint('[PowerSync] waitForCheckpoint error: $e');
+    }
+  }
+
+  // ── Recoverable Watch ────────────────────────────────────────────
+
+  /// Public resilient watch — wraps db.watch() with auto-restart on error or
+  /// stream end. Use this instead of raw db.watch() in ALL repositories to
+  /// prevent permanent stream death from checkpoint blocking.
+  Stream<List<Map<String, dynamic>>> createRecoverableWatch(
+    String sql,
+    List<Object?> parameters,
+  ) {
+    StreamController<List<Map<String, dynamic>>>? controller;
+    StreamSubscription? subscription;
+    bool isCancelled = false;
+
+    void startListening() {
+      if (isCancelled) return;
+
+      subscription = db.watch(sql, parameters: parameters).listen(
+        (rows) {
+          if (!isCancelled) {
+            controller
+                ?.add(rows.map((r) => Map<String, dynamic>.from(r)).toList());
+          }
+        },
+        onError: (error) {
+          if (_debugSync)
+            debugPrint(
+                '[PowerSync Watch] Error: $error — restarting stream...');
+          subscription?.cancel();
+          if (!isCancelled) {
+            Future.delayed(const Duration(seconds: 1), startListening);
+          }
+        },
+        onDone: () {
+          if (_debugSync)
+            debugPrint(
+                '[PowerSync Watch] Stream ended (checkpoint issue?) — restarting...');
+          subscription?.cancel();
+          if (!isCancelled) {
+            Future.delayed(const Duration(seconds: 1), startListening);
+          }
+        },
+      );
+    }
+
+    controller = StreamController<List<Map<String, dynamic>>>.broadcast(
+      onListen: () {
+        isCancelled = false;
+        startListening();
+      },
+      onCancel: () {
+        isCancelled = true;
+        subscription?.cancel();
+      },
+    );
+
+    return controller.stream;
+  }
+
+  // ── Watch Methods ───────────────────────────────────────────────
+
   Stream<List<Map<String, dynamic>>> watchWorkOrdersByDate(
       DateTime selectedDate) {
     final dateStr = selectedDate.toIso8601String().split('T')[0];
-
-    return db.watch(
+    return createRecoverableWatch(
       'SELECT * FROM hc_patient_visit_detail WHERE visible = 1 AND visit_date = ? ORDER BY visit_time ASC',
-      parameters: [dateStr],
-    ).map((rows) {
-      return rows.map((r) => Map<String, dynamic>.from(r)).toList();
-    });
+      [dateStr],
+    );
   }
 
   Stream<List<Map<String, dynamic>>> watchWorkOrdersFromDate(
@@ -159,26 +305,17 @@ class PowerSyncService {
     final startStr = startDate.toIso8601String().split('T')[0];
     final endDate = startDate.add(const Duration(days: 6));
     final endStr = endDate.toIso8601String().split('T')[0];
-
-    return db.watch(
+    return createRecoverableWatch(
       'SELECT * FROM hc_patient_visit_detail WHERE visible = 1 AND visit_date >= ? AND visit_date <= ? ORDER BY visit_date ASC, visit_time ASC',
-      parameters: [startStr, endStr],
-    ).map((rows) {
-      return rows.map((r) => Map<String, dynamic>.from(r)).toList();
-    });
+      [startStr, endStr],
+    );
   }
 
   Stream<List<Map<String, dynamic>>> watchTechnicianWorkOrders(String techId) {
-    return db.watch(
-      '''
-        SELECT * FROM hc_patient_visit_detail 
-        WHERE assigned_id = ? AND visible = 1
-        ORDER BY visit_time ASC
-        ''',
-      parameters: [techId],
-    ).map((rows) {
-      return rows.map((r) => Map<String, dynamic>.from(r)).toList();
-    });
+    return createRecoverableWatch(
+      'SELECT * FROM hc_patient_visit_detail WHERE assigned_id = ? AND visible = 1 ORDER BY visit_time ASC',
+      [techId],
+    );
   }
 
   Future<void> createWorkOrder(WorkOrder order) async {
@@ -215,7 +352,7 @@ class PowerSyncService {
       data['bill_amount'],
       data['received_amount'],
       data['discount_amount'],
-      data['doc'],
+      data['doc'] is String ? data['doc'] : jsonEncode(data['doc']),
       data['bill_number'],
       data['lab_number'],
       data['visible'],
@@ -264,7 +401,7 @@ class PowerSyncService {
           data['bill_amount'],
           data['received_amount'],
           data['discount_amount'],
-          docToUse,
+          docToUse is String ? docToUse : jsonEncode(docToUse),
           data['last_updated_by'],
           now,
           data['id'],
@@ -355,7 +492,7 @@ class PowerSyncService {
   Stream<List<Map<String, dynamic>>> watchCancelledWorkOrdersByDate(
       DateTime date) {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
-    return db.watch(
+    return createRecoverableWatch(
       '''
       SELECT * FROM hc_patient_visit_detail 
       WHERE visit_date = ? 
@@ -363,35 +500,35 @@ class PowerSyncService {
       AND visible = 1
       ORDER BY visit_time DESC
       ''',
-      parameters: [dateStr],
-    ).map((rows) => rows.map((r) => Map<String, dynamic>.from(r)).toList());
+      [dateStr],
+    );
   }
 
-  /// Wait for the upload queue to fully drain (all local writes synced to server).
-  /// Falls back to a timeout to avoid hanging indefinitely.
+  /// Wait for the CRUD upload queue to fully drain (all local writes uploaded).
+  /// Directly polls the ps_crud table instead of relying on sync status flags,
+  /// because the status flag has a race condition: the local write is in the
+  /// queue but PowerSync hasn't started uploadData() yet, so `uploading` is
+  /// still false and the old approach returned immediately.
   Future<void> waitForSync(
       {Duration timeout = const Duration(seconds: 15)}) async {
-    // If not uploading and connected, already synced
-    final current = db.currentStatus;
-    if (!current.uploading && current.connected) return;
+    final deadline = DateTime.now().add(timeout);
+    const pollInterval = Duration(milliseconds: 300);
 
-    final completer = Completer<void>();
-    late StreamSubscription<SyncStatus> sub;
-
-    sub = db.statusStream.listen((status) {
-      if (!status.uploading && status.connected) {
-        if (!completer.isCompleted) completer.complete();
-        sub.cancel();
+    while (DateTime.now().isBefore(deadline)) {
+      try {
+        final result = await db.getAll('SELECT count(*) as cnt FROM ps_crud');
+        final count = result.first['cnt'] as int? ?? 0;
+        if (count == 0) {
+          debugPrint('[PowerSync] waitForSync: CRUD queue empty ✅');
+          return;
+        }
+        debugPrint('[PowerSync] waitForSync: $count CRUD entries pending...');
+      } catch (e) {
+        debugPrint('[PowerSync] waitForSync query error: $e');
       }
-    });
-
-    try {
-      await completer.future.timeout(timeout, onTimeout: () {
-        debugPrint('[PowerSync] waitForSync timed out after $timeout');
-      });
-    } finally {
-      await sub.cancel();
+      await Future.delayed(pollInterval);
     }
+    debugPrint('[PowerSync] waitForSync timed out after $timeout');
   }
 
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(

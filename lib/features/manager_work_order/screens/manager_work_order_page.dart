@@ -34,8 +34,17 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
         if (provider.isInitializing) {
           provider.initialize();
         }
-        final today = ref.read(managerTodayPod);
-        provider.loadWorkOrdersByDate(today);
+        final selectedDate = ref.read(managerSelectedDatePod);
+        // Check if we are already watching this date to avoid killing the stream
+        if (provider.currentDate != selectedDate ||
+            provider.workOrders.isEmpty) {
+          debugPrint(
+              'ManagerWorkOrderPage: initializing stream for $selectedDate');
+          provider.loadWorkOrdersByDate(selectedDate);
+        } else {
+          debugPrint(
+              'ManagerWorkOrderPage: Stream already active for $selectedDate - SKIPPING RELOAD');
+        }
       });
     });
   }
@@ -220,8 +229,8 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
             Text('Error: ${provider.errorMessage}'),
             ElevatedButton(
               onPressed: () async {
-                final today = ref.read(managerTodayPod);
-                await provider.loadWorkOrdersByDate(today);
+                final selectedDate = ref.read(managerSelectedDatePod);
+                await provider.loadWorkOrdersByDate(selectedDate);
               },
               child: const Text('Retry'),
             ),
@@ -335,12 +344,16 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           builder: (context) => const AddWorkOrderPage(),
           fullscreenDialog: true),
     )
-        .then((value) async {
-      if (value == 'refresh') {
-        final selectedDate = ref.read(managerSelectedDatePod);
-        await ref
-            .read(managerWorkOrderProvider)
-            .loadWorkOrdersByDate(selectedDate);
+        .then((value) {
+      // No loadWorkOrdersByDate needed — db.watch() auto-detects
+      // the INSERT/UPDATE and re-emits the updated list.
+      if (value == 'refresh' && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Work Order Saved'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     });
   }

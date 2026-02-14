@@ -16,6 +16,7 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
   List<WorkOrder> _workOrders = [];
   bool _isLoading = false;
   String? _errorMessage;
+  DateTime? _currentDate;
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
 
   List<WorkOrder> get workOrders => _workOrders;
@@ -25,6 +26,7 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
   bool get isSyncing => _repo.isSyncing;
   bool get hasPendingUploads => _repo.hasPendingUploads;
   String? get errorMessage => _errorMessage;
+  DateTime? get currentDate => _currentDate;
 
   Future<void> initialize() async {
     _isLoading = true;
@@ -34,23 +36,41 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// After a local mutation, wait for the CRUD queue to drain,
+  /// then do an immediate one-shot query so the UI is up-to-date.
+  /// The recoverable watch streams in PowerSyncService will handle
+  /// catching any subsequent updates automatically.
+  Future<void> syncAfterMutation() async {
+    if (_currentDate == null) return;
+    debugPrint('[Manager] syncAfterMutation — waiting for CRUD drain...');
+    try {
+      // Step 1: Wait for all pending writes to upload.
+      await _repo.waitForSync(timeout: const Duration(seconds: 10));
+      debugPrint('[Manager] syncAfterMutation — CRUD queue drained ✅');
+
+      // Step 2: Actively wait for checkpoint to apply (or force reconnect).
+      // This ensures the server echo is applied before the one-shot query.
+      await _repo.waitForCheckpointOrReconnect(
+          timeout: const Duration(seconds: 3));
+
+      // Step 3: Immediate one-shot query so the UI is up-to-date NOW.
+      final latest = await _repo.getWorkOrdersByDate(_currentDate!);
+      _workOrders = latest;
+      _errorMessage = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[Manager] syncAfterMutation failed: $e');
+    }
+  }
+
   Future<void> loadWorkOrdersByDate(DateTime selectedDate,
       {bool fromDateOnwards = false}) async {
-    debugPrint(
-        'Manager loading orders for: $selectedDate (fromDateOnwards: $fromDateOnwards)');
+    _currentDate = selectedDate;
 
     await _repo.ensureInitialized();
 
-    // DEBUG: Check sync status
-    debugPrint(
-        '🔍 [Manager DEBUG] Sync status - connected: ${_repo.isConnected}, syncing: ${_repo.isSyncing}');
-    debugPrint('🔍 [Manager DEBUG] Full sync status: ${_repo.syncStatus}');
-
     try {
       await _ordersSubscription?.cancel();
-
-      final dateStr = selectedDate.toIso8601String().split('T')[0];
-      debugPrint('[Manager DEBUG] Query date string: $dateStr');
 
       final stream = fromDateOnwards
           ? _repo.watchWorkOrdersFromDate(selectedDate)
@@ -58,25 +78,18 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
 
       _ordersSubscription = stream.listen(
         (orders) {
-          debugPrint(
-              '[Manager DEBUG] Stream emitted ${orders.length} work orders');
-          if (orders.isNotEmpty) {
-            debugPrint(
-                ' [Manager DEBUG] First order: id=${orders.first.id}, date=${orders.first.visitDate}, name=${orders.first.patientName}');
-          }
-          debugPrint('Manager UI notified with ${orders.length} work orders');
           _workOrders = orders;
           _errorMessage = null;
           notifyListeners();
         },
         onError: (error) {
-          debugPrint(' Manager Stream Error: $error');
+          debugPrint('[Manager] Stream Error: $error');
           _errorMessage = 'Failed to load: $error';
           notifyListeners();
         },
       );
     } catch (e) {
-      debugPrint(' loadWorkOrdersByDate failed: $e');
+      debugPrint('[Manager] loadWorkOrdersByDate failed: $e');
       _errorMessage = 'Error: $e';
       notifyListeners();
     }
@@ -150,6 +163,7 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    debugPrint('ManagerWorkOrderProvider DISPOSED - Closing stream!');
     _ordersSubscription?.cancel();
     super.dispose();
   }
@@ -162,9 +176,9 @@ final managerWorkOrderProvider =
 });
 
 final managerTodayPod = StateProvider<DateTime>((_) {
-  if (Settings.development) {
-    return DateTime(2022, 12, 14);
-  }
+  // if (Settings.development) {
+  //   return DateTime(2022, 12, 14);
+  // }
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);
 });

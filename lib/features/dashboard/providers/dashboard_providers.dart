@@ -95,10 +95,20 @@ class DailyReportNotifier extends BaseDashboardNotifier {
 }
 
 class WeeklyReportNotifier extends BaseDashboardNotifier {
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 7));
-  DateTime _endDate = DateTime.now().subtract(const Duration(days: 1));
+  late DateTime _startDate;
+  late DateTime _endDate;
 
-  WeeklyReportNotifier(super.service);
+  WeeklyReportNotifier(super.service) {
+    final now = DateTime.now();
+    // Previous full week logic
+    final lastWeek = now.subtract(const Duration(days: 7));
+    // Assume Monday is start of week
+    final monday = lastWeek.subtract(Duration(days: lastWeek.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+
+    _startDate = monday;
+    _endDate = sunday;
+  }
 
   DateTime get startDate => _startDate;
   DateTime get endDate => _endDate;

@@ -723,19 +723,19 @@
     },
     {
       "name": "powersync",
-      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/powersync-1.16.1",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/powersync-1.17.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "powersync_core",
-      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/powersync_core-1.6.1",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/powersync_core-1.7.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "powersync_flutter_libs",
-      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/powersync_flutter_libs-0.4.12",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/powersync_flutter_libs-0.4.14",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -873,13 +873,13 @@
     },
     {
       "name": "sqlite3_web",
-      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/sqlite3_web-0.3.2",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/sqlite3_web-0.4.1",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.5"
     },
     {
       "name": "sqlite_async",
-      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/sqlite_async-0.12.2",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/sqlite_async-0.13.1",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },

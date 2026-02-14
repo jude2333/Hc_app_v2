@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
 import 'price_list_model.dart';
+import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 
 class PriceListRepository {
   final PowerSyncDatabase _db;
+  final PowerSyncService _powerSync = PowerSyncService.instance;
 
   PriceListRepository(this._db);
 
@@ -96,8 +98,6 @@ class PriceListRepository {
   }
 
   Stream<List<PriceListItem>> watchAll({String query = ''}) {
-    debugPrint(' [PriceListRepo] watchAll(query: "$query")');
-
     String sql;
     List<dynamic> params = [];
 
@@ -115,7 +115,7 @@ class PriceListRepository {
       params = [searchTerm, searchTerm];
     }
 
-    return _db.watch(sql, parameters: params).map((results) {
+    return _powerSync.createRecoverableWatch(sql, params).map((results) {
       return results.map((row) => PriceListItem.fromRow(row)).toList();
     });
   }

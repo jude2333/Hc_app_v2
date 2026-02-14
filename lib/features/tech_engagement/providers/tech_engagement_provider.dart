@@ -103,10 +103,16 @@ class TechEngagementState {
 class TechEngagementNotifier extends StateNotifier<TechEngagementState> {
   final Ref ref;
 
+  // TechEngagementNotifier(this.ref)
+  //     : super(TechEngagementState(
+  //         selectedDate:
+  //             Settings.development ? DateTime(2022, 12, 14) : DateTime.now(),
+  //         aggregates: AggregateSummary(),
+  //       ));
+
   TechEngagementNotifier(this.ref)
       : super(TechEngagementState(
-          selectedDate:
-              Settings.development ? DateTime(2022, 12, 14) : DateTime.now(),
+          selectedDate: DateTime.now(),
           aggregates: AggregateSummary(),
         ));
 

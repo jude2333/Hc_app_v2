@@ -14,13 +14,15 @@ class SearchSkeleton extends StatelessWidget {
   Widget _buildMobileSkeleton() {
     return ListView.builder(
       padding: EdgeInsets.all(AppSpacing.md),
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 5,
+      itemCount: 8,
       itemBuilder: (context, index) {
         return Card(
           margin: EdgeInsets.only(bottom: AppSpacing.md),
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.mdAll,
+              side: BorderSide(color: Colors.grey.shade200)),
+          color: Colors.white,
           child: Padding(
             padding: AppPadding.card,
             child: Column(
@@ -28,27 +30,70 @@ class SearchSkeleton extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _shimmerBox(width: 140, height: 18),
-                    const Spacer(),
-                    _shimmerBox(width: 70, height: 24, borderRadius: 12),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Container(
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Container(
+                      width: 20,
+                      height: 20,
+                      color: Colors.grey.shade100,
+                    ),
                   ],
                 ),
                 SizedBox(height: AppSpacing.md),
-                _shimmerBox(width: 200, height: 14),
-                SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    _shimmerBox(width: 100, height: 12),
+                    Container(
+                        width: 14, height: 14, color: Colors.grey.shade200),
+                    SizedBox(width: 4),
+                    Container(
+                        width: 80, height: 14, color: Colors.grey.shade100),
                     SizedBox(width: AppSpacing.md),
-                    _shimmerBox(width: 80, height: 12),
+                    Container(
+                        width: 14, height: 14, color: Colors.grey.shade200),
+                    SizedBox(width: 4),
+                    Container(
+                        width: 100, height: 14, color: Colors.grey.shade100),
                   ],
                 ),
-                SizedBox(height: AppSpacing.sm),
+                SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    _shimmerBox(width: 60, height: 22, borderRadius: 11),
+                    Container(
+                      width: 60,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                    ),
                     SizedBox(width: AppSpacing.sm),
-                    _shimmerBox(width: 80, height: 22, borderRadius: 11),
+                    Container(
+                      width: 80,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -60,86 +105,76 @@ class SearchSkeleton extends StatelessWidget {
   }
 
   Widget _buildDesktopSkeleton() {
+    final flexFactors = [1, 4, 2, 1, 3, 3, 2, 3, 3, 4, 2];
+
     return Card(
-      elevation: AppSizes.cardElevation,
-      color: AppColors.surface,
+      elevation: 4,
+      color: Colors.white,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
           Container(
-            padding: AppPadding.tableCell,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: Colors.grey.shade50,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
+              border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200, width: 1)),
             ),
             child: Row(
-              children: List.generate(
-                8,
-                (index) => Expanded(
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: AppColors.tableBorder,
-                      borderRadius: AppRadius.xsAll,
-                    ),
-                  ),
-                ),
-              ),
+              children: flexFactors
+                  .map((flex) => Expanded(
+                        flex: flex,
+                        child: Container(
+                          height: 16,
+                          margin: EdgeInsets.only(right: AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ))
+                  .toList(),
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 8,
+            child: ListView.separated(
+              itemCount: 15,
+              separatorBuilder: (ctx, i) =>
+                  Divider(height: 1, color: Colors.grey.shade100),
               itemBuilder: (context, index) {
-                return Container(
-                  padding: AppPadding.tableCell,
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: AppColors.divider),
-                    ),
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md, // Match table row padding roughly
                   ),
                   child: Row(
-                    children: List.generate(
-                      8,
-                      (i) => Expanded(
-                        child: Container(
-                          margin:
-                              EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: AppColors.tableBorder,
-                            borderRadius: AppRadius.xsAll,
-                          ),
-                        ),
-                      ),
-                    ),
+                    children: flexFactors
+                        .map((flex) => Expanded(
+                              flex: flex,
+                              child: Container(
+                                height: 14,
+                                margin: EdgeInsets.only(right: AppSpacing.sm),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ))
+                        .toList(),
                   ),
                 );
               },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _shimmerBox({
-    required double width,
-    required double height,
-    double borderRadius = 4,
-  }) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.tableBorder,
-        borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
   }

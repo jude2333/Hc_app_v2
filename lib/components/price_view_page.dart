@@ -5,7 +5,7 @@ import 'package:anderson_crm_flutter/features/price_list/price_list.dart';
 
 import '../features/core/widgets/common/common_widgets.dart';
 
-class PriceViewPage extends ConsumerWidget {
+class PriceViewPage extends ConsumerStatefulWidget {
   const PriceViewPage({Key? key}) : super(key: key);
 
   static final NumberFormat _currencyFormatter = NumberFormat.currency(
@@ -15,7 +15,21 @@ class PriceViewPage extends ConsumerWidget {
   );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PriceViewPage> createState() => _PriceViewPageState();
+}
+
+class _PriceViewPageState extends ConsumerState<PriceViewPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Trigger initial load of all items
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(priceListProvider.notifier).init();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(priceListProvider);
 
     return Scaffold(
@@ -74,7 +88,15 @@ class PriceViewPage extends ConsumerWidget {
         ),
       ),
       body: state.isLoading && state.items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 800) {
+                  return _buildDesktopSkeleton(context);
+                } else {
+                  return _buildMobileSkeleton(context);
+                }
+              },
+            )
           : state.errorMessage != null
               ? Center(child: Text('Error: ${state.errorMessage}'))
               : state.items.isEmpty
@@ -99,6 +121,151 @@ class PriceViewPage extends ConsumerWidget {
                         }
                       },
                     ),
+    );
+  }
+
+  Widget _buildMobileSkeleton(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: 8,
+      itemBuilder: (context, index) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    3,
+                    (index) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 10,
+                          margin: const EdgeInsets.only(bottom: 4),
+                          color: Colors.grey.shade100,
+                        ),
+                        Container(
+                          width: 60,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopSkeleton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Card(
+        elevation: 4,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                children: List.generate(
+                  5,
+                  (index) => Expanded(
+                    flex: index == 1 ? 3 : (index == 0 ? 2 : 1),
+                    child: Container(
+                      height: 16,
+                      margin: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.separated(
+                itemCount: 15,
+                separatorBuilder: (ctx, i) =>
+                    const Divider(height: 1, color: Colors.black12),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: List.generate(
+                        5,
+                        (colIndex) => Expanded(
+                          flex: colIndex == 1 ? 3 : (colIndex == 0 ? 2 : 1),
+                          child: Container(
+                            height: 14,
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -152,7 +319,7 @@ class PriceViewPage extends ConsumerWidget {
                 key: ValueKey(items[index].id),
                 child: _MobilePriceCard(
                   item: items[index],
-                  formatter: _currencyFormatter,
+                  formatter: PriceViewPage._currencyFormatter,
                 ),
               );
             },
@@ -200,7 +367,8 @@ class PriceViewPage extends ConsumerWidget {
                     const Divider(height: 1, color: Colors.black12),
                 itemBuilder: (context, index) {
                   return _DesktopExpandableRow(
-                      item: items[index], formatter: _currencyFormatter);
+                      item: items[index],
+                      formatter: PriceViewPage._currencyFormatter);
                 },
               ),
             ),

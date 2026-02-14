@@ -34,6 +34,21 @@
     <link rel="manifest" href="manifest.json" />
   </head>
   <body>
+    <script>
+      // Bypass Flutter's service worker cache for PowerSync workers & WASM.
+      // The Flutter service worker aggressively caches ALL static assets,
+      // including powersync_*.worker.js and sqlite3.wasm. This causes stale
+      // workers to be served even after a new deploy, breaking db.watch()
+      // real-time updates due to SDK/worker version mismatch.
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var reg of registrations) {
+            // Force update check on every page load
+            reg.update();
+          }
+        });
+      }
+    </script>
     <script src="flutter_bootstrap.js" async></script>
   </body>
 </html>

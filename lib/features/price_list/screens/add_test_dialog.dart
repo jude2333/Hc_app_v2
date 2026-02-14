@@ -358,14 +358,76 @@ class _AddTestDialogState extends ConsumerState<AddTestDialog> {
   }
 }
 
-class _SearchTestSheet extends ConsumerWidget {
+class _SearchTestSheet extends ConsumerStatefulWidget {
   final bool useCghsPrice;
   final Function(Map<String, dynamic>) onSelect;
 
   const _SearchTestSheet({required this.useCghsPrice, required this.onSelect});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SearchTestSheet> createState() => _SearchTestSheetState();
+}
+
+class _SearchTestSheetState extends ConsumerState<_SearchTestSheet> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(priceListProvider.notifier).init();
+    });
+  }
+
+  Widget _buildSkeleton() {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      itemCount: 10,
+      separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Container(
+                  height: 12,
+                  margin: const EdgeInsets.only(right: 8),
+                  color: Colors.grey.shade100,
+                ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Container(
+                  height: 14,
+                  margin: const EdgeInsets.only(right: 8),
+                  color: Colors.grey.shade200,
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Container(
+                  height: 12,
+                  color: Colors.grey.shade100,
+                ),
+              ),
+              if (widget.useCghsPrice)
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    height: 12,
+                    margin: const EdgeInsets.only(left: 8),
+                    color: Colors.grey.shade100,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(priceListProvider);
     final notifier = ref.read(priceListProvider.notifier);
 
@@ -418,15 +480,14 @@ class _SearchTestSheet extends ConsumerWidget {
                 const _HeaderCell('Department', flex: 2),
                 const _HeaderCell('Investigation', flex: 3),
                 const _HeaderCell('Price', flex: 1),
-                if (useCghsPrice) const _HeaderCell('CGHS', flex: 1),
+                if (widget.useCghsPrice) const _HeaderCell('CGHS', flex: 1),
                 const SizedBox(width: 40),
               ],
             ),
           ),
           Expanded(
             child: state.isLoading && state.items.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.orange))
+                ? _buildSkeleton()
                 : state.items.isEmpty
                     ? const Center(
                         child: Text('No items found',
@@ -441,7 +502,7 @@ class _SearchTestSheet extends ConsumerWidget {
                           final cghsPrice = item.cghsPrice;
 
                           return InkWell(
-                            onTap: () => onSelect(item.toDisplayMap()),
+                            onTap: () => widget.onSelect(item.toDisplayMap()),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 12),
@@ -452,7 +513,7 @@ class _SearchTestSheet extends ConsumerWidget {
                                       flex: 3, isBold: true),
                                   _DataCell(Util.formatMoney(price),
                                       flex: 1, color: Colors.green),
-                                  if (useCghsPrice)
+                                  if (widget.useCghsPrice)
                                     _DataCell(Util.formatMoney(cghsPrice),
                                         flex: 1, color: Colors.blue),
                                 ],
