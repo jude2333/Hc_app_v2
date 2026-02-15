@@ -409,29 +409,9 @@ class _TechnicianExpandedContentState
 
   /// Opens fullscreen viewer for image or PDF
   void _openFileViewer(String path) async {
-    final messenger = ScaffoldMessenger.of(context);
     final fileName = FileService.getFileName(path);
 
-    messenger.showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white)),
-            const SizedBox(width: 12),
-            Text('Loading $fileName...'),
-          ],
-        ),
-        duration: const Duration(seconds: 30),
-      ),
-    );
-
     try {
-      messenger.hideCurrentSnackBar();
-
       if (FileService.isPdf(path)) {
         Navigator.push(
           context,
@@ -451,10 +431,11 @@ class _TechnicianExpandedContentState
         _downloadAndSave(path);
       }
     } catch (e) {
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -113,12 +114,11 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
         if (_blobUrlCache.containsKey(viewType)) {
           _blobUrl = _blobUrlCache[viewType];
         } else {
-          _blobUrl = _createBlobUrl(bytes);
+          _blobUrl = _createWebViewerUrl(bytes);
           _blobUrlCache[viewType] = _blobUrl!;
         }
 
-        // Register the factory ONCE per viewType — must happen here (not in build)
-        // because registerViewFactory is one-shot and the blob URL must be ready.
+        // Register the factory ONCE per viewType
         if (!_registeredViewTypes.contains(viewType)) {
           final urlForFactory = _blobUrl!;
           ui.platformViewRegistry.registerViewFactory(
@@ -127,7 +127,10 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
               ..src = urlForFactory
               ..style.border = 'none'
               ..style.width = '100%'
-              ..style.height = '100%',
+              ..style.height = '100%'
+              ..setAttribute('allow', 'fullscreen')
+              ..setAttribute(
+                  'sandbox', 'allow-scripts allow-same-origin allow-popups'),
           );
           _registeredViewTypes.add(viewType);
         }
@@ -166,12 +169,71 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
     }
   }
 
-  String _createBlobUrl(Uint8List bytes) {
-    if (kIsWeb) {
-      final blob = html.Blob([bytes], 'application/pdf');
-      return html.Url.createObjectUrlFromBlob(blob);
-    }
-    return '';
+  /// Creates a blob URL containing an HTML page with PDF.js that renders
+  /// the PDF on a canvas. Works on ALL browsers including mobile.
+  String _createWebViewerUrl(Uint8List bytes) {
+    final base64Data = base64Encode(bytes);
+    final htmlContent = _buildPdfJsHtml(base64Data);
+    final blob = html.Blob([htmlContent], 'text/html');
+    return html.Url.createObjectUrlFromBlob(blob);
+  }
+
+  /// Builds a self-contained HTML page that uses PDF.js (CDN) to render
+  /// the PDF from base64 data. Renders all pages as scrollable canvases.
+  String _buildPdfJsHtml(String base64Data) {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, user-scalable=yes">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #525659; }
+  #container { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+  canvas { display: block; margin: 6px auto; box-shadow: 0 2px 8px rgba(0,0,0,0.3); background: white; }
+  .msg { color: #ccc; font-family: -apple-system, sans-serif; padding: 40px; text-align: center; font-size: 15px; }
+  .err { color: #ff6b6b; }
+</style>
+</head>
+<body>
+<div id="container"><div class="msg">Rendering PDF\u2026</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+var raw = atob("$base64Data");
+var uint8 = new Uint8Array(raw.length);
+for (var i = 0; i < raw.length; i++) uint8[i] = raw.charCodeAt(i);
+
+pdfjsLib.getDocument({data: uint8}).promise.then(function(pdf) {
+  var container = document.getElementById("container");
+  container.innerHTML = "";
+  var rendered = 0;
+  for (var p = 1; p <= pdf.numPages; p++) {
+    (function(pageNum) {
+      pdf.getPage(pageNum).then(function(page) {
+        var vp1 = page.getViewport({scale: 1});
+        var scale = Math.min((window.innerWidth - 16) / vp1.width, 2.0);
+        var viewport = page.getViewport({scale: scale});
+        var canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.order = pageNum;
+        container.appendChild(canvas);
+        page.render({canvasContext: canvas.getContext("2d"), viewport: viewport});
+      });
+    })(p);
+  }
+}).catch(function(e) {
+  document.getElementById("container").innerHTML =
+    '<div class="msg err">Failed to load PDF: ' + e.message + "</div>";
+});
+</script>
+</body>
+</html>
+''';
   }
 
   @override

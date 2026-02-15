@@ -369,30 +369,8 @@ class ManagerExpandedContent extends StatelessWidget {
   }
 
   void _openFileViewer(BuildContext context, String path) async {
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            Text('Loading ${FileService.getFileName(path)}...'),
-          ],
-        ),
-        duration: const Duration(seconds: 30),
-      ),
-    );
-
     try {
       final fileName = FileService.getFileName(path);
-
-      messenger.hideCurrentSnackBar();
 
       if (FileService.isPdf(path)) {
         Navigator.push(
@@ -416,8 +394,7 @@ class ManagerExpandedContent extends StatelessWidget {
         );
       }
     } catch (e) {
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
           backgroundColor: Colors.red,

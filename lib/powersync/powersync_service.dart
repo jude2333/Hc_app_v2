@@ -313,7 +313,7 @@ class PowerSyncService {
 
   Stream<List<Map<String, dynamic>>> watchTechnicianWorkOrders(String techId) {
     return createRecoverableWatch(
-      'SELECT * FROM hc_patient_visit_detail WHERE assigned_id = ? AND visible = 1 ORDER BY visit_time ASC',
+      'SELECT * FROM hc_patient_visit_detail WHERE assigned_id = ? AND visible = 1 ORDER BY visit_date DESC, visit_time DESC',
       [techId],
     );
   }
