@@ -37,9 +37,6 @@ class TechnicianWorkOrderRepository {
 
   final PostgresService postgresService;
 
-  StreamSubscription<SyncStatus>? _statusSubscription;
-  SyncStatus? _syncStatus;
-
   bool _isInitializing = true;
   Completer<void>? _initCompleter;
 
@@ -47,15 +44,16 @@ class TechnicianWorkOrderRepository {
     required this.storage,
     required this.postgresService,
   }) {
-    debugPrint('🏭 TechnicianWorkOrderRepository CONSTRUCTOR called');
+    debugPrint(' TechnicianWorkOrderRepository CONSTRUCTOR called');
   }
 
   bool get isInitializing => _isInitializing;
-  bool get isConnected => _syncStatus?.connected ?? false;
-  bool get isSyncing =>
-      (_syncStatus?.downloading ?? false) || (_syncStatus?.uploading ?? false);
-  bool get hasPendingUploads => _syncStatus?.uploading ?? false;
-  SyncStatus? get syncStatus => _syncStatus;
+
+  /// Stream of sync status changes — consumed by techSyncStatusProvider
+  /// so AppBar indicators rebuild independently from the work order list.
+  Stream<SyncStatus> watchSyncStatus() {
+    return _powerSync.watchStatus();
+  }
 
   Future<void> initialize() async {
     if (!_isInitializing) return;
@@ -63,7 +61,7 @@ class TechnicianWorkOrderRepository {
       return _initCompleter!.future;
     }
 
-    debugPrint('🚀 TechnicianWorkOrderRepository.initialize() START');
+    debugPrint(' TechnicianWorkOrderRepository.initialize() START');
     _initCompleter = Completer<void>();
 
     Future.microtask(() async {
@@ -83,15 +81,14 @@ class TechnicianWorkOrderRepository {
         },
       );
 
-      _statusSubscription = _powerSync.watchStatus().listen((status) {
-        _syncStatus = status;
-      });
+      // Sync status is now handled by techSyncStatusProvider
+      // via watchSyncStatus() — no silent listener needed here.
 
       _isInitializing = false;
       _initCompleter?.complete();
-      debugPrint('✅ TechnicianWorkOrderRepository.initialize() COMPLETE');
+      debugPrint(' TechnicianWorkOrderRepository.initialize() COMPLETE');
     } catch (e) {
-      debugPrint('❌ TechnicianWorkOrderRepository.initialize() FAILED: $e');
+      debugPrint(' TechnicianWorkOrderRepository.initialize() FAILED: $e');
       _isInitializing = false;
       _initCompleter?.completeError(e);
     }
@@ -134,7 +131,7 @@ class TechnicianWorkOrderRepository {
       await _powerSync.createWorkOrder(order);
       return true;
     } catch (e) {
-      debugPrint('❌ Create failed: $e');
+      debugPrint(' Create failed: $e');
       return false;
     }
   }
@@ -144,7 +141,7 @@ class TechnicianWorkOrderRepository {
     try {
       return await _powerSync.updateWorkOrder(order, customDoc: customDoc);
     } catch (e) {
-      debugPrint('❌ Update failed: $e');
+      debugPrint(' Update failed: $e');
       return false;
     }
   }
@@ -154,7 +151,7 @@ class TechnicianWorkOrderRepository {
       await _powerSync.softDeleteWorkOrder(id, user);
       return true;
     } catch (e) {
-      debugPrint('❌ Soft delete failed: $e');
+      debugPrint(' Soft delete failed: $e');
       return false;
     }
   }
@@ -178,7 +175,7 @@ class TechnicianWorkOrderRepository {
   }
 
   void dispose() {
-    _statusSubscription?.cancel();
+    // No subscriptions to clean up — sync status is handled by StreamProvider
   }
 }
 

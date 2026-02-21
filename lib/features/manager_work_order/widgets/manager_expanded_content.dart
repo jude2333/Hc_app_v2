@@ -24,7 +24,7 @@ class ManagerExpandedContent extends StatelessWidget {
         children: [
           _buildInfoTable(context),
           const SizedBox(height: AppSpacing.md),
-          if (workOrder.prescriptionPath.isNotEmpty)
+          if (workOrder.prescriptionPhoto.isNotEmpty)
             _buildPrescriptionSection(context),
           if (workOrder.status == 'cancelled') _buildCancellationSection(),
           _buildProcessSteps(),
@@ -98,7 +98,7 @@ class ManagerExpandedContent extends StatelessWidget {
   }
 
   Widget _buildPrescriptionSection(BuildContext context) {
-    final path = workOrder.prescriptionPath;
+    final path = workOrder.prescriptionPhoto;
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Wrap(
@@ -108,7 +108,7 @@ class ManagerExpandedContent extends StatelessWidget {
         children: [
           _LabelChip(label: 'Prescription', color: AppColors.error),
           _ActionLinkChip(
-            label: _getName(path),
+            label: _getPrescriptionFileNames(path),
             color: AppColors.secondary,
             onTap: () => _viewFile(context, path),
           ),

@@ -416,13 +416,6 @@ class WorkOrder {
 
     if (process != null) {
       updatedDoc['process'] = process;
-    } else if (prescriptionPath != null) {
-      updatedDoc['process'] ??= {};
-      updatedDoc['process']['fifth_step'] = prescriptionPath;
-      if (prescriptionPath.isNotEmpty) {
-        updatedDoc['process']['prescription_uploaded_at'] =
-            DateTime.now().toIso8601String();
-      }
     }
 
     if (settings != null) updatedDoc['settings'] = settings;
@@ -630,7 +623,7 @@ class WorkOrder {
     String? pincode,
     String? doctorName,
     String? freeText,
-    String? prescriptionPath,
+    List<String>? prescriptionPaths,
     int? b2bClientId,
     String? b2bClientName,
     bool? vip,
@@ -644,8 +637,13 @@ class WorkOrder {
     final docId = 'work_order:$appointmentDate:${const Uuid().v4()}';
     // Use doc_id as the PowerSync id — matches sync rules (doc_id as id)
     final id = docId;
-    final now = DateTime.now().toIso8601String();
+
     final createdEntry = '$appointmentDate | $managerName | Work Order Created';
+
+    final prescriptionJoined =
+        (prescriptionPaths != null && prescriptionPaths.isNotEmpty)
+            ? prescriptionPaths.join(',')
+            : '';
 
     final initialDocMap = {
       '_id': docId,
@@ -657,7 +655,7 @@ class WorkOrder {
       'pincode': pincode ?? '',
       'doctor_name': doctorName ?? '',
       'free_text': freeText ?? '',
-      'pres_photo': prescriptionPath ?? '',
+      'pres_photo': prescriptionJoined,
       'b2b_client_id': b2bClientId ?? 0,
       'b2b_client_name': b2bClientName ?? '',
       'vip_client': vip == true ? 1 : 0,
@@ -668,9 +666,8 @@ class WorkOrder {
         'second_step': '',
         'third_step': '',
         'fourth_step': '',
-        'fifth_step': prescriptionPath ?? '',
-        'prescription_uploaded_at':
-            prescriptionPath?.isNotEmpty == true ? now : '',
+        'fifth_step': '',
+        'prescription_uploaded_at': '',
         'proforma_uploaded_at': '',
       },
       'settings': {

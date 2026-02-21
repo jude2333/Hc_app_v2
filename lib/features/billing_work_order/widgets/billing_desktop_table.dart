@@ -9,10 +9,7 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/work_order_chips.dart';
 import '../../theme/theme.dart';
-
-final _billingSearchPod = StateProvider<String>((_) => '');
-final _billingSortColumnPod = StateProvider<String>((_) => 'date');
-final _billingSortAscendingPod = StateProvider<bool>((_) => false);
+import '../providers/billing_work_order_provider.dart';
 
 class BillingDesktopTable extends ConsumerWidget {
   final List<WorkOrder> orders;
@@ -30,41 +27,18 @@ class BillingDesktopTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final search = ref.watch(_billingSearchPod);
-    final sortCol = ref.watch(_billingSortColumnPod);
-    final sortAsc = ref.watch(_billingSortAscendingPod);
-
-    List<WorkOrder> filtered = search.isEmpty
-        ? orders
-        : orders.where((wo) {
-            final term = search.toLowerCase();
-            return wo.searchableText.contains(term);
-          }).toList();
-
-    filtered.sort((a, b) {
-      int cmp = 0;
-      switch (sortCol) {
-        case 'name':
-          cmp = a.patientName.compareTo(b.patientName);
-          break;
-        case 'total':
-          cmp = a.calculatedTotal.compareTo(b.calculatedTotal);
-          break;
-        case 'date':
-        default:
-          cmp = a.visitDate.compareTo(b.visitDate);
-          if (cmp == 0) cmp = a.visitTime.compareTo(b.visitTime);
-          break;
-      }
-      return sortAsc ? cmp : -cmp;
-    });
+    // Use the derived cached provider — filter+sort computed once,
+    // recomputed only when orders, search, sortCol, or sortAsc change.
+    final filtered = ref.watch(billingFilteredOrdersPod);
+    final sortCol = ref.watch(billingSortColumnPod);
+    final sortAsc = ref.watch(billingSortAscendingPod);
 
     void handleSort(String sortKey) {
       if (sortCol == sortKey) {
-        ref.read(_billingSortAscendingPod.notifier).state = !sortAsc;
+        ref.read(billingSortAscendingPod.notifier).state = !sortAsc;
       } else {
-        ref.read(_billingSortColumnPod.notifier).state = sortKey;
-        ref.read(_billingSortAscendingPod.notifier).state = true;
+        ref.read(billingSortColumnPod.notifier).state = sortKey;
+        ref.read(billingSortAscendingPod.notifier).state = true;
       }
     }
 
@@ -74,7 +48,7 @@ class BillingDesktopTable extends ConsumerWidget {
         children: [
           WorkOrderSearchBar(
             hintText: 'Search by name, mobile, bill number...',
-            onChanged: (v) => ref.read(_billingSearchPod.notifier).state = v,
+            onChanged: (v) => ref.read(billingSearchPod.notifier).state = v,
           ),
           SizedBox(height: AppSpacing.md),
           Expanded(
@@ -323,9 +297,8 @@ class _ExpandedContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint('testItems: ${order.testItems.toString()}');
-    debugPrint('order: ${order.toString()}');
-    final storage = ref.watch(storageRepositoryProvider);
+    // ref.read — storageRepositoryProvider is a global singleton that never changes
+    final storage = ref.read(storageRepositoryProvider);
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),

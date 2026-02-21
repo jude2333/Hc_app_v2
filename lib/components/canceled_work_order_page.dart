@@ -44,8 +44,9 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
   }
 
   void _generateDates() {
-    final DateTime baseDate =
-        Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+    // final DateTime baseDate =
+    //     Settings.development ? DateTime(2022, 12, 14) : DateTime.now();
+    final DateTime baseDate = DateTime.now();
 
     _suitableDates =
         List.generate(7, (i) => baseDate.subtract(Duration(days: i - 1)));

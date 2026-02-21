@@ -44,7 +44,9 @@ class _TechnicianExpandedContentState
     final reportStatus = wo.parsedDoc['report_status']?.toString() ?? '';
     final reportPath = wo.parsedDoc['report_path']?.toString() ?? '';
     final proformaPath = wo.parsedDoc['second_step']?.toString() ?? '';
-    final prescriptionPath = wo.prescriptionPath;
+    final prescriptionPath =
+        wo.prescriptionPath; // fifth_step (technician HC Process)
+    final presPhoto = wo.prescriptionPhoto; // pres_photo (manager upload)
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
@@ -72,9 +74,17 @@ class _TechnicianExpandedContentState
             else
               _buildInfoRow('GPay', gpayRef.isEmpty ? 'Nil' : gpayRef),
 
-            // Prescription Photo - NEW: with view/download
+            // Manager Prescription (from pres_photo - uploaded at work order creation)
+            if (presPhoto.isNotEmpty)
+              _buildFileRow(
+                'Prescription',
+                presPhoto,
+                showUpload: false,
+              ),
+
+            // HC Process Prescription (from fifth_step - uploaded by technician)
             _buildFileRow(
-              'Prescription',
+              'HC Prescription',
               prescriptionPath,
               showUpload: false,
             ),
@@ -468,7 +478,7 @@ class _TechnicianExpandedContentState
     final user = storage.getFromSession('logged_in_emp_name');
     setState(() => _remittance = value);
     final success = await ref
-        .read(technicianWorkOrderProvider)
+        .read(technicianWONotifierProvider.notifier)
         .updateRemittance(widget.workOrder, value, user);
     if (!success && mounted) {
       setState(() => _remittance = !value);
@@ -514,7 +524,7 @@ class _TechnicianExpandedContentState
                       final storage = ref.read(storageServiceProvider);
                       final user = storage.getFromSession('logged_in_emp_name');
                       final success = await ref
-                          .read(technicianWorkOrderProvider)
+                          .read(technicianWONotifierProvider.notifier)
                           .updateGPayRef(
                               widget.workOrder, controller.text, user);
                       if (mounted) {
@@ -551,7 +561,7 @@ class _TechnicianExpandedContentState
                       final storage = ref.read(storageServiceProvider);
                       final user = storage.getFromSession('logged_in_emp_name');
                       final success = await ref
-                          .read(technicianWorkOrderProvider)
+                          .read(technicianWONotifierProvider.notifier)
                           .updateRemarks(
                               widget.workOrder, controller.text, user);
                       if (!mounted) return;
@@ -600,7 +610,7 @@ class _TechnicianExpandedContentState
       final storage = ref.read(storageServiceProvider);
       final user = storage.getFromSession('logged_in_emp_name');
       final success = await ref
-          .read(technicianWorkOrderProvider)
+          .read(technicianWONotifierProvider.notifier)
           .addLabSamplePhoto(widget.workOrder, uploadedPath, user);
 
       if (mounted) {

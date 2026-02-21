@@ -66,6 +66,12 @@ class ManagerWorkOrderRepository {
   bool get hasPendingUploads => _syncStatus?.uploading ?? false;
   SyncStatus? get syncStatus => _syncStatus;
 
+  /// Stream of sync status changes — consumed by managerSyncStatusProvider
+  /// so AppBar indicators rebuild independently from the work order list.
+  Stream<SyncStatus> watchSyncStatus() {
+    return _powerSync.watchStatus();
+  }
+
   Future<void> initialize() async {
     if (!_isInitializing) return;
     if (_initCompleter != null) {
@@ -101,8 +107,10 @@ class ManagerWorkOrderRepository {
       debugPrint(' ManagerWorkOrderRepository.initialize() COMPLETE');
     } catch (e) {
       debugPrint(' ManagerWorkOrderRepository.initialize() FAILED: $e');
-      _isInitializing = false;
+      // Allow retry: reset state so initialize() can be called again
+      _isInitializing = true;
       _initCompleter?.completeError(e);
+      _initCompleter = null;
     }
   }
 

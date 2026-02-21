@@ -1,6 +1,5 @@
 // lib/models/new_work_order.dart
 import 'dart:convert';
-import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class NewWorkOrder {
@@ -287,8 +286,8 @@ class NewWorkOrder {
         'second_step': '',
         'third_step': '',
         'fourth_step': '',
-        'fifth_step': prescriptionPath,
-        'prescription_uploaded_at': prescriptionPath.isNotEmpty ? now : '',
+        'fifth_step': '',
+        'prescription_uploaded_at': '',
         'proforma_uploaded_at': '',
       },
       'settings': {

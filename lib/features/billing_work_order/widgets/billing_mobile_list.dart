@@ -10,8 +10,7 @@ import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/work_order_chips.dart';
-
-final _mobileSearchPod = StateProvider<String>((_) => '');
+import '../providers/billing_work_order_provider.dart';
 
 class BillingMobileList extends ConsumerWidget {
   final List<WorkOrder> orders;
@@ -29,7 +28,7 @@ class BillingMobileList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final search = ref.watch(_mobileSearchPod);
+    final search = ref.watch(billingSearchPod);
     final storage = ref.watch(storageRepositoryProvider);
 
     final filtered = search.isEmpty
@@ -45,7 +44,7 @@ class BillingMobileList extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           child: _DebouncedSearchBar(
             hintText: 'Search by name, mobile...',
-            onSearch: (v) => ref.read(_mobileSearchPod.notifier).state = v,
+            onSearch: (v) => ref.read(billingSearchPod.notifier).state = v,
           ),
         ),
         Expanded(

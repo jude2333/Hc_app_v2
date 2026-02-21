@@ -15,10 +15,6 @@ import '../widgets/technician_actions.dart';
 import '../widgets/technician_mobile_view.dart';
 import '../widgets/technician_expanded_content.dart';
 
-final _searchPod = StateProvider<String>((_) => '');
-final _sortColumnPod = StateProvider<String>((_) => 'date');
-final _sortAscendingPod = StateProvider<bool>((_) => false);
-
 class TechnicianWorkOrderPage extends ConsumerStatefulWidget {
   const TechnicianWorkOrderPage({Key? key}) : super(key: key);
 
@@ -33,18 +29,16 @@ class _TechnicianWorkOrderPageState
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = ref.read(technicianWorkOrderProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final notifier = ref.read(technicianWONotifierProvider.notifier);
       final storage = ref.read(storageServiceProvider);
       final techId =
           storage.getFromSession('logged_in_emp_id')?.toString() ?? '';
 
-      if (provider.isInitializing) {
-        provider.initialize();
-      }
+      await notifier.initialize();
 
       if (techId.isNotEmpty) {
-        provider.loadTechnicianWorkOrders(techId);
+        notifier.loadTechnicianWorkOrders(techId);
       }
 
       _checkSugarTestPrompt(storage);
@@ -93,8 +87,8 @@ class _TechnicianWorkOrderPageState
   }
 
   Future<void> _handleSugarTestCopy(String docId) async {
-    final provider = ref.read(technicianWorkOrderProvider);
-    final workOrder = provider.getWorkOrderById(docId);
+    final notifier = ref.read(technicianWONotifierProvider.notifier);
+    final workOrder = notifier.getWorkOrderById(docId);
     if (workOrder != null && mounted) {
       final workOrderForCopy = workOrder.copyWith(visitTime: '');
 
@@ -112,7 +106,33 @@ class _TechnicianWorkOrderPageState
 
   @override
   Widget build(BuildContext context) {
-    final provider = ref.watch(technicianWorkOrderProvider);
+    // Granular watches — only rebuild what changes
+    final isInitializing = ref.watch(
+      technicianWONotifierProvider.select((s) => s.isInitializing),
+    );
+    final isLoading = ref.watch(
+      technicianWONotifierProvider.select((s) => s.isLoading),
+    );
+    final errorMessage = ref.watch(
+      technicianWONotifierProvider.select((s) => s.errorMessage),
+    );
+    final workOrders = ref.watch(
+      technicianWONotifierProvider.select((s) => s.workOrders),
+    );
+
+    // Sync status from separate StreamProvider — AppBar only
+    final isConnected = ref.watch(techSyncStatusProvider).whenOrNull(
+              data: (status) => status.connected,
+            ) ??
+        false;
+    final isSyncing = ref.watch(techSyncStatusProvider).whenOrNull(
+          data: (status) {
+            final hasSynced = status.hasSynced ?? false;
+            if (hasSynced) return status.downloading;
+            return status.downloading || status.uploading;
+          },
+        ) ??
+        false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -135,6 +155,25 @@ class _TechnicianWorkOrderPageState
           ],
         ),
         actions: [
+          // Connection indicator
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Icon(
+              isConnected ? Icons.cloud_done : Icons.cloud_off,
+              color: isConnected ? AppColors.success : AppColors.error,
+              size: 18,
+            ),
+          ),
+          // Sync indicator
+          if (isSyncing)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
           IconButton(
             tooltip: 'Price view',
             icon: const Icon(Icons.list_alt_outlined, color: Colors.black87),
@@ -163,17 +202,26 @@ class _TechnicianWorkOrderPageState
           ),
         ],
       ),
-      body: _buildBody(provider),
+      body: _buildBody(
+        isInitializing: isInitializing,
+        isLoading: isLoading,
+        errorMessage: errorMessage,
+        workOrders: workOrders,
+      ),
     );
   }
 
-  Widget _buildBody(TechnicianWorkOrderProvider provider) {
-    if (provider.isInitializing ||
-        (provider.isLoading && provider.workOrders.isEmpty)) {
+  Widget _buildBody({
+    required bool isInitializing,
+    required bool isLoading,
+    required String? errorMessage,
+    required List<WorkOrder> workOrders,
+  }) {
+    if (isInitializing || (isLoading && workOrders.isEmpty)) {
       return _buildSkeletonLoading();
     }
 
-    if (provider.errorMessage != null) {
+    if (errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -181,7 +229,7 @@ class _TechnicianWorkOrderPageState
             Icon(Icons.error_outline,
                 size: AppSizes.iconLg + 16, color: AppColors.error),
             SizedBox(height: AppSpacing.md),
-            Text('Error: ${provider.errorMessage}'),
+            Text('Error: $errorMessage'),
           ],
         ),
       );
@@ -190,17 +238,14 @@ class _TechnicianWorkOrderPageState
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 800;
-        final searchQuery = ref.watch(_searchPod);
 
         if (isMobile) {
           return TechnicianMobileView(
-            workOrders: provider.workOrders,
-            searchQuery: searchQuery,
-            onSearchChanged: (v) => ref.read(_searchPod.notifier).state = v,
+            workOrders: workOrders,
           );
         }
 
-        return VirtualTechnicianTable(rows: provider.workOrders);
+        return const VirtualTechnicianTable();
       },
     );
   }
@@ -292,46 +337,21 @@ class _TechnicianWorkOrderPageState
 }
 
 class VirtualTechnicianTable extends ConsumerWidget {
-  final List<WorkOrder> rows;
-  const VirtualTechnicianTable({super.key, required this.rows});
+  const VirtualTechnicianTable({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final search = ref.watch(_searchPod);
-    final sortCol = ref.watch(_sortColumnPod);
-    final sortAsc = ref.watch(_sortAscendingPod);
-
-    List<WorkOrder> filtered = search.isEmpty
-        ? rows
-        : rows.where((wo) {
-            final term = search.toLowerCase();
-            return wo.searchableText.contains(term);
-          }).toList();
-
-    filtered.sort((a, b) {
-      int cmp = 0;
-      switch (sortCol) {
-        case 'name':
-          cmp = a.patientName.compareTo(b.patientName);
-          break;
-        case 'status':
-          cmp = a.status.compareTo(b.status);
-          break;
-        case 'date':
-        default:
-          cmp = a.visitDate.compareTo(b.visitDate);
-          if (cmp == 0) cmp = a.visitTime.compareTo(b.visitTime);
-          break;
-      }
-      return sortAsc ? cmp : -cmp;
-    });
+    // Use the derived provider — filter+sort is cached by Riverpod
+    final filtered = ref.watch(techFilteredWorkOrdersPod);
+    final sortCol = ref.watch(techSortColumnPod);
+    final sortAsc = ref.watch(techSortAscendingPod);
 
     void handleSort(String sortKey) {
       if (sortCol == sortKey) {
-        ref.read(_sortAscendingPod.notifier).state = !sortAsc;
+        ref.read(techSortAscendingPod.notifier).state = !sortAsc;
       } else {
-        ref.read(_sortColumnPod.notifier).state = sortKey;
-        ref.read(_sortAscendingPod.notifier).state = true;
+        ref.read(techSortColumnPod.notifier).state = sortKey;
+        ref.read(techSortAscendingPod.notifier).state = true;
       }
     }
 
@@ -341,7 +361,7 @@ class VirtualTechnicianTable extends ConsumerWidget {
           padding: AppPadding.md,
           child: WorkOrderSearchBar(
             hintText: 'Search Patient, Mobile, Bill No...',
-            onChanged: (v) => ref.read(_searchPod.notifier).state = v,
+            onChanged: (v) => ref.read(techSearchPod.notifier).state = v,
             padding: EdgeInsets.zero,
           ),
         ),

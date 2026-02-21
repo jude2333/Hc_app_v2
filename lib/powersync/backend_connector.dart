@@ -265,7 +265,7 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
 
     final payload = Map<String, dynamic>.from(data);
-    payload.remove('id');
+    // payload.remove('id');
 
     int retryCount = 0;
     while (retryCount < 2) {

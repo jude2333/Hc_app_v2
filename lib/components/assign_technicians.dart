@@ -175,7 +175,9 @@ class _AssignTechnicianDialogState
     final techniciansAsync = ref
         .watch(techniciansProvider(_searchQuery.isEmpty ? null : _searchQuery));
 
-    final allWorkOrders = ref.watch(managerWorkOrderProvider).workOrders;
+    final allWorkOrders = ref.watch(
+      managerWONotifierProvider.select((s) => s.workOrders),
+    );
 
     return Dialog(
       child: Container(

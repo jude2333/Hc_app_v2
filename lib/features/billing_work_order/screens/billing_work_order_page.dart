@@ -46,7 +46,23 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(billingWorkOrderProvider);
+    // Granular watches — only rebuild what changes
+    final isInitializing = ref.watch(
+      billingWorkOrderProvider.select((s) => s.isInitializing),
+    );
+    final isLoading = ref.watch(
+      billingWorkOrderProvider.select((s) => s.isLoading),
+    );
+    final errorMessage = ref.watch(
+      billingWorkOrderProvider.select((s) => s.errorMessage),
+    );
+    final orders = ref.watch(
+      billingWorkOrderProvider.select((s) => s.orders),
+    );
+    final selectedTab = ref.watch(
+      billingWorkOrderProvider.select((s) => s.selectedTab),
+    );
+
     final isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
@@ -90,26 +106,47 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildTabContent(state, isDesktop),
-          _buildTabContent(state, isDesktop),
+          _buildTabContent(
+            isInitializing: isInitializing,
+            isLoading: isLoading,
+            errorMessage: errorMessage,
+            orders: orders,
+            selectedTab: selectedTab,
+            isDesktop: isDesktop,
+          ),
+          _buildTabContent(
+            isInitializing: isInitializing,
+            isLoading: isLoading,
+            errorMessage: errorMessage,
+            orders: orders,
+            selectedTab: selectedTab,
+            isDesktop: isDesktop,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTabContent(BillingWorkOrderState state, bool isDesktop) {
-    if (state.isInitializing || (state.isLoading && state.orders.isEmpty)) {
+  Widget _buildTabContent({
+    required bool isInitializing,
+    required bool isLoading,
+    required String? errorMessage,
+    required List<WorkOrder> orders,
+    required String selectedTab,
+    required bool isDesktop,
+  }) {
+    if (isInitializing || (isLoading && orders.isEmpty)) {
       return _buildSkeletonLoading();
     }
 
-    if (state.errorMessage != null) {
+    if (errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
-            Text('Error: ${state.errorMessage}'),
+            Text('Error: $errorMessage'),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () =>
@@ -121,13 +158,13 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
       );
     }
 
-    if (state.orders.isEmpty) {
+    if (orders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              state.selectedTab == 'unbilled'
+              selectedTab == 'unbilled'
                   ? Icons.pending_actions
                   : Icons.check_circle_outline,
               size: 64,
@@ -135,7 +172,7 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
             ),
             const SizedBox(height: 16),
             Text(
-              state.selectedTab == 'unbilled'
+              selectedTab == 'unbilled'
                   ? 'No unbilled orders'
                   : 'No billed orders',
               style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
@@ -147,17 +184,17 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
 
     if (isDesktop) {
       return BillingDesktopTable(
-        orders: state.filteredOrders,
+        orders: orders,
         onBill: _showBillDialog,
         onSend: _sendOrder,
-        showBillAction: state.selectedTab == 'unbilled',
+        showBillAction: selectedTab == 'unbilled',
       );
     } else {
       return BillingMobileList(
-        orders: state.filteredOrders,
+        orders: orders,
         onBill: _showBillDialog,
         onSend: _sendOrder,
-        showBillAction: state.selectedTab == 'unbilled',
+        showBillAction: selectedTab == 'unbilled',
       );
     }
   }

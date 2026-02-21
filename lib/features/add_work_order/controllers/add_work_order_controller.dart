@@ -8,13 +8,13 @@ import '../../../../features/core/util.dart';
 import '../../../../models/work_order.dart';
 import '../../../../providers/storage_provider.dart';
 import '../../../../features/manager_work_order/repositories/manager_work_order_repository.dart';
+import '../../../../features/manager_work_order/providers/manager_work_order_provider.dart';
 import '../../../../providers/com_center_provider.dart';
 import '../../../../providers/notificationCenter_provider.dart';
 import '../../../../config/settings.dart';
 import '../../../../repositories/temp_upload_repository.dart';
 
 import '../../../../database/sms_template.dart';
-import '../../../../features/manager_work_order/providers/manager_work_order_provider.dart';
 
 final addWorkOrderControllerProvider =
     StateNotifierProvider<AddWorkOrderController, bool>((ref) {
@@ -54,8 +54,8 @@ class AddWorkOrderController extends StateNotifier<bool> {
     required bool sendSms,
     required bool sendWhatsapp,
     required bool sendEmail,
-    required String prescriptionPath,
-    XFile? prescriptionImage,
+    required List<String> prescriptionPaths,
+    List<XFile> prescriptionImages = const [],
     required bool isCancelled,
     required String cancelReason,
   }) async {
@@ -149,7 +149,9 @@ class AddWorkOrderController extends StateNotifier<bool> {
 
         if (success) {
           // Wait for CRUD queue to drain so db.watch() resumes
-          await ref.read(managerWorkOrderProvider).syncAfterMutation();
+          await ref
+              .read(managerWONotifierProvider.notifier)
+              .syncAfterMutation();
         }
 
         if (success && isCancelled && existingWorkOrder.status != 'cancelled') {
@@ -181,7 +183,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
           pincode: pincode,
           doctorName: doctor,
           freeText: freeText,
-          prescriptionPath: prescriptionPath,
+          prescriptionPaths: prescriptionPaths,
           b2bClientId: b2bClientId,
           b2bClientName: b2bClientName,
           vip: isVip,
@@ -192,13 +194,17 @@ class AddWorkOrderController extends StateNotifier<bool> {
           sendEmail: sendEmail,
         );
 
-        // Save prescription image to temp_uploads if provided
-        if (prescriptionImage != null && prescriptionPath.isNotEmpty) {
-          await _savePrescriptionToTempUploads(
-            workOrderDocId: workOrder.docId,
-            prescriptionImage: prescriptionImage,
-            prescriptionPath: prescriptionPath,
-          );
+        // Save prescription images to temp_uploads for S3 upload via hc_app_local
+        if (prescriptionImages.isNotEmpty && prescriptionPaths.isNotEmpty) {
+          for (int i = 0; i < prescriptionImages.length; i++) {
+            if (i < prescriptionPaths.length) {
+              await _savePrescriptionToTempUploads(
+                workOrderDocId: workOrder.docId,
+                prescriptionImage: prescriptionImages[i],
+                prescriptionPath: prescriptionPaths[i],
+              );
+            }
+          }
         }
 
         if (isCopyMode) {
@@ -212,7 +218,9 @@ class AddWorkOrderController extends StateNotifier<bool> {
               .createWorkOrder(finalOrder);
 
           if (success) {
-            await ref.read(managerWorkOrderProvider).syncAfterMutation();
+            await ref
+                .read(managerWONotifierProvider.notifier)
+                .syncAfterMutation();
           }
           setLoading(false);
           return {
@@ -225,7 +233,9 @@ class AddWorkOrderController extends StateNotifier<bool> {
               .createWorkOrder(workOrder);
 
           if (success) {
-            await ref.read(managerWorkOrderProvider).syncAfterMutation();
+            await ref
+                .read(managerWONotifierProvider.notifier)
+                .syncAfterMutation();
             await _sendConfirmationSms(workOrder, sendSms);
           }
 

@@ -1,19 +1,21 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../features/theme/theme.dart';
 
 class ImageUploadSection extends StatelessWidget {
-  final XFile? image;
-  final String? initialUrl;
+  final List<XFile> images;
+  final List<String> initialUrls;
   final Function(ImageSource) onPickImage;
+  final Function(int)? onRemoveImage;
+  final Function(int)? onRemoveExisting;
 
   const ImageUploadSection({
     super.key,
-    required this.image,
-    this.initialUrl,
+    this.images = const [],
+    this.initialUrls = const [],
     required this.onPickImage,
+    this.onRemoveImage,
+    this.onRemoveExisting,
   });
 
   void _showImageSourceDialog(BuildContext context) {
@@ -52,60 +54,97 @@ class ImageUploadSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage =
-        image != null || (initialUrl != null && initialUrl!.isNotEmpty);
-
-    if (!hasImage) {
-      return OutlinedButton.icon(
-        icon: Icon(Icons.camera_alt_rounded, color: AppColors.secondary),
-        label: Text('Upload Prescription',
-            style: TextStyle(color: AppColors.secondary)),
-        onPressed: () => _showImageSourceDialog(context),
-        style: OutlinedButton.styleFrom(
-          side:
-              BorderSide(color: AppColors.secondary, style: BorderStyle.solid),
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
-        ),
-      );
-    }
+    final hasAny = images.isNotEmpty || initialUrls.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: AppRadius.smAll,
-          child: Container(
-            width: double.infinity,
-            height: 160,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceAlt,
-              borderRadius: AppRadius.smAll,
-            ),
-            child: image != null
-                ? (kIsWeb
-                    ? Image.network(image!.path, fit: BoxFit.cover)
-                    : Image.file(File(image!.path), fit: BoxFit.cover))
-                : (initialUrl != null && initialUrl!.isNotEmpty)
-                    ? Image.network(initialUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Center(
-                              child: Icon(Icons.broken_image,
-                                  color: AppColors.textHint),
-                            ))
-                    : Center(
-                        child: Text('No Image',
-                            style: TextStyle(color: AppColors.textHint)),
-                      ),
+        // Existing (S3) prescription chips
+        if (initialUrls.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (int i = 0; i < initialUrls.length; i++)
+                Chip(
+                  avatar: Icon(Icons.image_rounded,
+                      size: 16, color: AppColors.success),
+                  label: Text(
+                    _extractFileName(initialUrls[i]),
+                    style: TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  deleteIcon:
+                      Icon(Icons.close, size: 16, color: AppColors.error),
+                  onDeleted: onRemoveExisting != null
+                      ? () => onRemoveExisting!(i)
+                      : null,
+                  backgroundColor: AppColors.success.withOpacity(0.08),
+                  side: BorderSide(color: AppColors.success.withOpacity(0.2)),
+                ),
+            ],
           ),
-        ),
-        SizedBox(height: AppSpacing.sm),
-        TextButton.icon(
-          icon: Icon(Icons.refresh, size: 16),
-          label: Text('Change'),
+
+        // Newly picked image chips
+        if (images.isNotEmpty) ...[
+          if (initialUrls.isNotEmpty) SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (int i = 0; i < images.length; i++)
+                Chip(
+                  avatar: Icon(Icons.add_photo_alternate_rounded,
+                      size: 16, color: AppColors.secondary),
+                  label: Text(
+                    images[i].name,
+                    style: TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  deleteIcon:
+                      Icon(Icons.close, size: 16, color: AppColors.error),
+                  onDeleted:
+                      onRemoveImage != null ? () => onRemoveImage!(i) : null,
+                  backgroundColor: AppColors.secondary.withOpacity(0.08),
+                  side: BorderSide(color: AppColors.secondary.withOpacity(0.2)),
+                ),
+            ],
+          ),
+        ],
+
+        SizedBox(height: hasAny ? AppSpacing.sm : 0),
+
+        // Upload button — always visible so user can add more
+        OutlinedButton.icon(
+          icon: Icon(Icons.camera_alt_rounded, color: AppColors.secondary),
+          label: Text(
+            hasAny ? 'Add More' : 'Upload Prescription',
+            style: TextStyle(color: AppColors.secondary),
+          ),
           onPressed: () => _showImageSourceDialog(context),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(
+                color: AppColors.secondary, style: BorderStyle.solid),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
+          ),
         ),
       ],
     );
+  }
+
+  /// Extract a readable filename from a full S3 path.
+  String _extractFileName(String path) {
+    final parts = path.split('/');
+    final name = parts.isNotEmpty ? parts.last : path;
+    // Remove timestamp prefix if present (e.g. "1738000000000_photo.jpg" → "photo.jpg")
+    final underscoreIdx = name.indexOf('_');
+    if (underscoreIdx > 0 && underscoreIdx < 15) {
+      final prefix = name.substring(0, underscoreIdx);
+      if (int.tryParse(prefix) != null) {
+        return name.substring(underscoreIdx + 1);
+      }
+    }
+    return name;
   }
 }

@@ -5,7 +5,6 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
-import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../../theme/theme.dart';
 import '../../core/widgets/common/common_widgets.dart';
 import '../providers/technician_work_order_provider.dart';
@@ -13,18 +12,16 @@ import 'technician_expanded_content.dart';
 
 class TechnicianMobileView extends ConsumerWidget {
   final List<WorkOrder> workOrders;
-  final String searchQuery;
-  final Function(String) onSearchChanged;
 
   const TechnicianMobileView({
     super.key,
     required this.workOrders,
-    required this.searchQuery,
-    required this.onSearchChanged,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final searchQuery = ref.watch(techSearchPod);
+
     final filtered = searchQuery.isEmpty
         ? workOrders
         : workOrders.where((wo) {
@@ -38,7 +35,7 @@ class TechnicianMobileView extends ConsumerWidget {
           padding: EdgeInsets.all(AppSpacing.md),
           child: WorkOrderSearchBar(
             hintText: 'Search Patient, Mobile...',
-            onChanged: onSearchChanged,
+            onChanged: (v) => ref.read(techSearchPod.notifier).state = v,
             padding: EdgeInsets.zero,
           ),
         ),
@@ -51,7 +48,9 @@ class TechnicianMobileView extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
-                    return _TechnicianMobileCard(workOrder: filtered[index]);
+                    return RepaintBoundary(
+                      child: _TechnicianMobileCard(workOrder: filtered[index]),
+                    );
                   },
                 ),
         ),
@@ -161,9 +160,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
             child: Row(
               children: [
                 _buildActionChip('Copy', () => _onCopy(context)),
-                if (wo.status != 'cancelled' &&
-                    wo.status != 'Finished' &&
-                    wo.status != 'NA') ...[
+                if (canEdit) ...[
                   SizedBox(width: AppSpacing.xs),
                   _buildActionChip('Start', () => _onStart(context),
                       color: AppColors.success),
@@ -357,20 +354,13 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
       ),
     )
         .then((result) async {
-      if (result == 'refresh') {
-        final storage = ref.read(storageServiceProvider);
-        final techId = storage.getFromSession('logged_in_emp_id').toString();
-        await ref
-            .read(technicianWorkOrderProvider)
-            .loadTechnicianWorkOrders(techId);
-        if (mounted) {
-          parentMessenger.showSnackBar(
-            SnackBar(
-              content: Text('Copied Successfully'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
+      if (result == 'refresh' && mounted) {
+        parentMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Copied Successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     });
   }
@@ -391,12 +381,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
       context: context,
       builder: (context) => CancelWorkOrderDialog(workOrder: widget.workOrder),
     ).then((result) async {
-      if (result == true) {
-        final storage = ref.read(storageServiceProvider);
-        final techId = storage.getFromSession('logged_in_emp_id').toString();
-        await ref
-            .read(technicianWorkOrderProvider)
-            .loadTechnicianWorkOrders(techId);
+      if (result == true && mounted) {
         parentMessenger.showSnackBar(
           SnackBar(
             content: Text('Cancelled Successfully'),
@@ -413,20 +398,13 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
       context: context,
       builder: (context) => EditWorkOrderDialog(workOrder: widget.workOrder),
     ).then((result) async {
-      if (result == true) {
-        final storage = ref.read(storageServiceProvider);
-        final techId = storage.getFromSession('logged_in_emp_id').toString();
-        await ref
-            .read(technicianWorkOrderProvider)
-            .loadTechnicianWorkOrders(techId);
-        if (mounted) {
-          parentMessenger.showSnackBar(
-            SnackBar(
-              content: Text('Updated Successfully'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
+      if (result == true && mounted) {
+        parentMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Updated Successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     });
   }

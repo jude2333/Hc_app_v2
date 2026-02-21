@@ -1,39 +1,72 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:powersync/powersync.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import '../repositories/manager_work_order_repository.dart';
 
-class ManagerWorkOrderProvider extends ChangeNotifier {
-  final ManagerWorkOrderRepository _repo;
+// ---------------------------------------------------------------------------
+// Immutable state class — enables select() for targeted rebuilds
+// ---------------------------------------------------------------------------
+@immutable
+class ManagerWOState {
+  final List<WorkOrder> workOrders;
+  final bool isLoading;
+  final bool isInitializing;
+  final String? errorMessage;
+  final DateTime? currentDate;
 
-  ManagerWorkOrderProvider({required ManagerWorkOrderRepository repository})
-      : _repo = repository {
-    debugPrint('ManagerWorkOrderProvider CONSTRUCTOR called');
+  const ManagerWOState({
+    this.workOrders = const [],
+    this.isLoading = false,
+    this.isInitializing = true,
+    this.errorMessage,
+    this.currentDate,
+  });
+
+  ManagerWOState copyWith({
+    List<WorkOrder>? workOrders,
+    bool? isLoading,
+    bool? isInitializing,
+    String? errorMessage,
+    DateTime? currentDate,
+    bool clearError = false,
+  }) {
+    return ManagerWOState(
+      workOrders: workOrders ?? this.workOrders,
+      isLoading: isLoading ?? this.isLoading,
+      isInitializing: isInitializing ?? this.isInitializing,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      currentDate: currentDate ?? this.currentDate,
+    );
   }
+}
 
-  List<WorkOrder> _workOrders = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-  DateTime? _currentDate;
+// ---------------------------------------------------------------------------
+// AutoDispose Notifier — disposes stream on navigation away, restarts on return
+// ---------------------------------------------------------------------------
+class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
+  late final ManagerWorkOrderRepository _repo;
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
 
-  List<WorkOrder> get workOrders => _workOrders;
-  bool get isInitializing => _repo.isInitializing;
-  bool get isLoading => _isLoading;
-  bool get isConnected => _repo.isConnected;
-  bool get isSyncing => _repo.isSyncing;
-  bool get hasPendingUploads => _repo.hasPendingUploads;
-  String? get errorMessage => _errorMessage;
-  DateTime? get currentDate => _currentDate;
+  @override
+  ManagerWOState build() {
+    _repo = ref.watch(managerWorkOrderRepositoryProvider);
+    debugPrint('ManagerWONotifier build() called');
+
+    ref.onDispose(() {
+      debugPrint('ManagerWONotifier DISPOSED - Closing stream!');
+      _ordersSubscription?.cancel();
+    });
+
+    return const ManagerWOState();
+  }
 
   Future<void> initialize() async {
-    _isLoading = true;
-    notifyListeners();
+    state = state.copyWith(isLoading: true);
     await _repo.initialize();
-    _isLoading = false;
-    notifyListeners();
+    state = state.copyWith(isLoading: false, isInitializing: false);
   }
 
   /// After a local mutation, wait for the CRUD queue to drain,
@@ -41,7 +74,7 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
   /// The recoverable watch streams in PowerSyncService will handle
   /// catching any subsequent updates automatically.
   Future<void> syncAfterMutation() async {
-    if (_currentDate == null) return;
+    if (state.currentDate == null) return;
     debugPrint('[Manager] syncAfterMutation — waiting for CRUD drain...');
     try {
       // Step 1: Wait for all pending writes to upload.
@@ -54,10 +87,8 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
           timeout: const Duration(seconds: 3));
 
       // Step 3: Immediate one-shot query so the UI is up-to-date NOW.
-      final latest = await _repo.getWorkOrdersByDate(_currentDate!);
-      _workOrders = latest;
-      _errorMessage = null;
-      notifyListeners();
+      final latest = await _repo.getWorkOrdersByDate(state.currentDate!);
+      state = state.copyWith(workOrders: latest, clearError: true);
     } catch (e) {
       debugPrint('[Manager] syncAfterMutation failed: $e');
     }
@@ -65,7 +96,7 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
 
   Future<void> loadWorkOrdersByDate(DateTime selectedDate,
       {bool fromDateOnwards = false}) async {
-    _currentDate = selectedDate;
+    state = state.copyWith(currentDate: selectedDate);
 
     await _repo.ensureInitialized();
 
@@ -78,20 +109,16 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
 
       _ordersSubscription = stream.listen(
         (orders) {
-          _workOrders = orders;
-          _errorMessage = null;
-          notifyListeners();
+          state = state.copyWith(workOrders: orders, clearError: true);
         },
         onError: (error) {
           debugPrint('[Manager] Stream Error: $error');
-          _errorMessage = 'Failed to load: $error';
-          notifyListeners();
+          state = state.copyWith(errorMessage: 'Failed to load: $error');
         },
       );
     } catch (e) {
       debugPrint('[Manager] loadWorkOrdersByDate failed: $e');
-      _errorMessage = 'Error: $e';
-      notifyListeners();
+      state = state.copyWith(errorMessage: 'Error: $e');
     }
   }
 
@@ -154,25 +181,28 @@ class ManagerWorkOrderProvider extends ChangeNotifier {
   }
 
   Future<List<WorkOrder>> searchWorkOrdersAsync(String query) async {
-    return await _repo.searchWorkOrdersAsync(_workOrders, query);
+    return await _repo.searchWorkOrdersAsync(state.workOrders, query);
   }
 
   List<WorkOrder> searchWorkOrders(String query) {
-    return _repo.searchWorkOrders(_workOrders, query);
-  }
-
-  @override
-  void dispose() {
-    debugPrint('ManagerWorkOrderProvider DISPOSED - Closing stream!');
-    _ordersSubscription?.cancel();
-    super.dispose();
+    return _repo.searchWorkOrders(state.workOrders, query);
   }
 }
 
-final managerWorkOrderProvider =
-    ChangeNotifierProvider<ManagerWorkOrderProvider>((ref) {
-  final repo = ref.read(managerWorkOrderRepositoryProvider);
-  return ManagerWorkOrderProvider(repository: repo);
+// ---------------------------------------------------------------------------
+// Providers
+// ---------------------------------------------------------------------------
+
+/// Main notifier — autoDispose so the stream is cleaned up on navigation away.
+final managerWONotifierProvider =
+    AutoDisposeNotifierProvider<ManagerWONotifier, ManagerWOState>(
+        ManagerWONotifier.new);
+
+/// Separate sync status stream — decoupled from work orders so AppBar
+/// rebuilds independently without triggering full list rebuilds.
+final managerSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
+  final repo = ref.watch(managerWorkOrderRepositoryProvider);
+  return repo.watchSyncStatus();
 });
 
 final managerTodayPod = StateProvider<DateTime>((_) {
@@ -193,14 +223,16 @@ final managerSortColumnPod = StateProvider<String>((_) => 'date');
 final managerSortAscendingPod = StateProvider<bool>((_) => false);
 
 final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
-  final provider = ref.watch(managerWorkOrderProvider);
+  final woState = ref.watch(
+    managerWONotifierProvider.select((s) => s.workOrders),
+  );
   final search = ref.watch(managerSearchPod);
   final sortCol = ref.watch(managerSortColumnPod);
   final sortAsc = ref.watch(managerSortAscendingPod);
 
   List<WorkOrder> filtered = search.isEmpty
-      ? List.from(provider.workOrders)
-      : provider.workOrders.where((wo) {
+      ? List.from(woState)
+      : woState.where((wo) {
           final term = search.toLowerCase();
           return wo.searchableText.contains(term);
         }).toList();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,35 +24,53 @@ class ManagerWorkOrderPage extends ConsumerStatefulWidget {
 }
 
 class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (!mounted) return;
-        final provider = ref.read(managerWorkOrderProvider);
-        if (provider.isInitializing) {
-          provider.initialize();
-        }
-        final selectedDate = ref.read(managerSelectedDatePod);
-        // Check if we are already watching this date to avoid killing the stream
-        if (provider.currentDate != selectedDate ||
-            provider.workOrders.isEmpty) {
-          debugPrint(
-              'ManagerWorkOrderPage: initializing stream for $selectedDate');
-          provider.loadWorkOrdersByDate(selectedDate);
-        } else {
-          debugPrint(
-              'ManagerWorkOrderPage: Stream already active for $selectedDate - SKIPPING RELOAD');
-        }
-      });
+      if (!mounted) return;
+      final notifier = ref.read(managerWONotifierProvider.notifier);
+      final woState = ref.read(managerWONotifierProvider);
+      if (woState.isInitializing) {
+        notifier.initialize();
+      }
+      final selectedDate = ref.read(managerSelectedDatePod);
+      // Check if we are already watching this date to avoid killing the stream
+      if (woState.currentDate != selectedDate || woState.workOrders.isEmpty) {
+        debugPrint(
+            'ManagerWorkOrderPage: initializing stream for $selectedDate');
+        notifier.loadWorkOrdersByDate(selectedDate);
+      } else {
+        debugPrint(
+            'ManagerWorkOrderPage: Stream already active for $selectedDate - SKIPPING RELOAD');
+      }
     });
   }
 
   @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final provider = ref.watch(managerWorkOrderProvider);
+    // Granular watches — only rebuild what changed
+    final isConnected = ref.watch(managerSyncStatusProvider).whenOrNull(
+              data: (status) => status.connected,
+            ) ??
+        false;
+    final isSyncing = ref.watch(managerSyncStatusProvider).whenOrNull(
+          data: (status) {
+            final hasSynced = status.hasSynced ?? false;
+            if (hasSynced) return status.downloading;
+            return status.downloading || status.uploading;
+          },
+        ) ??
+        false;
     final selected = ref.watch(managerSelectedDatePod);
     final today = ref.read(managerTodayPod);
 
@@ -101,7 +120,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                 ),
               ),
               SizedBox(width: AppSpacing.lg),
-              if (provider.isConnected)
+              if (isConnected)
                 Tooltip(
                     message: 'Connected',
                     child: Icon(Icons.cloud_done,
@@ -111,7 +130,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                     message: 'Offline',
                     child: Icon(Icons.cloud_off,
                         color: AppColors.primary, size: AppSizes.iconSm)),
-              if (provider.isSyncing)
+              if (isSyncing)
                 Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
                     child: SizedBox(
@@ -191,8 +210,10 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                     onTap: () async {
                       ref.read(managerSelectedDatePod.notifier).state =
                           chip.date;
-                      await provider.loadWorkOrdersByDate(chip.date,
-                          fromDateOnwards: chip.isFuturePlus);
+                      await ref
+                          .read(managerWONotifierProvider.notifier)
+                          .loadWorkOrdersByDate(chip.date,
+                              fromDateOnwards: chip.isFuturePlus);
                     },
                   ),
                 );
@@ -201,16 +222,28 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
         ),
       ),
-      body: _buildBody(context, provider),
+      body: _buildBody(context),
     );
   }
 
-  Widget _buildBody(BuildContext context, ManagerWorkOrderProvider provider) {
+  Widget _buildBody(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
 
-    if (provider.isInitializing ||
-        (provider.isLoading && provider.workOrders.isEmpty)) {
+    final isInitializing = ref.watch(
+      managerWONotifierProvider.select((s) => s.isInitializing),
+    );
+    final isLoading = ref.watch(
+      managerWONotifierProvider.select((s) => s.isLoading),
+    );
+    final workOrders = ref.watch(
+      managerWONotifierProvider.select((s) => s.workOrders),
+    );
+    final errorMessage = ref.watch(
+      managerWONotifierProvider.select((s) => s.errorMessage),
+    );
+
+    if (isInitializing || (isLoading && workOrders.isEmpty)) {
       return Padding(
         padding: isMobile
             ? EdgeInsets.zero
@@ -219,18 +252,20 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
         child: _buildSkeletonLoading(),
       );
     }
-    if (provider.errorMessage != null) {
+    if (errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.error_outline,
                 size: AppSizes.iconLg + 16, color: AppColors.error),
-            Text('Error: ${provider.errorMessage}'),
+            Text('Error: $errorMessage'),
             ElevatedButton(
               onPressed: () async {
                 final selectedDate = ref.read(managerSelectedDatePod);
-                await provider.loadWorkOrdersByDate(selectedDate);
+                await ref
+                    .read(managerWONotifierProvider.notifier)
+                    .loadWorkOrdersByDate(selectedDate);
               },
               child: const Text('Retry'),
             ),
@@ -243,8 +278,12 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
       return ManagerMobileView(
         workOrders: ref.watch(managerFilteredWorkOrdersPod),
         searchQuery: ref.watch(managerSearchPod),
-        onSearchChanged: (value) =>
-            ref.read(managerSearchPod.notifier).state = value,
+        onSearchChanged: (value) {
+          _searchDebounce?.cancel();
+          _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+            ref.read(managerSearchPod.notifier).state = value;
+          });
+        },
       );
     }
 

@@ -55,8 +55,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   String _gender = 'Male';
   String _collectionDate = '';
   TimeOfDay? _collectionTime;
-  XFile? _prescriptionImage;
-  String _prescriptionPath = '';
+  List<XFile> _prescriptionImages = [];
+  List<String> _prescriptionPaths = [];
 
   bool _isVip = false;
   bool _isUrgent = false;
@@ -202,7 +202,12 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     }
 
     if (!isCopy) {
-      _prescriptionPath = wo.prescriptionPath;
+      if (wo.prescriptionPath.isNotEmpty) {
+        _prescriptionPaths = wo.prescriptionPath
+            .split(',')
+            .where((p) => p.trim().isNotEmpty)
+            .toList();
+      }
     }
 
     if (wo.settings != null) {
@@ -295,12 +300,20 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Future<void> _save() async {
-    // Generate S3-style path for prescription if new image picked
-    String prescriptionPath = _prescriptionPath;
-    if (_prescriptionImage != null) {
+    // Generate S3-style paths with timestamp prefix for each new image
+    // (matches HC Process pattern for unique filenames)
+    List<String> prescriptionPaths = List.from(_prescriptionPaths);
+    List<XFile> newImages = [];
+    if (_prescriptionImages.isNotEmpty) {
       final todayFolder = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      final fileName = _prescriptionImage!.name;
-      prescriptionPath = 'homecollection/prescriptions/$todayFolder/$fileName';
+      for (final image in _prescriptionImages) {
+        final timestampedName =
+            '${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+        final path =
+            'homecollection/prescriptions/$todayFolder/$timestampedName';
+        prescriptionPaths.add(path);
+        newImages.add(image);
+      }
     }
 
     final result =
@@ -328,8 +341,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               sendSms: _sendSms,
               sendWhatsapp: _sendWhatsapp,
               sendEmail: _sendEmail,
-              prescriptionPath: prescriptionPath,
-              prescriptionImage: _prescriptionImage,
+              prescriptionPaths: prescriptionPaths,
+              prescriptionImages: newImages,
               isCancelled: _isCancelled,
               cancelReason: _cancellationReasonController.text.trim(),
             );
@@ -371,7 +384,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
           await _imagePicker.pickImage(source: source, imageQuality: 50);
       if (picked != null) {
         setState(() {
-          _prescriptionImage = picked;
+          _prescriptionImages.add(picked);
         });
       }
     } catch (e) {
@@ -488,9 +501,13 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                             _buildDateTimeFields(),
                             SizedBox(height: AppSpacing.lg),
                             ImageUploadSection(
-                              image: _prescriptionImage,
-                              initialUrl: _prescriptionPath,
+                              images: _prescriptionImages,
+                              initialUrls: _prescriptionPaths,
                               onPickImage: _pickImage,
+                              onRemoveImage: (i) => setState(
+                                  () => _prescriptionImages.removeAt(i)),
+                              onRemoveExisting: (i) => setState(
+                                  () => _prescriptionPaths.removeAt(i)),
                             ),
                           ],
                         ),
@@ -583,9 +600,13 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                 _buildDateTimeFields(),
                 SizedBox(height: AppSpacing.lg),
                 ImageUploadSection(
-                  image: _prescriptionImage,
-                  initialUrl: _prescriptionPath,
+                  images: _prescriptionImages,
+                  initialUrls: _prescriptionPaths,
                   onPickImage: _pickImage,
+                  onRemoveImage: (i) =>
+                      setState(() => _prescriptionImages.removeAt(i)),
+                  onRemoveExisting: (i) =>
+                      setState(() => _prescriptionPaths.removeAt(i)),
                 ),
               ],
             ),

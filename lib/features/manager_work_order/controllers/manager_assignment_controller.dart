@@ -20,7 +20,8 @@ class ManagerAssignmentController {
 
   dynamic get _storage => _ref.read(storageServiceProvider);
   PostgresService get _postgresService => _ref.read(postgresServiceProvider);
-  ManagerWorkOrderProvider get _provider => _ref.read(managerWorkOrderProvider);
+  ManagerWONotifier get _provider =>
+      _ref.read(managerWONotifierProvider.notifier);
 
   Future<bool> assignTechnician({
     required WorkOrder workOrder,

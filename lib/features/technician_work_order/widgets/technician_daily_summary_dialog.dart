@@ -20,7 +20,7 @@ final _selectedDateProvider = StateProvider<DateTime>((ref) {
 
 final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,
     ({String techId, String dateStr})>((ref, params) async {
-  final provider = ref.read(technicianWorkOrderProvider);
+  final provider = ref.read(technicianWONotifierProvider.notifier);
 
   final orders = await provider.getDailyOrders(params.techId, params.dateStr);
 

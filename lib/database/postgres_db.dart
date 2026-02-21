@@ -212,7 +212,18 @@ class PostgresDB {
         await _storage.saveSessionItem(
             "department_id", userDetails['department_id'].toString());
 
-        final employeeActivities = response.data['employee_activities'];
+        final rawActivities = response.data['employee_activities'];
+        Map<String, dynamic>? employeeActivities;
+        if (rawActivities is String && rawActivities.isNotEmpty) {
+          try {
+            employeeActivities =
+                jsonDecode(rawActivities) as Map<String, dynamic>;
+          } catch (e) {
+            debugPrint('[PostgresDB] Failed to parse employee_activities: $e');
+          }
+        } else if (rawActivities is Map<String, dynamic>) {
+          employeeActivities = rawActivities;
+        }
 
         if (employeeActivities != null &&
             employeeActivities['role_list'] != null) {

@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:powersync/powersync.dart';
 import 'package:anderson_crm_flutter/database/couch_db.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 

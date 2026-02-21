@@ -7,6 +7,9 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import '../data/billing_work_order_repository.dart';
 
+// ---------------------------------------------------------------------------
+// Immutable state class — enables select() for targeted rebuilds
+// ---------------------------------------------------------------------------
 @immutable
 class BillingWorkOrderState {
   final bool isLoading;
@@ -14,7 +17,6 @@ class BillingWorkOrderState {
   final List<WorkOrder> orders;
   final String? errorMessage;
   final String selectedTab;
-  final String searchQuery;
 
   const BillingWorkOrderState({
     this.isLoading = false,
@@ -22,7 +24,6 @@ class BillingWorkOrderState {
     this.orders = const [],
     this.errorMessage,
     this.selectedTab = 'unbilled',
-    this.searchQuery = '',
   });
 
   BillingWorkOrderState copyWith({
@@ -31,32 +32,38 @@ class BillingWorkOrderState {
     List<WorkOrder>? orders,
     String? errorMessage,
     String? selectedTab,
-    String? searchQuery,
+    bool clearError = false,
   }) {
     return BillingWorkOrderState(
       isLoading: isLoading ?? this.isLoading,
       isInitializing: isInitializing ?? this.isInitializing,
       orders: orders ?? this.orders,
-      errorMessage: errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       selectedTab: selectedTab ?? this.selectedTab,
-      searchQuery: searchQuery ?? this.searchQuery,
     );
-  }
-
-  List<WorkOrder> get filteredOrders {
-    if (searchQuery.isEmpty) return orders;
-    final term = searchQuery.toLowerCase();
-    return orders.where((wo) => wo.searchableText.contains(term)).toList();
   }
 }
 
-class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
-  final Ref _ref;
+// ---------------------------------------------------------------------------
+// AutoDispose Notifier — disposes stream on navigation away, restarts on return
+// ---------------------------------------------------------------------------
+class BillingWorkOrderNotifier
+    extends AutoDisposeNotifier<BillingWorkOrderState> {
   BillingWorkOrderRepository? _repository;
   bool _powerSyncInitStarted = false;
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
 
-  BillingWorkOrderNotifier(this._ref) : super(const BillingWorkOrderState());
+  @override
+  BillingWorkOrderState build() {
+    debugPrint('BillingWorkOrderNotifier build() called');
+
+    ref.onDispose(() {
+      debugPrint('BillingWorkOrderNotifier DISPOSED - Closing stream!');
+      _ordersSubscription?.cancel();
+    });
+
+    return const BillingWorkOrderState();
+  }
 
   BillingWorkOrderRepository? _getRepository() {
     if (_repository != null) return _repository;
@@ -68,8 +75,8 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       }
 
       final db = PowerSyncService.instance.db;
-      final couchClient = _ref.read(couchDbClientProvider);
-      final storage = _ref.read(storageRepositoryProvider);
+      final couchClient = ref.read(couchDbClientProvider);
+      final storage = ref.read(storageRepositoryProvider);
       _repository = BillingWorkOrderRepository(db, couchClient, storage);
       return _repository;
     } catch (e) {
@@ -86,7 +93,7 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     debugPrint('[BillingProvider] Initializing PowerSync...');
 
     try {
-      final storage = _ref.read(storageServiceProvider);
+      final storage = ref.read(storageServiceProvider);
       await PowerSyncService.instance.initialize(storage);
       debugPrint('[BillingProvider] PowerSync initialized successfully');
     } catch (e) {
@@ -100,7 +107,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     state = state.copyWith(isInitializing: true);
     try {
       await _initializePowerSync();
-
       await loadUnbilled();
     } catch (e) {
       debugPrint('[BillingProvider] Initialize error: $e');
@@ -118,7 +124,17 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     if (repo == null) {
       try {
         await _initializePowerSync();
-        return loadUnbilled();
+        // Re-check after init — no recursive call
+        final repoRetry = _getRepository();
+        if (repoRetry == null) {
+          state = state.copyWith(
+            isLoading: false,
+            isInitializing: false,
+            errorMessage: 'PowerSync not ready after initialization',
+          );
+          return;
+        }
+        return _startUnbilledStream(repoRetry);
       } catch (e) {
         state = state.copyWith(
           isLoading: false,
@@ -129,7 +145,10 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       }
     }
 
-    // Cancel any previous subscription before starting a new one
+    return _startUnbilledStream(repo);
+  }
+
+  Future<void> _startUnbilledStream(BillingWorkOrderRepository repo) async {
     await _ordersSubscription?.cancel();
 
     state = state.copyWith(isLoading: true, selectedTab: 'unbilled');
@@ -139,7 +158,7 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
         state = state.copyWith(
           isLoading: false,
           orders: orders,
-          errorMessage: null,
+          clearError: true,
         );
       },
       onError: (error) {
@@ -162,7 +181,6 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       return;
     }
 
-    // Cancel any previous subscription before starting a new one
     await _ordersSubscription?.cancel();
 
     state = state.copyWith(isLoading: true, selectedTab: 'billed');
@@ -172,7 +190,7 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
         state = state.copyWith(
           isLoading: false,
           orders: orders,
-          errorMessage: null,
+          clearError: true,
         );
       },
       onError: (error) {
@@ -212,21 +230,13 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
         labNumber: labNumber,
       );
 
-      _syncAfterMutation();
+      await _syncAfterMutation();
 
       return 'OK';
     } catch (e) {
       debugPrint('[BillingProvider] Error billing: $e');
       return 'Error: $e';
     }
-  }
-
-  void search(String query) {
-    state = state.copyWith(searchQuery: query);
-  }
-
-  void clearSearch() {
-    state = state.copyWith(searchQuery: '');
   }
 
   Future<void> refresh() async {
@@ -242,7 +252,7 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
     if (repo == null) return 'Error: PowerSync not ready';
 
     try {
-      final storage = _ref.read(storageServiceProvider);
+      final storage = ref.read(storageServiceProvider);
       final createdBy = storage.getFromSession('logged_in_emp_id');
 
       int age = 0;
@@ -297,16 +307,61 @@ class BillingWorkOrderNotifier extends StateNotifier<BillingWorkOrderState> {
       return 'Error: $e';
     }
   }
-
-  @override
-  void dispose() {
-    _ordersSubscription?.cancel();
-    super.dispose();
-  }
 }
 
-final billingWorkOrderProvider =
-    StateNotifierProvider<BillingWorkOrderNotifier, BillingWorkOrderState>(
-        (ref) {
-  return BillingWorkOrderNotifier(ref);
+// ---------------------------------------------------------------------------
+// Providers
+// ---------------------------------------------------------------------------
+
+/// Main notifier — autoDispose so the stream is cleaned up on navigation away.
+final billingWorkOrderProvider = AutoDisposeNotifierProvider<
+    BillingWorkOrderNotifier, BillingWorkOrderState>(
+  BillingWorkOrderNotifier.new,
+);
+
+// ---------------------------------------------------------------------------
+// UI State Pods (autoDispose so they reset on navigation away)
+// ---------------------------------------------------------------------------
+final billingSearchPod = AutoDisposeStateProvider<String>((_) => '');
+final billingSortColumnPod = AutoDisposeStateProvider<String>((_) => 'date');
+final billingSortAscendingPod = AutoDisposeStateProvider<bool>((_) => false);
+
+// ---------------------------------------------------------------------------
+// Derived filtered + sorted list — cached by Riverpod, recomputes only
+// when inputs (orders, search, sort) change.
+// ---------------------------------------------------------------------------
+final billingFilteredOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
+  final orders = ref.watch(
+    billingWorkOrderProvider.select((s) => s.orders),
+  );
+  final search = ref.watch(billingSearchPod);
+  final sortCol = ref.watch(billingSortColumnPod);
+  final sortAsc = ref.watch(billingSortAscendingPod);
+
+  List<WorkOrder> filtered = search.isEmpty
+      ? List.from(orders)
+      : orders.where((wo) {
+          final term = search.toLowerCase();
+          return wo.searchableText.contains(term);
+        }).toList();
+
+  filtered.sort((a, b) {
+    int cmp = 0;
+    switch (sortCol) {
+      case 'name':
+        cmp = a.patientName.compareTo(b.patientName);
+        break;
+      case 'total':
+        cmp = a.calculatedTotal.compareTo(b.calculatedTotal);
+        break;
+      case 'date':
+      default:
+        cmp = a.visitDate.compareTo(b.visitDate);
+        if (cmp == 0) cmp = a.visitTime.compareTo(b.visitTime);
+        break;
+    }
+    return sortAsc ? cmp : -cmp;
+  });
+
+  return filtered;
 });

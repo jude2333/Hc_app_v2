@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,13 +12,26 @@ import '../controllers/manager_assignment_controller.dart';
 import 'manager_actions.dart';
 import 'manager_expanded_content.dart';
 
-class ManagerDesktopView extends ConsumerWidget {
+class ManagerDesktopView extends ConsumerStatefulWidget {
   final List<WorkOrder> workOrders;
 
   const ManagerDesktopView({super.key, required this.workOrders});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ManagerDesktopView> createState() => _ManagerDesktopViewState();
+}
+
+class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final sortCol = ref.watch(managerSortColumnPod);
     final sortAsc = ref.watch(managerSortAscendingPod);
 
@@ -34,7 +48,12 @@ class ManagerDesktopView extends ConsumerWidget {
       children: [
         WorkOrderSearchBar(
           hintText: 'Search',
-          onChanged: (v) => ref.read(managerSearchPod.notifier).state = v,
+          onChanged: (v) {
+            _searchDebounce?.cancel();
+            _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+              ref.read(managerSearchPod.notifier).state = v;
+            });
+          },
         ),
         Expanded(
           child: Card(
@@ -46,19 +65,19 @@ class ManagerDesktopView extends ConsumerWidget {
               children: [
                 _buildTableHeader(sortCol, sortAsc, handleSort),
                 Expanded(
-                  child: workOrders.isEmpty
+                  child: widget.workOrders.isEmpty
                       ? Center(
                           child: Text('No Data Available',
                               style: TextStyle(color: AppColors.textSecondary)))
                       : ListView.separated(
-                          itemCount: workOrders.length,
+                          itemCount: widget.workOrders.length,
                           cacheExtent: 500,
                           addAutomaticKeepAlives: false,
                           addRepaintBoundaries: true,
                           separatorBuilder: (ctx, i) =>
                               Divider(height: 1, color: AppColors.divider),
                           itemBuilder: (context, index) {
-                            final wo = workOrders[index];
+                            final wo = widget.workOrders[index];
                             return RepaintBoundary(
                               key: ValueKey(wo.id),
                               child: _ManagerExpandableRow(
