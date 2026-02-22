@@ -1,18 +1,21 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/components/time_line_page.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
+import 'package:anderson_crm_flutter/services/s3_file_service.dart';
 import '../../theme/theme.dart';
 
-class ManagerExpandedContent extends StatelessWidget {
+class ManagerExpandedContent extends ConsumerWidget {
   final WorkOrder workOrder;
 
   const ManagerExpandedContent({super.key, required this.workOrder});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: AppPadding.card,
       decoration: BoxDecoration(
@@ -25,14 +28,14 @@ class ManagerExpandedContent extends StatelessWidget {
           _buildInfoTable(context),
           const SizedBox(height: AppSpacing.md),
           if (workOrder.prescriptionPhoto.isNotEmpty)
-            _buildPrescriptionSection(context),
+            _buildPrescriptionSection(context, ref),
           if (workOrder.status == 'cancelled') _buildCancellationSection(),
-          _buildProcessSteps(),
+          _buildProcessSteps(ref),
           const SizedBox(height: AppSpacing.md),
           if (workOrder.parsedDoc['remarks'] != null) _buildRemarksSection(),
           if (workOrder.serverStatus == 'Billed') _buildBillInfo(),
           if (workOrder.parsedDoc['report_path'] != null)
-            _buildReportSection(context),
+            _buildReportSection(context, ref),
           const SizedBox(height: AppSpacing.md),
           _buildTimelineButton(context),
         ],
@@ -97,7 +100,7 @@ class ManagerExpandedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildPrescriptionSection(BuildContext context) {
+  Widget _buildPrescriptionSection(BuildContext context, WidgetRef ref) {
     final path = workOrder.prescriptionPhoto;
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -110,7 +113,7 @@ class ManagerExpandedContent extends StatelessWidget {
           _ActionLinkChip(
             label: _getPrescriptionFileNames(path),
             color: AppColors.secondary,
-            onTap: () => _viewFile(context, path),
+            onTap: () => _viewFile(context, ref, path),
           ),
         ],
       ),
@@ -128,7 +131,7 @@ class ManagerExpandedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildProcessSteps() {
+  Widget _buildProcessSteps(WidgetRef ref) {
     final process = workOrder.process;
     bool isStepDone(String? key) =>
         process[key] != null && process[key].toString().isNotEmpty;
@@ -153,7 +156,7 @@ class ManagerExpandedContent extends StatelessWidget {
           isDone: workOrder.firstStep.isNotEmpty,
         ),
         SizedBox(height: AppSpacing.xs),
-        _buildProformaStep(workOrder.proformaPath),
+        _buildProformaStep(ref, workOrder.proformaPath),
         SizedBox(height: AppSpacing.xs),
         _buildGenericStep(
           'Step-3',
@@ -171,7 +174,7 @@ class ManagerExpandedContent extends StatelessWidget {
           isDone: isStepDone('fourth_step'),
         ),
         SizedBox(height: AppSpacing.xs),
-        _buildPrescriptionPhotoStep(process['fifth_step']),
+        _buildPrescriptionPhotoStep(ref, process['fifth_step']),
       ],
     );
   }
@@ -198,7 +201,7 @@ class ManagerExpandedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildProformaStep(String? stepData) {
+  Widget _buildProformaStep(WidgetRef ref, String? stepData) {
     final isDone = stepData != null && stepData.isNotEmpty;
     String statusText = 'Pending';
     if (isDone) {
@@ -237,7 +240,7 @@ class ManagerExpandedContent extends StatelessWidget {
             builder: (context) => _ActionLinkChip(
               label: 'View PDF',
               color: AppColors.secondary,
-              onTap: () => _viewFile(context, stepData),
+              onTap: () => _viewFile(context, ref, stepData),
             ),
           ),
         ],
@@ -248,7 +251,7 @@ class ManagerExpandedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildPrescriptionPhotoStep(dynamic stepData) {
+  Widget _buildPrescriptionPhotoStep(WidgetRef ref, dynamic stepData) {
     final isDone = stepData != null && stepData.toString().isNotEmpty;
     final path = stepData?.toString() ?? '';
     return Row(
@@ -271,7 +274,7 @@ class ManagerExpandedContent extends StatelessWidget {
             builder: (context) => _ActionLinkChip(
               label: _getPrescriptionFileNames(path),
               color: AppColors.secondary,
-              onTap: () => _viewFile(context, path),
+              onTap: () => _viewFile(context, ref, path),
             ),
           ),
         if (!isDone)
@@ -325,7 +328,7 @@ class ManagerExpandedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildReportSection(BuildContext context) {
+  Widget _buildReportSection(BuildContext context, WidgetRef ref) {
     final status = '${workOrder.parsedDoc['report_status']}';
     final reportPath = workOrder.parsedDoc['report_path']?.toString() ?? '';
     return Wrap(
@@ -337,13 +340,13 @@ class ManagerExpandedContent extends StatelessWidget {
         _ActionLinkChip(
           label: 'Report PDF',
           color: AppColors.secondary,
-          onTap: () => _viewFile(context, reportPath),
+          onTap: () => _viewFile(context, ref, reportPath),
         ),
       ],
     );
   }
 
-  void _viewFile(BuildContext context, String path) {
+  void _viewFile(BuildContext context, WidgetRef ref, String path) {
     if (path.isEmpty) return;
 
     final files = path.contains(',')
@@ -361,7 +364,7 @@ class ManagerExpandedContent extends StatelessWidget {
           if (action == 'view') {
             _openFileViewer(context, selectedPath);
           } else {
-            _downloadFile(context, selectedPath);
+            _downloadFile(context, ref, selectedPath);
           }
         },
       );
@@ -403,16 +406,37 @@ class ManagerExpandedContent extends StatelessWidget {
     }
   }
 
-  void _downloadFile(BuildContext context, String path) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Download started: ${FileService.getFileName(path)}'),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
+  Future<void> _downloadFile(
+      BuildContext context, WidgetRef ref, String path) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final fileName = FileService.getFileName(path);
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('Downloading: $fileName')),
     );
+
+    try {
+      final s3Service = ref.read(s3FileServiceProvider);
+      final Uint8List bytes = await s3Service.downloadFile(filePath: path);
+      final ext = FileService.getExtension(path).replaceAll('.', '');
+      final mimeType =
+          FileService.isPdf(path) ? 'application/pdf' : 'image/$ext';
+
+      await FileService.saveOrOpenFile(
+        context,
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+      );
+    } catch (e) {
+      debugPrint('[ManagerExpanded] Download error: $e');
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _getName(dynamic name) {

@@ -62,6 +62,15 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
     final selectedTab = ref.watch(
       billingWorkOrderProvider.select((s) => s.selectedTab),
     );
+    final isInitialSyncPending =
+        ref.watch(billingSyncStatusProvider).whenOrNull(
+              data: (status) {
+                // We only block the UI with a skeleton if we haven't completed
+                // our very first initial sync pass with the server.
+                return status.hasSynced == false;
+              },
+            ) ??
+            false; // Don't show skeleton just because provider is initializing
 
     final isDesktop = MediaQuery.of(context).size.width > 800;
 
@@ -109,6 +118,7 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
           _buildTabContent(
             isInitializing: isInitializing,
             isLoading: isLoading,
+            isInitialSyncPending: isInitialSyncPending,
             errorMessage: errorMessage,
             orders: orders,
             selectedTab: selectedTab,
@@ -117,6 +127,7 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
           _buildTabContent(
             isInitializing: isInitializing,
             isLoading: isLoading,
+            isInitialSyncPending: isInitialSyncPending,
             errorMessage: errorMessage,
             orders: orders,
             selectedTab: selectedTab,
@@ -130,12 +141,14 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
   Widget _buildTabContent({
     required bool isInitializing,
     required bool isLoading,
+    required bool isInitialSyncPending,
     required String? errorMessage,
     required List<WorkOrder> orders,
     required String selectedTab,
     required bool isDesktop,
   }) {
-    if (isInitializing || (isLoading && orders.isEmpty)) {
+    if (isInitializing ||
+        ((isLoading || isInitialSyncPending) && orders.isEmpty)) {
       return _buildSkeletonLoading();
     }
 

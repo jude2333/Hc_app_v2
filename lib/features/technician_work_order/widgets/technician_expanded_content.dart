@@ -450,19 +450,28 @@ class _TechnicianExpandedContentState
   }
 
   Future<void> _downloadAndSave(String path) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final fileName = FileService.getFileName(path);
+
     try {
       final s3Service = ref.read(s3FileServiceProvider);
-      await s3Service.downloadFile(filePath: path);
-      final fileName = _getFileName(path);
+      final Uint8List bytes = await s3Service.downloadFile(filePath: path);
+      final ext = FileService.getExtension(path).replaceAll('.', '');
+      final mimeType =
+          FileService.isPdf(path) ? 'application/pdf' : 'image/$ext';
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Downloaded: $fileName'),
-            backgroundColor: AppColors.success));
+        await FileService.saveOrOpenFile(
+          context,
+          bytes: bytes,
+          fileName: fileName,
+          mimeType: mimeType,
+        );
       }
     } catch (e) {
-      debugPrint('Download error: $e');
+      debugPrint('[TechExpanded] Download error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        messenger.showSnackBar(SnackBar(
             content: Text('Download failed: $e'),
             backgroundColor: AppColors.error));
       }

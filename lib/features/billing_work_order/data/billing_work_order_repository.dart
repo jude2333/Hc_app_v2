@@ -19,6 +19,12 @@ class BillingWorkOrderRepository {
 
   BillingWorkOrderRepository(this._db, this._couchClient, this._storage);
 
+  /// Stream of sync status changes — consumed by billingSyncStatusProvider
+  /// so UI indicators can rebuild independently.
+  Stream<SyncStatus> watchSyncStatus() {
+    return _powerSync.watchStatus();
+  }
+
   DateTime _getBaseDate() {
     // if (Settings.development) {
     //   return DateTime(2022, 12, 14);

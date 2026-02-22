@@ -123,56 +123,81 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
+  /// Postgres response codes that indicate fatal (non-retryable) errors.
+  /// Matches the official PowerSync Supabase demo pattern.
+  static final List<RegExp> _fatalPostgresCodes = [
+    // Class 22 — Data Exception (e.g. data type mismatch, invalid JSON)
+    RegExp(r'^22...$'),
+    // Class 23 — Integrity Constraint Violation (NOT NULL, FK, UNIQUE)
+    RegExp(r'^23...$'),
+    // INSUFFICIENT PRIVILEGE — typically a row-level security violation
+    RegExp(r'^42501$'),
+  ];
+
   @override
   Future<void> uploadData(PowerSyncDatabase database) async {
     debugPrint('[BackendConnector] uploadData()');
 
-    // Use getCrudBatch() for atomic batch completion.
-    // This ensures checkpoint advancement happens once after ALL operations
-    // succeed, preventing the "Could not apply checkpoint due to local data"
-    // blocking issue that kills db.watch() streams.
-    final batch = await database.getCrudBatch();
+    // Use getNextCrudTransaction() per official PowerSync pattern.
+    // Processes one transaction at a time so write checkpoints advance
+    // correctly, preventing "Could not apply checkpoint due to local data".
+    final transaction = await database.getNextCrudTransaction();
 
-    if (batch == null) return;
+    if (transaction == null) return;
 
     debugPrint(
-        '[BackendConnector] Processing batch with ${batch.crud.length} operations');
+        '[BackendConnector] Processing transaction with ${transaction.crud.length} operations');
 
+    CrudEntry? lastOp;
     try {
-      for (final operation in batch.crud) {
+      for (final operation in transaction.crud) {
+        lastOp = operation;
         await _processOperation(operation);
       }
 
-      // CRITICAL: Complete the entire batch at once.
-      // This allows the write checkpoint to advance properly.
-      await batch.complete();
-      debugPrint('[BackendConnector] Batch completed successfully ✅');
-
-      // Small delay to let the internal write checkpoint state settle
-      // before the next sync iteration evaluates the checkpoint.
-      await Future.delayed(const Duration(milliseconds: 100));
+      // All operations successful — advance the write checkpoint.
+      await transaction.complete();
+      debugPrint('[BackendConnector] Transaction completed successfully ✅');
     } catch (e) {
-      debugPrint('[BackendConnector] Upload error: $e');
+      debugPrint('[BackendConnector] Upload error on $lastOp: $e');
 
       if (_isPermanentError(e)) {
-        // Permanent errors (400, 404, 409, etc.) should NOT block the queue.
-        // Complete the batch to skip and unblock checkpoint advancement.
+        // Fatal Postgres errors (data type mismatch, constraint violations)
+        // should NOT block the queue. Discard and move on.
         debugPrint(
-            '[BackendConnector] ⚠️ Permanent error, completing batch to skip: $e');
-        await batch.complete();
+            '[BackendConnector] ⚠️ Fatal error, discarding transaction: $e');
+        await transaction.complete();
       } else {
-        // Transient errors (network, 5xx) — don't complete batch, let PowerSync retry
+        // Transient errors (network, 5xx, 401) — let PowerSync retry
         rethrow;
       }
     }
   }
 
   /// Check if an error is permanent (should not be retried).
-  /// Uses structured HTTP status codes instead of fragile string matching.
+  /// Uses Postgres error codes from the PostgREST JSON response body,
+  /// matching the official PowerSync Supabase demo pattern.
   bool _isPermanentError(dynamic error) {
     if (error is PostgRESTException) {
       // 401 is Transient (Token Expired) -> Retry (with refresh)
       if (error.statusCode == 401) return false;
+
+      // Try to extract Postgres error code from PostgREST JSON response
+      try {
+        final body = jsonDecode(error.responseBody);
+        final pgCode = body['code']?.toString();
+        if (pgCode != null) {
+          final isFatal = _fatalPostgresCodes.any((re) => re.hasMatch(pgCode));
+          debugPrint(
+              '[BackendConnector] Postgres code: $pgCode, fatal: $isFatal');
+          return isFatal;
+        }
+      } catch (_) {
+        // Response body not valid JSON — fall through to status code check
+      }
+
+      // Fallback: 4xx (except 401, 409, 429) are likely permanent
+      if (error.statusCode == 409 || error.statusCode == 429) return false;
       return error.statusCode >= 400 && error.statusCode < 500;
     }
     // Fallback: check for known permanent error patterns
@@ -218,12 +243,12 @@ class BackendConnector extends PowerSyncBackendConnector {
     switch (operation.op) {
       case UpdateType.put:
         // Ensure sync_window is always true for new/edited work orders
-        data!['sync_window'] = true;
+        data!['sync_window'] = 1;
         await _upsertWorkOrder(id, data);
         break;
       case UpdateType.patch:
         // Ensure sync_window is always true for updated work orders
-        data!['sync_window'] = true;
+        data!['sync_window'] = 1;
         await _updateWorkOrder(id, data);
         break;
       case UpdateType.delete:
@@ -239,10 +264,15 @@ class BackendConnector extends PowerSyncBackendConnector {
 
     switch (operation.op) {
       case UpdateType.put:
-        await _upsertPriceList(id, data!);
+        // Create a copy to avoid mutating opData in place
+        final payload = Map<String, dynamic>.from(data!);
+        await _upsertPriceList(id, payload);
         break;
       case UpdateType.patch:
-        await _updatePriceList(id, data!);
+        // Create a copy to avoid mutating opData in place
+        final payload = Map<String, dynamic>.from(data!);
+        payload.remove('id'); // PowerSync id != Postgres PK
+        await _updatePriceList(id, payload);
         break;
       case UpdateType.delete:
         await _deletePriceList(id);
@@ -334,10 +364,19 @@ class BackendConnector extends PowerSyncBackendConnector {
       url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
     }
 
+    // IMPORTANT: Create a COPY of the data before modifying.
+    // Do NOT mutate operation.opData in place — PowerSync uses
+    // the original opData for write checkpoint reconciliation.
+    final payload = Map<String, dynamic>.from(data);
+
+    // Strip fields that don't belong in the PostgREST PATCH payload.
+    // - id: PowerSync uses doc_id as id, but Postgres has an integer PK
+    payload.remove('id');
+
     // Decode doc from String→Map to prevent double-encoding into jsonb
-    if (data['doc'] is String) {
+    if (payload['doc'] is String) {
       try {
-        data['doc'] = jsonDecode(data['doc'] as String);
+        payload['doc'] = jsonDecode(payload['doc'] as String);
       } catch (_) {}
     }
 
@@ -352,7 +391,7 @@ class BackendConnector extends PowerSyncBackendConnector {
 
       try {
         debugPrint('[BackendConnector] Sending PATCH to $url');
-        final body = jsonEncode(data);
+        final body = jsonEncode(payload);
 
         final response = await http
             .patch(
@@ -375,6 +414,7 @@ class BackendConnector extends PowerSyncBackendConnector {
                 '[BackendConnector] ⚠️ PATCH matched 0 rows for id=$id — row may not exist on server');
             return;
           }
+
           debugPrint('[BackendConnector] ✅ Work order updated: id=$id');
           return;
         }
@@ -448,6 +488,13 @@ class BackendConnector extends PowerSyncBackendConnector {
     final baseUrl = Settings.currentPostgresUrl;
     final url = '$baseUrl/price_list';
 
+    // Decode history from String→List to prevent double-encoding into jsonb
+    if (data['history'] is String) {
+      try {
+        data['history'] = jsonDecode(data['history'] as String);
+      } catch (_) {}
+    }
+
     final dataWithId = {...data, 'id': id};
 
     debugPrint('[BackendConnector] Upserting price_list: $id');
@@ -491,6 +538,13 @@ class BackendConnector extends PowerSyncBackendConnector {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
+
+    // Decode history from String→List to prevent double-encoding into jsonb
+    if (data['history'] is String) {
+      try {
+        data['history'] = jsonDecode(data['history'] as String);
+      } catch (_) {}
+    }
 
     final response = await http
         .patch(

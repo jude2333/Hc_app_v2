@@ -318,6 +318,47 @@ class PowerSyncService {
     );
   }
 
+  /// Normalize a JSON value to match Postgres jsonb key ordering.
+  /// Postgres jsonb sorts object keys alphabetically. This ensures
+  /// the local TEXT representation matches what the server returns,
+  /// preventing "Could not apply checkpoint due to local data" errors.
+  static String _normalizeJsonForPostgres(dynamic value) {
+    if (value is String) {
+      try {
+        final parsed = jsonDecode(value);
+        return jsonEncode(_sortKeys(parsed));
+      } catch (_) {
+        return value;
+      }
+    } else if (value is Map) {
+      return jsonEncode(_sortKeys(value));
+    }
+    return jsonEncode(value);
+  }
+
+  /// Recursively sort map keys to match Postgres jsonb ordering.
+  /// Postgres jsonb sorts by key LENGTH first, then lexicographically
+  /// for keys of the same length.
+  static dynamic _sortKeys(dynamic value) {
+    if (value is Map) {
+      final sorted = Map<String, dynamic>.fromEntries(
+        (value.entries.toList()
+              ..sort((a, b) {
+                final aKey = a.key.toString();
+                final bKey = b.key.toString();
+                // Postgres jsonb: shorter keys first, then lexicographic
+                final lenCmp = aKey.length.compareTo(bKey.length);
+                return lenCmp != 0 ? lenCmp : aKey.compareTo(bKey);
+              }))
+            .map((e) => MapEntry(e.key.toString(), _sortKeys(e.value))),
+      );
+      return sorted;
+    } else if (value is List) {
+      return value.map((e) => _sortKeys(e)).toList();
+    }
+    return value;
+  }
+
   Future<void> createWorkOrder(WorkOrder order) async {
     await _ensureInitialized();
     final data = order.toMap();
@@ -329,8 +370,8 @@ class PowerSyncService {
       b2b_client_id, b2b_client_name, status, server_status, 
       bill_amount, received_amount, discount_amount, doc,
       bill_number, lab_number, visible, created_by, created_at, 
-      last_updated_by, last_updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      last_updated_by, last_updated_at, sync_window
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ''', [
       data['id'],
       data['tenant_id'],
@@ -352,7 +393,9 @@ class PowerSyncService {
       data['bill_amount'],
       data['received_amount'],
       data['discount_amount'],
-      data['doc'] is String ? data['doc'] : jsonEncode(data['doc']),
+      data['doc'] is String
+          ? _normalizeJsonForPostgres(data['doc'])
+          : _normalizeJsonForPostgres(data['doc']),
       data['bill_number'],
       data['lab_number'],
       data['visible'],
@@ -360,6 +403,7 @@ class PowerSyncService {
       data['created_at'],
       data['last_updated_by'],
       data['last_updated_at'],
+      data['sync_window'] ?? 1,
     ]);
   }
 
@@ -371,7 +415,7 @@ class PowerSyncService {
 
     try {
       final data = workOrder.toMap();
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
       final docToUse = customDoc != null ? jsonEncode(customDoc) : data['doc'];
 
       await db.execute(
@@ -382,7 +426,8 @@ class PowerSyncService {
         manager_id = ?, manager_name = ?, assigned_id = ?, assigned_to = ?, 
         b2b_client_id = ?, b2b_client_name = ?, 
         status = ?, server_status = ?, bill_amount = ?, received_amount = ?, 
-        discount_amount = ?, doc = ?, last_updated_by = ?, last_updated_at = ?
+        discount_amount = ?, doc = ?, last_updated_by = ?, last_updated_at = ?,
+        sync_window = ?
       WHERE id = ?
       ''',
         [
@@ -401,9 +446,10 @@ class PowerSyncService {
           data['bill_amount'],
           data['received_amount'],
           data['discount_amount'],
-          docToUse is String ? docToUse : jsonEncode(docToUse),
+          _normalizeJsonForPostgres(docToUse),
           data['last_updated_by'],
           now,
+          data['sync_window'] ?? 1,
           data['id'],
         ],
       );

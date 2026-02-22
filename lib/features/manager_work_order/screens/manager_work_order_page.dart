@@ -229,6 +229,15 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
   Widget _buildBody(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
+    final isInitialSyncPending =
+        ref.watch(managerSyncStatusProvider).whenOrNull(
+              data: (status) {
+                // We only block the UI with a skeleton if we haven't completed
+                // our very first initial sync pass with the server.
+                return status.hasSynced == false;
+              },
+            ) ??
+            false; // Don't show skeleton just because provider is initializing
 
     final isInitializing = ref.watch(
       managerWONotifierProvider.select((s) => s.isInitializing),
@@ -243,7 +252,8 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
       managerWONotifierProvider.select((s) => s.errorMessage),
     );
 
-    if (isInitializing || (isLoading && workOrders.isEmpty)) {
+    if (isInitializing ||
+        ((isLoading || isInitialSyncPending) && workOrders.isEmpty)) {
       return Padding(
         padding: isMobile
             ? EdgeInsets.zero

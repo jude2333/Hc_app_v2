@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:powersync/powersync.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
@@ -318,6 +319,12 @@ final billingWorkOrderProvider = AutoDisposeNotifierProvider<
     BillingWorkOrderNotifier, BillingWorkOrderState>(
   BillingWorkOrderNotifier.new,
 );
+
+/// Separate sync status stream so the UI can show skeleton loading
+/// without re-triggering full list rebuilds.
+final billingSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
+  return PowerSyncService.instance.watchStatus();
+});
 
 // ---------------------------------------------------------------------------
 // UI State Pods (autoDispose so they reset on navigation away)

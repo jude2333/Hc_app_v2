@@ -67,8 +67,19 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
                 Expanded(
                   child: widget.workOrders.isEmpty
                       ? Center(
-                          child: Text('No Data Available',
-                              style: TextStyle(color: AppColors.textSecondary)))
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.assignment_outlined,
+                                  size: 40, color: AppColors.textHint),
+                              const SizedBox(height: 12),
+                              Text('No Work Orders Found',
+                                  style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        )
                       : ListView.separated(
                           itemCount: widget.workOrders.length,
                           cacheExtent: 500,
