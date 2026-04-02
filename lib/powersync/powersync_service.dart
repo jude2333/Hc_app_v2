@@ -148,8 +148,7 @@ class PowerSyncService {
       // Check if lastSyncedAt advanced → checkpoint applied successfully
       if (status.lastSyncedAt != null &&
           status.lastSyncedAt != _lastSyncedAtSeen) {
-        debugPrint(
-            '[PowerSync] ✅ Checkpoint applied at ${status.lastSyncedAt}');
+        debugPrint('[PowerSync]  Checkpoint applied at ${status.lastSyncedAt}');
         _lastSyncedAtSeen = status.lastSyncedAt;
         _stuckSince = null; // Reset stuck timer
         return;
@@ -176,6 +175,9 @@ class PowerSyncService {
           await _reconnect();
         }
       }
+    }, onError: (error) {
+      // Silently handle JS interop errors on web (LegacyJavaScriptObject)
+      debugPrint('[PowerSync] statusStream error (ignored): $error');
     });
   }
 
@@ -192,7 +194,7 @@ class PowerSyncService {
           syncImplementation: SyncClientImplementation.rust,
         ),
       );
-      debugPrint('[PowerSync] Reconnected successfully ✅');
+      debugPrint('[PowerSync] Reconnected successfully ');
     } catch (e) {
       debugPrint('[PowerSync] Reconnect failed: $e');
     }
@@ -215,7 +217,7 @@ class PowerSyncService {
           .first
           .timeout(timeout);
 
-      debugPrint('[PowerSync] ✅ Checkpoint advanced after CRUD drain');
+      debugPrint('[PowerSync]  Checkpoint advanced after CRUD drain');
     } on TimeoutException {
       debugPrint(
           '[PowerSync] ⚠️ Checkpoint didn\'t advance in ${timeout.inSeconds}s — forcing reconnect...');
@@ -318,46 +320,44 @@ class PowerSyncService {
     );
   }
 
-  /// Normalize a JSON value to match Postgres jsonb key ordering.
-  /// Postgres jsonb sorts object keys alphabetically. This ensures
-  /// the local TEXT representation matches what the server returns,
-  /// preventing "Could not apply checkpoint due to local data" errors.
-  static String _normalizeJsonForPostgres(dynamic value) {
-    if (value is String) {
-      try {
-        final parsed = jsonDecode(value);
-        return jsonEncode(_sortKeys(parsed));
-      } catch (_) {
-        return value;
-      }
-    } else if (value is Map) {
-      return jsonEncode(_sortKeys(value));
-    }
-    return jsonEncode(value);
-  }
-
-  /// Recursively sort map keys to match Postgres jsonb ordering.
-  /// Postgres jsonb sorts by key LENGTH first, then lexicographically
-  /// for keys of the same length.
-  static dynamic _sortKeys(dynamic value) {
-    if (value is Map) {
-      final sorted = Map<String, dynamic>.fromEntries(
-        (value.entries.toList()
-              ..sort((a, b) {
-                final aKey = a.key.toString();
-                final bKey = b.key.toString();
-                // Postgres jsonb: shorter keys first, then lexicographic
-                final lenCmp = aKey.length.compareTo(bKey.length);
-                return lenCmp != 0 ? lenCmp : aKey.compareTo(bKey);
-              }))
-            .map((e) => MapEntry(e.key.toString(), _sortKeys(e.value))),
-      );
-      return sorted;
-    } else if (value is List) {
-      return value.map((e) => _sortKeys(e)).toList();
-    }
-    return value;
-  }
+  // ── JSON Normalization (DISABLED) ─────────────────────────────────
+  // These were used to sort JSON keys to match Postgres jsonb ordering,
+  // preventing "Could not apply checkpoint" errors. No longer needed
+  // because Rust sync (SyncClientImplementation.rust) handles this,
+  // and _setupSyncRecovery() auto-reconnects on stuck checkpoints.
+  //
+  // static String _normalizeJsonForPostgres(dynamic value) {
+  //   if (value is String) {
+  //     try {
+  //       final parsed = jsonDecode(value);
+  //       return jsonEncode(_sortKeys(parsed));
+  //     } catch (_) {
+  //       return value;
+  //     }
+  //   } else if (value is Map) {
+  //     return jsonEncode(_sortKeys(value));
+  //   }
+  //   return jsonEncode(value);
+  // }
+  //
+  // static dynamic _sortKeys(dynamic value) {
+  //   if (value is Map) {
+  //     final sorted = Map<String, dynamic>.fromEntries(
+  //       (value.entries.toList()
+  //             ..sort((a, b) {
+  //               final aKey = a.key.toString();
+  //               final bKey = b.key.toString();
+  //               final lenCmp = aKey.length.compareTo(bKey.length);
+  //               return lenCmp != 0 ? lenCmp : aKey.compareTo(bKey);
+  //             }))
+  //           .map((e) => MapEntry(e.key.toString(), _sortKeys(e.value))),
+  //     );
+  //     return sorted;
+  //   } else if (value is List) {
+  //     return value.map((e) => _sortKeys(e)).toList();
+  //   }
+  //   return value;
+  // }
 
   Future<void> createWorkOrder(WorkOrder order) async {
     await _ensureInitialized();
@@ -393,9 +393,7 @@ class PowerSyncService {
       data['bill_amount'],
       data['received_amount'],
       data['discount_amount'],
-      data['doc'] is String
-          ? _normalizeJsonForPostgres(data['doc'])
-          : _normalizeJsonForPostgres(data['doc']),
+      data['doc'] is String ? data['doc'] : jsonEncode(data['doc']),
       data['bill_number'],
       data['lab_number'],
       data['visible'],
@@ -446,7 +444,7 @@ class PowerSyncService {
           data['bill_amount'],
           data['received_amount'],
           data['discount_amount'],
-          _normalizeJsonForPostgres(docToUse),
+          docToUse is String ? docToUse : jsonEncode(docToUse),
           data['last_updated_by'],
           now,
           data['sync_window'] ?? 1,
@@ -460,7 +458,7 @@ class PowerSyncService {
     }
   }
 
-  Future<void> softDeleteWorkOrder(int id, String user) async {
+  Future<void> softDeleteWorkOrder(String id, String user) async {
     await _ensureInitialized();
     final now = DateTime.now().toIso8601String();
     await db.execute(
@@ -469,13 +467,17 @@ class PowerSyncService {
     );
   }
 
-  Future<void> deleteWorkOrder(int id) async {
+  Future<void> deleteWorkOrder(String id) async {
     await _ensureInitialized();
     await db.execute('DELETE FROM hc_patient_visit_detail WHERE id = ?', [id]);
   }
 
   Stream<SyncStatus> watchStatus() {
-    return db.statusStream;
+    // Wrap with handleError to prevent LegacyJavaScriptObject cast
+    // failures on Flutter web from crashing the stream consumer.
+    return db.statusStream.handleError((error) {
+      debugPrint('[PowerSync] watchStatus stream error (ignored): $error');
+    });
   }
 
   bool get isConnected => db.currentStatus.connected;
@@ -565,7 +567,7 @@ class PowerSyncService {
         final result = await db.getAll('SELECT count(*) as cnt FROM ps_crud');
         final count = result.first['cnt'] as int? ?? 0;
         if (count == 0) {
-          debugPrint('[PowerSync] waitForSync: CRUD queue empty ✅');
+          debugPrint('[PowerSync] waitForSync: CRUD queue empty ');
           return;
         }
         debugPrint('[PowerSync] waitForSync: $count CRUD entries pending...');

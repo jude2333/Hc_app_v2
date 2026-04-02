@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../providers/notifications_page_provider.dart';
 import 'notification_status_chip.dart';
 import 'notification_expanded.dart';
@@ -69,7 +70,7 @@ class NotificationDesktopView extends ConsumerWidget {
                               ),
                               _buildStatusCell(notification, flex: 1),
                               _buildDataCell(
-                                notification['updated'] ?? '',
+                                _formatDateTime(notification['updated']),
                                 flex: 2,
                               ),
                               _buildExpandCell(isExpanded, flex: 1),
@@ -163,5 +164,15 @@ class NotificationDesktopView extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  static String _formatDateTime(dynamic value) {
+    if (value == null || value.toString().isEmpty) return '';
+    try {
+      final dt = DateTime.parse(value.toString()).toLocal();
+      return DateFormat('dd-MM-yyyy hh:mm a').format(dt);
+    } catch (_) {
+      return value.toString();
+    }
   }
 }

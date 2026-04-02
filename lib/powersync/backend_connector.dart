@@ -165,7 +165,7 @@ class BackendConnector extends PowerSyncBackendConnector {
         // Fatal Postgres errors (data type mismatch, constraint violations)
         // should NOT block the queue. Discard and move on.
         debugPrint(
-            '[BackendConnector] ⚠️ Fatal error, discarding transaction: $e');
+            '[BackendConnector]  Fatal error, discarding transaction: $e');
         await transaction.complete();
       } else {
         // Transient errors (network, 5xx, 401) — let PowerSync retry
@@ -351,18 +351,7 @@ class BackendConnector extends PowerSyncBackendConnector {
 
   Future<void> _updateWorkOrder(String id, Map<String, dynamic> data) async {
     final baseUrl = Settings.currentPostgresUrl;
-
-    // Detect ID format:
-    // - All digits → old cached integer PK (before sync rule change)
-    // - Contains non-digits → doc_id string (after sync rule change: doc_id as id)
-    final isIntegerId = RegExp(r'^\d+$').hasMatch(id);
-    final String url;
-    if (isIntegerId) {
-      url = '$baseUrl/hc_patient_visit_detail?id=eq.$id';
-      debugPrint('[BackendConnector] PATCH using integer PK: $id');
-    } else {
-      url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
-    }
+    final String url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
 
     // IMPORTANT: Create a COPY of the data before modifying.
     // Do NOT mutate operation.opData in place — PowerSync uses
@@ -411,7 +400,7 @@ class BackendConnector extends PowerSyncBackendConnector {
             // 0 rows matched — row may have been deleted. Log and move on.
             // Don't upsert: PATCH data is partial (missing required fields).
             debugPrint(
-                '[BackendConnector] ⚠️ PATCH matched 0 rows for id=$id — row may not exist on server');
+                '[BackendConnector]  PATCH matched 0 rows for id=$id — row may not exist on server');
             return;
           }
 
@@ -452,15 +441,7 @@ class BackendConnector extends PowerSyncBackendConnector {
 
   Future<void> _deleteWorkOrder(String id) async {
     final baseUrl = Settings.currentPostgresUrl;
-
-    // Detect ID format: integer PK (old) vs doc_id string (new)
-    final isIntegerId = RegExp(r'^\d+$').hasMatch(id);
-    final String url;
-    if (isIntegerId) {
-      url = '$baseUrl/hc_patient_visit_detail?id=eq.$id';
-    } else {
-      url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
-    }
+    final String url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
 
     final token = await storage.getFromSessionAsync('pg_admin');
     final headers = <String, String>{
@@ -705,12 +686,18 @@ class BackendConnector extends PowerSyncBackendConnector {
         )
         .timeout(const Duration(seconds: 15));
 
-    if (response.statusCode != 204 && response.statusCode != 200) {
+    // 200/204 = success (row deleted or already gone — both are fine).
+    // PostgREST returns 200 with empty body if the WHERE matched 0 rows,
+    // which happens when the server cron already cleaned up the row.
+    if (response.statusCode == 200 || response.statusCode == 204) {
       debugPrint(
-          '[BackendConnector] Temp upload delete failed: ${response.statusCode}');
-      throw PostgRESTException(
-          'TempUpload delete failed', response.statusCode, response.body);
+          '[BackendConnector] Temp upload deleted (or already gone): $id');
+      return;
     }
-    debugPrint('[BackendConnector] Temp upload deleted: $id');
+
+    debugPrint(
+        '[BackendConnector] Temp upload delete failed: ${response.statusCode}');
+    throw PostgRESTException(
+        'TempUpload delete failed', response.statusCode, response.body);
   }
 }

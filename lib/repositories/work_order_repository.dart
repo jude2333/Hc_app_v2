@@ -123,7 +123,7 @@ class WorkOrderRepository {
     }
   }
 
-  Future<bool> softDeleteWorkOrder(int id, String user) async {
+  Future<bool> softDeleteWorkOrder(String id, String user) async {
     try {
       await _powerSync.softDeleteWorkOrder(id, user);
       return true;
@@ -133,7 +133,7 @@ class WorkOrderRepository {
     }
   }
 
-  Future<bool> deleteWorkOrder(int id) async {
+  Future<bool> deleteWorkOrder(String id) async {
     try {
       await _powerSync.deleteWorkOrder(id);
       return true;

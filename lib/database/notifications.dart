@@ -101,8 +101,6 @@ class NotificationDB {
     return Dio(options);
   }
 
-  /// Create an in-app notification (mirrors Vue's send_notification function)
-  /// This is called when a work order is assigned to a technician
   Future<String> createNotification({
     required int toId,
     required String toName,
@@ -188,15 +186,14 @@ class NotificationDB {
 
       String? name = _dbHandler.resolveName("hc_notifications");
       if (name == null) {
-        debugPrint("❌ [Notifications] Could not resolve db name");
+        debugPrint(" [Notifications] Could not resolve db name");
         return [];
       }
 
       Dio? remoteDb = await _couchDB.getDB(name);
 
-      debugPrint("📥 [Notifications] Fetching for emp_id: $criteria");
-      debugPrint(
-          "📅 [Notifications] Date range: $startDate to $endDate (1-day lookback like Vue)");
+      debugPrint(" [Notifications] Fetching for emp_id: $criteria");
+      debugPrint(" [Notifications] Date range: $startDate to $endDate");
 
       Response response = await remoteDb.get(
         "/_all_docs",
@@ -213,20 +210,20 @@ class NotificationDB {
       final totalRows = rawData['total_rows'] ?? 0;
       final fetchedRows = (rawData['rows'] as List?)?.length ?? 0;
       debugPrint(
-          "📦 [Notifications] Total in DB: $totalRows, Fetched: $fetchedRows");
+          " [Notifications] Total in DB: $totalRows, Fetched: $fetchedRows");
 
       List<Map<String, dynamic>> allItems = await compute(
           _parseAndSortInBackground,
           {'body': response.data.toString(), 'criteria': criteria});
 
       debugPrint(
-          "✅ [Notifications] After filtering by emp_id: ${allItems.length} items");
+          " [Notifications] After filtering by emp_id: ${allItems.length} items");
 
       // If status is "New", filter to only new items (matches Vue logic)
       if (status == "New") {
         final newItems =
             allItems.where((doc) => doc['status'] == 'New').toList();
-        debugPrint("🔔 [Notifications] New status items: ${newItems.length}");
+        debugPrint(" [Notifications] New status items: ${newItems.length}");
         return newItems;
       }
 
@@ -241,10 +238,10 @@ class NotificationDB {
         });
       }
 
-      debugPrint("✅ [Notifications] Returning ${allItems.length} items");
+      debugPrint(" [Notifications] Returning ${allItems.length} items");
       return allItems;
     } catch (e) {
-      debugPrint("❌ [Notifications] Error in listRemoteData: $e");
+      debugPrint(" [Notifications] Error in listRemoteData: $e");
       return [];
     }
   }
@@ -283,12 +280,12 @@ class NotificationDB {
           return "ERROR: Document _id is missing";
         }
 
-        debugPrint("📝 Updating notification: $docId");
+        debugPrint(" Updating notification: $docId");
 
         Response getResponse = await remotedb.get('/$docId');
         if (getResponse.statusCode == 200) {
           doc['_rev'] = getResponse.data['_rev'];
-          debugPrint("📌 Got current rev: ${doc['_rev']}");
+          debugPrint(" Got current rev: ${doc['_rev']}");
         }
 
         final response = await remotedb.put(
@@ -301,15 +298,9 @@ class NotificationDB {
         if (response.statusCode == 200 || response.statusCode == 201) {
           debugPrint(" Updated notification doc successfully.");
           doc['_rev'] = response.data['rev'];
-          debugPrint("📌 New rev: ${doc['_rev']}");
+          debugPrint(" New rev: ${doc['_rev']}");
 
-          debugPrint("🔔 Triggering notification refresh...");
-          // DBHandler.notificationRefreshBus.add(null); // Removed static access
-          // We should rely on DBHandler sync to pick this up, or manually force sync?
-          // But this is direct server update.
-          // DBHandler sync will eventually pull it.
-          // If we want immediate UI update, we should update local DB too?
-          // But doUpdate2 seems to be for remote only?
+          debugPrint(" Triggering notification refresh...");
 
           return "OK";
         } else {
@@ -327,7 +318,7 @@ class NotificationDB {
   }
 
   Future<void> markAsSeen(String docId) async {
-    debugPrint('📝 Marking notification $docId as seen.');
+    debugPrint(' Marking notification $docId as seen.');
     try {
       final doc = await getWithIdRemote(docId);
       if (doc != null) {
@@ -367,7 +358,7 @@ class NotificationDB {
         return doc;
       } else {
         debugPrint(
-            "⚠️ Notification not found: $id (status: ${response.statusCode})");
+            " Notification not found: $id (status: ${response.statusCode})");
         return null;
       }
     } catch (e) {

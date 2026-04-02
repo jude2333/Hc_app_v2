@@ -14,6 +14,7 @@ import 'package:anderson_crm_flutter/features/technician_work_order/screens/tech
 import 'package:anderson_crm_flutter/features/billing_work_order/screens/billing_work_order_page.dart';
 import 'package:anderson_crm_flutter/features/manager_work_order/screens/manager_work_order_page.dart';
 import 'package:anderson_crm_flutter/features/search/screens/search_page.dart';
+import 'package:anderson_crm_flutter/features/tracking_dashboard/screens/tracking_dashboard_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -68,6 +69,11 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/home',
           redirect: (context, state) => '/dashboard',
+        ),
+        GoRoute(
+          path: '/tracking-dashboard',
+          name: 'tracking_dashboard',
+          builder: (context, state) => const TrackingDashboardPage(),
         ),
       ],
     ),

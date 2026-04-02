@@ -178,6 +178,14 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
   void setRemarks(String remarks) {
     state = state.copyWith(remarks: remarks);
   }
+
+  void setSkipMessage(String? message) {
+    state = state.copyWith(skipMessage: message);
+  }
+
+  void clearSkipMessage() {
+    state = state.copyWith(skipMessage: null);
+  }
 }
 
 final hcProcessProvider = StateNotifierProvider.autoDispose

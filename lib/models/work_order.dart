@@ -247,10 +247,11 @@ class WorkOrder {
       'b2b_client_name': b2bClientName,
       'vip_client': parsedDocMap['vip_client'] ?? 0,
       'urgent': parsedDocMap['urgent'] ?? 0,
+      'cghs_client': parsedDocMap['cghs_client'] ?? 0,
       'credit': parsedDocMap['credit'] ?? 0,
       'appointment_date': DateFormat('dd-MM-yyyy').format(visitDate),
       'appointment_time': visitTime,
-      'pres_photo': prescriptionPath,
+      'pres_photo': parsedDocMap['pres_photo'] ?? '',
       'status': status,
       'server_status': serverStatus,
       'assigned_to': assignedTo,
@@ -362,6 +363,7 @@ class WorkOrder {
     String? freeText,
     bool? vip,
     bool? urgent,
+    bool? cghsClient,
     int? credit,
     String? prescriptionPath,
     String? oldId,
@@ -409,6 +411,7 @@ class WorkOrder {
     if (freeText != null) updatedDoc['free_text'] = freeText;
     if (vip != null) updatedDoc['vip_client'] = vip ? 1 : 0;
     if (urgent != null) updatedDoc['urgent'] = urgent ? 1 : 0;
+    if (cghsClient != null) updatedDoc['cghs_client'] = cghsClient ? 1 : 0;
     if (credit != null) updatedDoc['credit'] = credit;
     if (prescriptionPath != null) updatedDoc['pres_photo'] = prescriptionPath;
     if (oldId != null) updatedDoc['old_id'] = oldId;
@@ -484,6 +487,12 @@ class WorkOrder {
 
   bool get urgent {
     final val = parsedDocMap['urgent'];
+    if (val is bool) return val;
+    return val == 1;
+  }
+
+  bool get cghsClient {
+    final val = parsedDocMap['cghs_client'];
     if (val is bool) return val;
     return val == 1;
   }
@@ -628,6 +637,7 @@ class WorkOrder {
     String? b2bClientName,
     bool? vip,
     bool? urgent,
+    bool? cghsClient,
     int? credit,
     bool? sendSms,
     bool? sendWhatsapp,
@@ -660,6 +670,7 @@ class WorkOrder {
       'b2b_client_name': b2bClientName ?? '',
       'vip_client': vip == true ? 1 : 0,
       'urgent': urgent == true ? 1 : 0,
+      'cghs_client': cghsClient == true ? 1 : 0,
       'credit': credit ?? 0,
       'process': {
         'first_step': '',

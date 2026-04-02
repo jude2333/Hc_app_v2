@@ -45,6 +45,7 @@ class HCProcessState {
   final int sms;
   final int whatsapp;
   final int email;
+  final String? skipMessage;
 
   const HCProcessState({
     this.isLoading = false,
@@ -81,6 +82,7 @@ class HCProcessState {
     this.sms = 0,
     this.whatsapp = 0,
     this.email = 0,
+    this.skipMessage,
   });
 
   HCProcessState copyWith({
@@ -118,6 +120,7 @@ class HCProcessState {
     int? sms,
     int? whatsapp,
     int? email,
+    String? skipMessage,
   }) {
     return HCProcessState(
       isLoading: isLoading ?? this.isLoading,
@@ -154,6 +157,7 @@ class HCProcessState {
       sms: sms ?? this.sms,
       whatsapp: whatsapp ?? this.whatsapp,
       email: email ?? this.email,
+      skipMessage: skipMessage,
     );
   }
 

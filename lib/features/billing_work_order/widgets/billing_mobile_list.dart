@@ -376,24 +376,32 @@ class _BillingCard extends StatelessWidget {
       flags.add(order.credit == 1 ? 'Credit' : 'Trial');
     }
     if ((order.b2bClientId ?? 0) > 0) flags.add('B2B');
+    if (order.cghsClient) flags.add('CGHS');
 
     if (flags.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.only(left: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.red),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        flags.join(' '),
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.red,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    return Wrap(
+      spacing: 4,
+      children: flags.map((flag) {
+        final isCghs = flag == 'CGHS';
+        final color = isCghs ? Colors.blue : Colors.red;
+        return Container(
+          margin: const EdgeInsets.only(left: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            border: Border.all(color: color),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            flag,
+            style: TextStyle(
+              fontSize: 10,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

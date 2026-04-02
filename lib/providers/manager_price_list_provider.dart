@@ -125,7 +125,7 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
   PriceListDB get _db => ref.read(priceListDbProvider);
 
   Future<void> loadComboData() async {
-    debugPrint('📊 Loading combo data...');
+    debugPrint(' Loading combo data...');
 
     await _db.setComboData();
 
@@ -133,7 +133,7 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
     final deptStr = await storage.getFromSessionAsync('dept_names');
     final investStr = await storage.getFromSessionAsync('invest_names');
 
-    debugPrint('🔄 Parsing ${investStr.length} chars in isolate...');
+    debugPrint(' Parsing ${investStr.length} chars in isolate...');
 
     final result = await compute(_parseComboDataIsolate, {
       'dept_names': deptStr,
@@ -150,12 +150,12 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
     );
 
     debugPrint(
-        '✅ Loaded ${state.deptNames.length} depts, ${state.investIds.length} investigations');
+        ' Loaded ${state.deptNames.length} depts, ${state.investIds.length} investigations');
   }
 
   Future<void> search(String query) async {
     if (state.currentSearchQuery == query && state.items.isNotEmpty) {
-      debugPrint('⏭️ Skipping duplicate search: $query');
+      debugPrint(' Skipping duplicate search: $query');
       return;
     }
 
@@ -167,9 +167,9 @@ class ManagerPriceListNotifier extends StateNotifier<ManagerPriceListState> {
           results.map((e) => Map<String, dynamic>.from(e)).toList();
 
       state = state.copyWith(items: typedResults, isLoading: false);
-      debugPrint('✅ Search complete: ${typedResults.length} results');
+      debugPrint(' Search complete: ${typedResults.length} results');
     } catch (e) {
-      debugPrint('❌ Search error: $e');
+      debugPrint(' Search error: $e');
       state = state.copyWith(isLoading: false);
     }
   }

@@ -48,6 +48,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
     required String freeText,
     required bool isVip,
     required bool isUrgent,
+    required bool isCghs,
     required int credit,
     required int? b2bClientId,
     required String? b2bClientName,
@@ -106,8 +107,12 @@ class AddWorkOrderController extends StateNotifier<bool> {
           email: email,
           pincode: pincode,
           freeText: freeText,
+          prescriptionPath: prescriptionPaths.isNotEmpty
+              ? prescriptionPaths.join(',')
+              : null,
           vip: isVip,
           urgent: isUrgent,
+          cghsClient: isCghs,
           credit: credit,
           b2bClientId: b2bClientId,
           b2bClientName: b2bClientName,
@@ -141,6 +146,24 @@ class AddWorkOrderController extends StateNotifier<bool> {
 
         if (isCancelled) {
           customDoc['cancel_reason'] = cancelReason;
+        }
+
+        // Save new prescription images to temp_uploads for S3 upload
+        // prescriptionPaths = [old1, old2, ..., new1, new2]
+        // prescriptionImages = [XFile(new1), XFile(new2)]
+        // New paths start at offset = total paths - new images count
+        if (prescriptionImages.isNotEmpty && prescriptionPaths.isNotEmpty) {
+          final offset = prescriptionPaths.length - prescriptionImages.length;
+          for (int i = 0; i < prescriptionImages.length; i++) {
+            final pathIndex = offset + i;
+            if (pathIndex >= 0 && pathIndex < prescriptionPaths.length) {
+              await _savePrescriptionToTempUploads(
+                workOrderDocId: existingWorkOrder.docId,
+                prescriptionImage: prescriptionImages[i],
+                prescriptionPath: prescriptionPaths[pathIndex],
+              );
+            }
+          }
         }
 
         final success = await ref
@@ -188,6 +211,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
           b2bClientName: b2bClientName,
           vip: isVip,
           urgent: isUrgent,
+          cghsClient: isCghs,
           credit: credit,
           sendSms: sendSms,
           sendWhatsapp: sendWhatsapp,

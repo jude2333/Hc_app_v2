@@ -146,7 +146,7 @@ class TechnicianWorkOrderRepository {
     }
   }
 
-  Future<bool> softDeleteWorkOrder(int id, String user) async {
+  Future<bool> softDeleteWorkOrder(String id, String user) async {
     try {
       await _powerSync.softDeleteWorkOrder(id, user);
       return true;

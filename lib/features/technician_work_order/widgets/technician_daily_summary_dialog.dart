@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
@@ -15,7 +14,8 @@ import '../providers/technician_work_order_provider.dart';
 // );
 
 final _selectedDateProvider = StateProvider<DateTime>((ref) {
-  return DateTime.now();
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
 });
 
 final _techDailySummaryProvider = FutureProvider.family<Map<String, dynamic>,

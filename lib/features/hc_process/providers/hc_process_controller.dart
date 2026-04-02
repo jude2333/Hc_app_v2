@@ -63,6 +63,9 @@ class HCProcessController {
         email: workOrder.sendEmail ? 1 : 0,
       );
 
+      // Auto-set CGHS price if work order is marked as CGHS client
+      _notifier.setCghsPrice(workOrder.cghsClient);
+
       if (processDoc.process.firstStep?.isNotEmpty == true) {
         _notifier.setDelayReason(processDoc.process.firstStep!);
       }
@@ -309,14 +312,19 @@ class HCProcessController {
       if (_state.b2bClient) {
         await _skipToFifthStep(
             'Not Received For B2B Client', 'OTP Not Needed For B2B Client');
+        _notifier.setSkipMessage('B2B client: Payment and OTP steps skipped.');
         return 4;
       } else if (_state.trialClient) {
         await _skipToFifthStep(
             'Not Received For Trial Client', 'OTP Not Needed For Trial Client');
+        _notifier
+            .setSkipMessage('Trial client: Payment and OTP steps skipped.');
         return 4;
       } else if (_state.creditClient && !_state.cghsPrice) {
         await _skipToFifthStep('Not Received For Credit Client',
             'OTP Not Needed For Credit Client');
+        _notifier
+            .setSkipMessage('Credit client: Payment and OTP steps skipped.');
         return 4;
       }
 
@@ -358,6 +366,8 @@ class HCProcessController {
 
       await _updateWorkOrderViaPowerSync(processDoc);
       _notifier.setCurrentStep(4);
+      _notifier.setSkipMessage(
+          'CGHS credit: Full payment skipped. Only HC charges applicable.');
       return;
     }
 
@@ -375,6 +385,7 @@ class HCProcessController {
 
       await _updateWorkOrderViaPowerSync(processDoc);
       _notifier.setCurrentStep(4);
+      _notifier.setSkipMessage('Credit client: OTP verification skipped.');
       return;
     }
 

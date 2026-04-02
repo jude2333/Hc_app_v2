@@ -20,7 +20,7 @@ class StorageService {
     _sessionCache = await _repository.loadSession();
     _localCache = await _repository.loadLocalStorage();
     debugPrint(
-        '🔄 Storage caches loaded: ${_sessionCache.keys.length} session, ${_localCache.keys.length} local');
+        ' Storage caches loaded: ${_sessionCache.keys.length} session, ${_localCache.keys.length} local');
   }
 
   Future<void> reloadCaches() async {
@@ -33,7 +33,7 @@ class StorageService {
 
   Future<String> getFromSessionAsync(String key) async {
     if (!_isInitialized) {
-      debugPrint('⏳ Storage not initialized, loading caches...');
+      debugPrint(' Storage not initialized, loading caches...');
       await _loadCaches();
       _isInitialized = true;
     }

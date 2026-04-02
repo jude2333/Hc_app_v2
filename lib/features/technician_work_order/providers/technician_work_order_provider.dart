@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
+import 'package:anderson_crm_flutter/repositories/temp_upload_repository.dart';
 import '../repositories/technician_work_order_repository.dart';
 
 // ---------------------------------------------------------------------------
@@ -61,6 +62,19 @@ class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
   Future<void> initialize() async {
     state = state.copyWith(isLoading: true);
     await _repo.initialize();
+
+    // Clean up completed temp_uploads older than 1 day from local SQLite.
+    // Server-side cleanup handles Postgres; this prevents local DB bloat.
+    try {
+      final tempRepo = ref.read(tempUploadRepositoryProvider);
+      final cleaned = await tempRepo.cleanupOldUploads();
+      if (cleaned > 0) {
+        debugPrint('[Tech] Cleaned $cleaned old temp uploads from local DB');
+      }
+    } catch (e) {
+      debugPrint('[Tech] Temp upload cleanup failed (non-fatal): $e');
+    }
+
     state = state.copyWith(isLoading: false, isInitializing: false);
   }
 

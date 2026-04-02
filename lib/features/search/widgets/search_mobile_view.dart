@@ -220,27 +220,34 @@ class _SearchResultCard extends StatelessWidget {
 
   Widget _buildBadges() {
     final badges = <String>[];
-    if (item['urgent'] == true) badges.add('Urgent');
-    if (item['vip_client'] == true) badges.add('VIP');
+    final urgentVal = item['urgent'];
+    if (urgentVal == true || urgentVal == 1) badges.add('Urgent');
+    final vipVal = item['vip_client'];
+    if (vipVal == true || vipVal == 1) badges.add('VIP');
     if (item['credit'] == 1) badges.add('Credit');
     if (item['credit'] == 2) badges.add('Trial');
-    if (item['b2b_client_id'] != null) badges.add('B2B');
+    final b2bId = int.tryParse(item['b2b_client_id']?.toString() ?? '0') ?? 0;
+    if (b2bId > 0) badges.add('B2B');
+    final cghsVal = item['cghs_client'];
+    if (cghsVal == true || cghsVal == 1) badges.add('CGHS');
 
     if (badges.isEmpty) return const SizedBox.shrink();
 
     return Wrap(
       spacing: 4,
       children: badges.map((badge) {
+        final isCghs = badge == 'CGHS';
+        final color = isCghs ? Colors.blue : AppColors.error;
         return Container(
           margin: EdgeInsets.only(top: 2),
           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.error, width: 1),
+            border: Border.all(color: color, width: 1),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             badge,
-            style: TextStyle(fontSize: 9, color: AppColors.error),
+            style: TextStyle(fontSize: 9, color: color),
           ),
         );
       }).toList(),

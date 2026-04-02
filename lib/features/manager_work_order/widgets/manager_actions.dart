@@ -170,7 +170,7 @@ class ManagerActions extends ConsumerWidget {
               Navigator.pop(context);
               final success = await ref
                   .read(managerWONotifierProvider.notifier)
-                  .softDeleteWorkOrder(int.parse(workOrder.id), 'Manager');
+                  .softDeleteWorkOrder(workOrder.id, 'Manager');
               if (success) {
                 // No loadWorkOrdersByDate needed — db.watch() auto-detects the delete
                 messenger.showSnackBar(

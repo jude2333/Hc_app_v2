@@ -60,6 +60,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
 
   bool _isVip = false;
   bool _isUrgent = false;
+  bool _isCghs = false;
 
   int _credit = 0;
   String _creditSelect = 'None';
@@ -177,6 +178,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _gender = wo.gender.isNotEmpty ? wo.gender : 'Male';
     _isVip = wo.vip;
     _isUrgent = wo.urgent;
+    _isCghs = wo.cghsClient;
     _credit = wo.credit;
     _creditSelect = _credit == 1 ? 'Credit' : (_credit == 2 ? 'Trial' : 'None');
 
@@ -202,8 +204,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     }
 
     if (!isCopy) {
-      if (wo.prescriptionPath.isNotEmpty) {
-        _prescriptionPaths = wo.prescriptionPath
+      if (wo.prescriptionPhoto.isNotEmpty) {
+        _prescriptionPaths = wo.prescriptionPhoto
             .split(',')
             .where((p) => p.trim().isNotEmpty)
             .toList();
@@ -258,10 +260,10 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
 
     if (_formKey.currentState!.validate() && _collectionTime != null) {
       // Validate future time for same-day appointments
-      // if (!_validateFutureTime()) {
-      //   _showSnackBar('Collection time must be in the future');
-      //   return;
-      // }
+      if (!_validateFutureTime()) {
+        _showSnackBar('Collection time must be in the future');
+        return;
+      }
       _save();
     } else if (_collectionTime == null) {
       _showSnackBar('Please select collection time');
@@ -335,6 +337,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               freeText: _freeTextController.text.trim(),
               isVip: _isVip,
               isUrgent: _isUrgent,
+              isCghs: _isCghs,
               credit: _credit,
               b2bClientId: _selectedB2BClientId,
               b2bClientName: _selectedB2BClientName,
@@ -858,6 +861,10 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         Expanded(
             child: _buildTagChip(
                 'Urgent', _isUrgent, (v) => setState(() => _isUrgent = v))),
+        SizedBox(width: AppSpacing.md),
+        Expanded(
+            child: _buildTagChip(
+                'CGHS', _isCghs, (v) => setState(() => _isCghs = v))),
       ],
     );
   }
@@ -873,12 +880,18 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
           color: value
               ? (label == 'Urgent'
                   ? AppColors.error.withOpacity(0.1)
-                  : AppColors.warning.withOpacity(0.1))
+                  : label == 'VIP'
+                      ? AppColors.warning.withOpacity(0.1)
+                      : AppColors.secondary.withOpacity(0.1))
               : AppColors.surfaceAlt,
           borderRadius: AppRadius.smAll,
           border: Border.all(
             color: value
-                ? (label == 'Urgent' ? AppColors.error : AppColors.warning)
+                ? (label == 'Urgent'
+                    ? AppColors.error
+                    : label == 'VIP'
+                        ? AppColors.warning
+                        : AppColors.secondary)
                 : AppColors.divider,
           ),
         ),
@@ -889,19 +902,31 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               value ? Icons.check_circle : Icons.circle_outlined,
               size: 18,
               color: value
-                  ? (label == 'Urgent' ? AppColors.error : AppColors.warning)
+                  ? (label == 'Urgent'
+                      ? AppColors.error
+                      : label == 'VIP'
+                          ? AppColors.warning
+                          : AppColors.secondary)
                   : AppColors.textHint,
             ),
             SizedBox(width: AppSpacing.xs),
-            Text(label,
+            Expanded(
+              child: Text(
+                label,
                 style: TextStyle(
                   color: value
                       ? (label == 'Urgent'
                           ? AppColors.error
-                          : AppColors.warning)
+                          : label == 'VIP'
+                              ? AppColors.warning
+                              : AppColors.secondary)
                       : AppColors.textSecondary,
                   fontWeight: value ? FontWeight.w600 : FontWeight.normal,
-                )),
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
           ],
         ),
       ),

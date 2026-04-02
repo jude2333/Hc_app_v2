@@ -28,7 +28,7 @@ class TempUploadRepository {
     );
 
     debugPrint(
-        '📷 Saving offline photo: ${upload.fileName} (${upload.fileSize} bytes)');
+        ' Saving offline photo: ${upload.fileName} (${upload.fileSize} bytes)');
 
     await db.execute('''
       INSERT INTO temp_uploads (
@@ -48,7 +48,7 @@ class TempUploadRepository {
       upload.createdBy,
     ]);
 
-    debugPrint('✅ Photo saved offline: ${upload.id}');
+    debugPrint(' Photo saved offline: ${upload.id}');
     return upload;
   }
 
@@ -111,22 +111,38 @@ class TempUploadRepository {
     await db.execute('DELETE FROM temp_uploads WHERE id = ?', [id]);
   }
 
-  Future<int> cleanupOldUploads({int olderThanDays = 1}) async {
+  /// Cleans up old temp_upload rows from local SQLite.
+  ///
+  /// IMPORTANT: temp_uploads has NO PowerSync sync rules (write-only).
+  /// The server sets status='completed' after S3 upload, but that status
+  /// change never syncs back to the client. So locally, rows stay
+  /// status='pending' forever after the CRUD queue pushes them to Postgres.
+  ///
+  /// It is safe to delete rows older than [olderThanHours] because the
+  /// server cron processes pending uploads every 30 seconds. A row that
+  /// has been in Postgres for 1+ day has certainly been processed.
+  ///
+  /// The DELETE goes through PowerSync's CRUD queue → backend_connector
+  /// → PostgREST. If the server already deleted the row, PostgREST
+  /// returns 204 which is handled gracefully.
+  Future<int> cleanupOldUploads({int olderThanHours = 24}) async {
     final cutoffDate = DateTime.now()
-        .subtract(Duration(days: olderThanDays))
+        .subtract(Duration(hours: olderThanHours))
         .toIso8601String();
 
     final countResult = await db.getAll('''
       SELECT COUNT(*) as count FROM temp_uploads 
-      WHERE status = 'completed' AND uploaded_at < ?
+      WHERE created_at < ?
     ''', [cutoffDate]);
     final count =
         countResult.isNotEmpty ? (countResult.first['count'] as int? ?? 0) : 0;
 
-    await db.execute('''
-      DELETE FROM temp_uploads 
-      WHERE status = 'completed' AND uploaded_at < ?
-    ''', [cutoffDate]);
+    if (count > 0) {
+      await db.execute('''
+        DELETE FROM temp_uploads 
+        WHERE created_at < ?
+      ''', [cutoffDate]);
+    }
 
     return count;
   }

@@ -6,7 +6,7 @@ class User {
   final String lastName;
   final String mobile;
   final String roleName;
-  final dynamic roleId; // Can be String or List
+  final dynamic roleId; // string or List
   final String departmentId;
   final String departmentName;
   final String photoIdCard;

@@ -80,7 +80,6 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
   @override
   Widget build(BuildContext context) {
     final wo = widget.workOrder;
-    final clientStatus = _getClientStatus(wo);
     final canEdit = _checkEditableStatus();
 
     return Card(
@@ -123,26 +122,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
                             ),
                         ],
                       ),
-                      if (clientStatus.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: AppSpacing.xs),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: AppSpacing.xs),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              borderRadius: AppRadius.smAll,
-                            ),
-                            child: Text(
-                              clientStatus,
-                              style: TextStyle(
-                                  color: AppColors.error,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
+                      _buildBadges(wo),
                     ],
                   ),
                 ),
@@ -305,14 +285,44 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
     );
   }
 
-  String _getClientStatus(WorkOrder wo) {
-    List<String> parts = [];
-    if (wo.urgent) parts.add('Urgent');
-    if (wo.vip) parts.add('VIP');
-    if (wo.credit == 1) parts.add('Credit');
-    if (wo.credit == 2) parts.add('Trial');
-    if (wo.b2bClientId != null && wo.b2bClientId! > 0) parts.add('B2B');
-    return parts.join(' ');
+  Widget _buildBadges(WorkOrder wo) {
+    List<String> badges = [];
+    if (wo.urgent) badges.add('Urgent');
+    if (wo.vip) badges.add('VIP');
+    if (wo.credit == 1) badges.add('Credit');
+    if (wo.credit == 2) badges.add('Trial');
+    if (wo.b2bClientId != null && wo.b2bClientId! > 0) badges.add('B2B');
+    if (wo.cghsClient) badges.add('CGHS');
+
+    if (badges.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(top: AppSpacing.xs),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        children: badges.map((badge) {
+          final isCghs = badge == 'CGHS';
+          final color = isCghs ? Colors.blue : AppColors.error;
+          return Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: AppRadius.smAll,
+            ),
+            child: Text(
+              badge,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   String _getGPayDisplay(WorkOrder wo) {

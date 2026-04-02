@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import '../providers/notifications_page_provider.dart';
 import 'notification_status_chip.dart';
@@ -50,7 +51,7 @@ class NotificationMobileView extends ConsumerWidget {
                           NotificationStatusChip(notification: notification),
                           const SizedBox(width: 8),
                           Text(
-                            notification['updated'] ?? '',
+                            _formatDateTime(notification['updated']),
                             style: const TextStyle(
                                 fontSize: 12, color: Colors.grey),
                           ),
@@ -88,5 +89,15 @@ class NotificationMobileView extends ConsumerWidget {
       updated.add(docId);
     }
     ref.read(expandedRowsProvider.notifier).state = updated;
+  }
+
+  static String _formatDateTime(dynamic value) {
+    if (value == null || value.toString().isEmpty) return '';
+    try {
+      final dt = DateTime.parse(value.toString()).toLocal();
+      return DateFormat('dd-MM-yyyy hh:mm a').format(dt);
+    } catch (_) {
+      return value.toString();
+    }
   }
 }

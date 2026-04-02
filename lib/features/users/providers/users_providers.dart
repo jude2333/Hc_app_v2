@@ -67,7 +67,6 @@ final usersListProvider = FutureProvider.autoDispose<List<User>>((ref) async {
   final pagination = ref.watch(usersPaginationProvider);
   final service = ref.watch(usersServiceProvider);
 
-  // Keep the previous value while loading new data to avoid flicker
   // ref.keepAlive(); // Optional, but good for UX
 
   return service.getUsers(

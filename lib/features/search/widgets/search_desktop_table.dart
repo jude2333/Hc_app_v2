@@ -273,11 +273,16 @@ class _NameWithBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badges = <String>[];
-    if (item['urgent'] == true) badges.add('Urgent');
-    if (item['vip_client'] == true) badges.add('VIP');
+    final urgentVal = item['urgent'];
+    if (urgentVal == true || urgentVal == 1) badges.add('Urgent');
+    final vipVal = item['vip_client'];
+    if (vipVal == true || vipVal == 1) badges.add('VIP');
     if (item['credit'] == 1) badges.add('Credit');
     if (item['credit'] == 2) badges.add('Trial');
-    if (item['b2b_client_id'] != null) badges.add('B2B');
+    final b2bId = int.tryParse(item['b2b_client_id']?.toString() ?? '0') ?? 0;
+    if (b2bId > 0) badges.add('B2B');
+    final cghsVal = item['cghs_client'];
+    if (cghsVal == true || cghsVal == 1) badges.add('CGHS');
 
     return Row(
       children: [
@@ -289,15 +294,20 @@ class _NameWithBadges extends StatelessWidget {
         ),
         if (badges.isNotEmpty) ...[
           SizedBox(width: AppSpacing.xs),
-          ...badges.map((b) => Container(
-                margin: EdgeInsets.only(right: 2),
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.error, width: 1),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Text(b, style: AppTextStyles.nameBadges),
-              )),
+          ...badges.map((b) {
+            final isCghs = b == 'CGHS';
+            final color = isCghs ? Colors.blue : AppColors.error;
+            return Container(
+              margin: EdgeInsets.only(right: 2),
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                border: Border.all(color: color, width: 1),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(b,
+                  style: AppTextStyles.nameBadges.copyWith(color: color)),
+            );
+          }),
         ],
       ],
     );

@@ -59,13 +59,15 @@ class HCStepTests extends ConsumerWidget {
               label: const Text('Add Tests'),
             ),
             const SizedBox(width: 8),
-            if (!state.trialClient) ...[
-              Checkbox(
-                value: state.cghsPrice,
-                onChanged: (v) => notifier.setCghsPrice(v ?? false),
-              ),
-              const Text('Use CGHS Price'),
-            ],
+            // CGHS is now set by manager in Add Work Order
+            // and auto-read from work order on HC Process init
+            // if (!state.trialClient) ...[
+            //   Checkbox(
+            //     value: state.cghsPrice,
+            //     onChanged: (v) => notifier.setCghsPrice(v ?? false),
+            //   ),
+            //   const Text('Use CGHS Price'),
+            // ],
           ],
         ),
         const SizedBox(height: 16),

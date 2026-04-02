@@ -171,7 +171,7 @@ class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
     return await _repo.updateWorkOrder(updatedOrder);
   }
 
-  Future<bool> softDeleteWorkOrder(int id, String user) async {
+  Future<bool> softDeleteWorkOrder(String id, String user) async {
     return await _repo.softDeleteWorkOrder(id, user);
   }
 

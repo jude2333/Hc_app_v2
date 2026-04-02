@@ -1,0 +1,88 @@
+# PowerSync Date Range Syncing: Analysis & Solutions
+
+Currently, your app uses a [sync_window](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/hc_app_local/js/cron_job_local.js#106-125) boolean column updated by a daily Node.js cron job ([cron_job_local.js](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/hc_app_local/js/cron_job_local.js)) to control which work orders sync to the device. You asked about evaluating **Client Parameters** and **Sync Streams** to build a better, more dynamic solution that removes the need for this cron job and hardcoded window limitation.
+
+Here is an analysis of your options based on the official PowerSync documentation.
+
+---
+
+## Analysis of Approaches
+
+### 1. Current Approach: [sync_window](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/hc_app_local/js/cron_job_local.js#106-125) Boolean + Cron Job
+- **How it works:** A cron job runs daily at midnight, setting `sync_window = true` for rows within `-10 to +7` days. PowerSync sync rules simply filter by `sync_window = true`.
+- **Pros:** simple client logic; works perfectly with standard Sync Rules.
+- **Cons:** 
+  - The window is **global** for all users. If a user needs yesterday's data from a month ago, it's not in the local DB.
+  - The cron job performs massive daily row updates, generating WAL (Write-Ahead Log) bloat and triggering sync updates for every client at midnight.
+
+### 2. Client Parameters (with standard Sync Rules)
+- **How it works:** You pass parameters during connection: `db.connect(connector, { params: { min_date: '...', max_date: '...' } })`. In [powersync.yaml](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/anderson_crm_flutter/config/powersync.yaml), you extract them using `SELECT request.parameters() ->> 'min_date'`.
+- **Limitations:**
+  - When connection parameters change, the sync client has to **reconnect** and invalidate the bucket, which is highly inefficient for dynamic UI changes.
+  - The "only one parameter" limitation you heard about usually refers to the fact that standard Sync Rules partition data into buckets based on parameter queries, and dynamic date ranges cause bucket fragmentation. Standard rules are designed for static partitioning (like `tenant_id` or `user_id`), not dynamic date filtering.
+
+### 3. Sync Streams (Early Alpha) 🏆 Recommended
+- **How it works:** Sync Streams are the official replacement for Sync Rules specifically designed for **On-demand, dynamic syncing**. Your UI can dynamically subscribe and unsubscribe to data sets with different parameters.
+- **Pros:**
+  - Designed exactly for parameterized queries (e.g., date ranges, searching).
+  - No need to reconnect to change parameters.
+  - Features temporary caching (`ttl`) so data stays around briefly if the user navigates away and back.
+  - Removes the need for the Node.js cron job and the [sync_window](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/hc_app_local/js/cron_job_local.js#106-125) column.
+- **Requirements:** 
+  - PowerSync Service `v1.15.0+`
+  - Flutter SDK `v1.16.0+` (using the new Rust client)
+
+---
+
+## How to Migrate to Sync Streams
+
+If you are ready to adopt the Early Alpha feature, here is how you would configure it.
+
+### 1. Update [docker-compose.yml](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/anderson_crm_flutter/docker-compose.yml) & [powersync.yaml](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/anderson_crm_flutter/config/powersync.yaml)
+First, configure your self-hosted PowerSync instance to use **Edition 2** and define `streams` instead of `sync_rules`.
+
+```yaml
+# config/powersync.yaml
+config:
+  edition: 2
+
+streams:
+  technician_work_orders:
+    # Use subscription.parameters() instead of request.jwt()
+    query: |
+      SELECT doc_id as id, tenant_id, hcpm_id, patient_name, visit_date, visit_time, 
+             doctor_name, status, server_status, b2b_client_id, b2b_client_name 
+      FROM data.hc_patient_visit_detail 
+      WHERE assigned_id = subscription.parameters() ->> 'emp_id'
+        AND visible = true
+        AND visit_date >= (subscription.parameters() ->> 'min_date')::date
+        AND visit_date <= (subscription.parameters() ->> 'max_date')::date
+```
+
+### 2. Update Flutter Dart Code
+In your Flutter app (`lib/powersync/powersync.dart` and UI layers), you no longer rely entirely on an automatic background sync. Instead, you subscribe to streams dynamically. 
+
+For example, your `ManagerWorkOrderProvider` would subscribe to the date range currently selected by the user:
+
+```dart
+// 1. Subscribe to the stream with dynamic parameters
+final sub = await db.syncStream('technician_work_orders', {
+  'emp_id': currentUser.empId,
+  'min_date': DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
+  'max_date': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+}).subscribe(ttl: const Duration(hours: 1)); // Keeps data for 1 hr after unsubscribe
+
+// 2. Wait for the data to arrive locally
+await sub.waitForFirstSync();
+
+// 3. Now query the local SQLite DB as usual!
+// When the user changes the date filter in the UI, you easily unsubscribe from the old 
+// stream and subscribe to a new one with the new dates.
+```
+
+### Next Steps Recommendation
+Since your app is approaching production and you mentioned having a "solid solution" currently, **I highly recommend keeping the [sync_window](file:///c:/Users/anderson/OneDrive/Documents/anderson_crm/hc_app_local/js/cron_job_local.js#106-125) + cron job approach for your V1 launch.** 
+
+Sync Streams are explicitly marked as **Early Alpha**. While they are the exact canonical solution to your problem, making a paradigm shift from Sync Rules to Sync Streams right before launch could introduce unexpected alpha-stage bugs in your offline data integrity. The cron job approach is unglamorous but incredibly stable.
+
+Once Sync Streams hit Beta or General Availability, you can safely remove the cron job and rewrite the sync layer.

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/components/assign_technicians.dart';
 import '../widgets/manager_expanded_content.dart';
 import '../widgets/manager_actions.dart';
+import '../controllers/manager_assignment_controller.dart';
 import 'package:anderson_crm_flutter/features/theme/app_spacing.dart';
 
 class ManagerMobileView extends ConsumerWidget {
@@ -118,7 +120,7 @@ class ManagerMobileView extends ConsumerWidget {
   }
 }
 
-class _MobileWorkOrderCard extends StatefulWidget {
+class _MobileWorkOrderCard extends ConsumerStatefulWidget {
   final WorkOrder workOrder;
   final int index;
 
@@ -128,10 +130,11 @@ class _MobileWorkOrderCard extends StatefulWidget {
   });
 
   @override
-  State<_MobileWorkOrderCard> createState() => _MobileWorkOrderCardState();
+  ConsumerState<_MobileWorkOrderCard> createState() =>
+      _MobileWorkOrderCardState();
 }
 
-class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
+class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
   bool _isExpanded = false;
 
   @override
@@ -184,19 +187,9 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    wo.patientName,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                            NameWithBadges(
+                              workOrder: wo,
+                              layout: BadgeLayout.row,
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -222,7 +215,10 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      StatusChip(status: wo.status),
+                      StatusChip(
+                        status: wo.status,
+                        onTap: () => _showAssignDialog(context, wo),
+                      ),
                       const SizedBox(width: 8),
                       ServerChip(status: wo.serverStatus),
                       const Spacer(),
@@ -297,6 +293,131 @@ class _MobileWorkOrderCardState extends State<_MobileWorkOrderCard> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  void _showAssignDialog(BuildContext context, WorkOrder workOrder) {
+    showAssignTechnicianDialog(context, ref, workOrder,
+        (techId, techName) async {
+      await _assignTechnician(context, workOrder, techId, techName);
+    });
+  }
+
+  Future<void> _assignTechnician(BuildContext context, WorkOrder workOrder,
+      String techId, String techName) async {
+    final parentMessenger = ScaffoldMessenger.of(context);
+    try {
+      final controller = ref.read(managerAssignmentControllerProvider);
+      final isReassignment = workOrder.assignedTo.isNotEmpty;
+
+      final success = await controller.assignTechnician(
+        workOrder: workOrder,
+        techId: techId,
+        techName: techName,
+      );
+
+      if (success && context.mounted) {
+        parentMessenger.showSnackBar(SnackBar(
+            content: Text('Technician assigned!'),
+            backgroundColor: AppColors.success));
+        _showNotificationDialog(
+          context,
+          workOrder,
+          techId,
+          techName,
+          parentMessenger,
+          isReassignment: isReassignment,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        parentMessenger.showSnackBar(SnackBar(
+            content: Text('Error: $e'), backgroundColor: AppColors.error));
+      }
+    }
+  }
+
+  void _showNotificationDialog(
+    BuildContext context,
+    WorkOrder workOrder,
+    String techId,
+    String techName,
+    ScaffoldMessengerState messenger, {
+    bool isReassignment = false,
+  }) {
+    final controller = ref.read(managerAssignmentControllerProvider);
+
+    bool sendSms = true;
+    bool sendWhatsApp = true;
+    bool sendEmail = workOrder.email.isNotEmpty;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Container(
+                padding: AppPadding.card,
+                color: AppColors.primary,
+                child: Text('Assigned Successfully',
+                    style: TextStyle(color: AppColors.textOnPrimary))),
+            content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                      'Do you wish to inform ${workOrder.patientName} (Mob: ${workOrder.mobile}) about the technician?'),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                      title: const Text('SMS'),
+                      value: sendSms,
+                      onChanged: (v) => setState(() => sendSms = v ?? false),
+                      dense: true),
+                  CheckboxListTile(
+                      title: const Text('WhatsApp'),
+                      value: sendWhatsApp,
+                      onChanged: (v) =>
+                          setState(() => sendWhatsApp = v ?? false),
+                      dense: true),
+                  CheckboxListTile(
+                      title: const Text('Email'),
+                      value: sendEmail,
+                      onChanged: (v) => setState(() => sendEmail = v ?? false),
+                      dense: true),
+                ]),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Close')),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+
+                  try {
+                    await controller.sendAssignmentMessages(
+                      workOrder: workOrder,
+                      techId: techId,
+                      techName: techName,
+                      sendSms: sendSms,
+                      sendWhatsApp: sendWhatsApp,
+                      sendEmail: sendEmail,
+                      isReassignment: isReassignment,
+                    );
+                    messenger.showSnackBar(SnackBar(
+                        content: Text('Notifications sent'),
+                        backgroundColor: AppColors.success));
+                  } catch (e) {
+                    messenger.showSnackBar(SnackBar(
+                        content: Text('Error sending notifications'),
+                        backgroundColor: AppColors.error));
+                  }
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

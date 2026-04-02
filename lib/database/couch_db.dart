@@ -37,9 +37,9 @@ class CouchDBClient {
     String token = await _getToken();
 
     // Debug: trace token retrieval
-    debugPrint("🔑 [CouchDB] Creating DB: $dbName");
+    debugPrint(" [CouchDB] Creating DB: $dbName");
     debugPrint(
-        "🔑 [CouchDB] Token length: ${token.length}, empty: ${token.isEmpty}");
+        " [CouchDB] Token length: ${token.length}, empty: ${token.isEmpty}");
 
     final options = BaseOptions(
       baseUrl: remoteUrl,
@@ -142,7 +142,7 @@ class CouchDBClient {
     _dbMap.clear();
 
     debugPrint(
-        "✅ [CouchDB] Cache cleared - fresh instances will be created on next request");
+        " [CouchDB] Cache cleared - fresh instances will be created on next request");
   }
 
   void dispose() {

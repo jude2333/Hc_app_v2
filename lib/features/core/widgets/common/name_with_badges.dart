@@ -24,32 +24,35 @@ class NameWithBadges extends StatelessWidget {
       flags.add(workOrder.credit == 1 ? 'Credit' : 'Trial');
     }
     if ((workOrder.b2bClientId ?? 0) > 0) flags.add('B2B');
+    if (workOrder.cghsClient) flags.add('CGHS');
     return flags;
   }
 
-  Widget _buildBadge(List<String> flags) {
-    if (flags.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      margin: layout == BadgeLayout.row
-          ? const EdgeInsets.only(left: 8)
-          : const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.red),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        flags.join(' '),
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.red,
-          fontWeight: FontWeight.bold,
+  List<Widget> _buildBadges(List<String> flags) {
+    return flags.map((flag) {
+      final isCghs = flag == 'CGHS';
+      final color = isCghs ? Colors.blue : Colors.red;
+      return Container(
+        margin: layout == BadgeLayout.row
+            ? const EdgeInsets.only(left: 8)
+            : const EdgeInsets.only(top: 4, right: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          border: Border.all(color: color),
+          borderRadius: BorderRadius.circular(4),
         ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
-      ),
-    );
+        child: Text(
+          flag,
+          style: TextStyle(
+            fontSize: 10,
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      );
+    }).toList();
   }
 
   @override
@@ -66,7 +69,7 @@ class NameWithBadges extends StatelessWidget {
       return Row(
         children: [
           Flexible(child: nameWidget),
-          if (flags.isNotEmpty) _buildBadge(flags),
+          ..._buildBadges(flags),
         ],
       );
     }
@@ -77,7 +80,10 @@ class NameWithBadges extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         nameWidget,
-        if (flags.isNotEmpty) _buildBadge(flags),
+        if (flags.isNotEmpty)
+          Wrap(
+            children: _buildBadges(flags),
+          ),
       ],
     );
   }

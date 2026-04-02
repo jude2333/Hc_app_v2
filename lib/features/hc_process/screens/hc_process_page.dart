@@ -108,8 +108,49 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
     }
   }
 
+  void _showInfoSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.teal,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Listen for skip messages (one-shot SnackBars)
+    ref.listen<String?>(
+      hcProcessProvider(widget.workOrderId).select((s) => s.skipMessage),
+      (previous, next) {
+        if (next != null && next.isNotEmpty) {
+          _showInfoSnackBar(next);
+          ref
+              .read(hcProcessProvider(widget.workOrderId).notifier)
+              .clearSkipMessage();
+        }
+      },
+    );
+
     if (!_isInitialized) {
       return _buildLoadingScaffold();
     }
@@ -637,30 +678,30 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
                       ),
               ),
             ),
-          if (details.stepIndex > 0) ...[
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: state.isLoading ? null : details.onStepCancel,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.arrow_back_rounded, size: 18),
-                  SizedBox(width: 6),
-                  Text('Back'),
-                ],
-              ),
-            ),
-          ],
+          // if (details.stepIndex > 0) ...[
+          //   const SizedBox(width: 12),
+          //   OutlinedButton(
+          //     onPressed: state.isLoading ? null : details.onStepCancel,
+          //     style: OutlinedButton.styleFrom(
+          //       foregroundColor: AppColors.textSecondary,
+          //       padding: const EdgeInsets.symmetric(
+          //         horizontal: 24,
+          //         vertical: 16,
+          //       ),
+          //       side: BorderSide(color: Colors.grey.shade300),
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(12),
+          //       ),
+          //     ),
+          //     child: const Row(
+          //     //   children: [
+          //     //     Icon(Icons.arrow_back_rounded, size: 18),
+          //     //     SizedBox(width: 6),
+          //     //     Text('Back'),
+          //     //   ],
+          //     // ),
+          //   ),
+          // ],
         ],
       ),
     );

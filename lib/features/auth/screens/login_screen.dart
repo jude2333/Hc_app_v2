@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../models/auth_state.dart';
 import '../widgets/otp_dialog.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -108,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           children: [
             // ── Layer 1: Full‑bleed background image ──
             Image.asset(
-              'assets/images/login_bg.webp',
+              'assets/images/login_bgg.webp',
               fit: BoxFit.cover,
               width: size.width,
               height: size.height,
@@ -138,7 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: _buildLiquidGlassCard(
                             authState, notifier, isDesktop),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 30),
                       _buildFooter(),
                     ],
                   ),
@@ -235,7 +236,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: _kHeadingColor,
+                        color: AppColors.backgroundSmoke,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -244,7 +245,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       'Sign in to continue to your account',
                       style: TextStyle(
                         fontSize: 14,
-                        color: _kSubheadingColor,
+                        color: AppColors.backgroundSmoke,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -323,7 +324,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: _kLabelColor,
+            color: AppColors.backgroundSmoke,
           ),
         ),
         const SizedBox(height: 8),
@@ -346,7 +347,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               prefixIconConstraints: BoxConstraints(minWidth: 12),
               border: InputBorder.none,
               hintText: 'Enter mobile number',
-              hintStyle: TextStyle(color: _kHintColor),
+              hintStyle: TextStyle(color: AppColors.backgroundSmoke),
               counterText: '',
               contentPadding: EdgeInsets.symmetric(vertical: 16),
             ),
@@ -395,7 +396,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           'Choose how you\'d like to sign in today',
           style: TextStyle(
             fontSize: 12,
-            color: _kSubheadingColor.withOpacity(0.7),
+            color: AppColors.backgroundSmoke.withOpacity(0.7),
           ),
         ),
         const SizedBox(height: 12),
@@ -531,7 +532,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           child: Checkbox(
             value: authState.rememberMobile,
             onChanged: (value) => notifier.setRememberMobile(value ?? false),
-            side: BorderSide(color: _kLabelColor.withOpacity(0.5)),
+            side: BorderSide(color: AppColors.backgroundSmoke.withOpacity(0.5)),
             checkColor: Colors.white,
             activeColor: _kAndersonBlue,
             shape: RoundedRectangleBorder(
@@ -543,7 +544,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const Text(
           'Remember my mobile number',
           style: TextStyle(
-            color: _kLabelColor,
+            color: AppColors.backgroundSmoke,
             fontSize: 13,
           ),
         ),
@@ -601,7 +602,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: _kHeadingColor,
+                            color: AppColors.backgroundSmoke,
                             letterSpacing: 0.3,
                           ),
                         ),
@@ -647,14 +648,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.sms_outlined,
-                          size: 18, color: _kSubheadingColor),
+                          size: 18, color: AppColors.backgroundSmoke),
                       SizedBox(width: 8),
                       Text(
                         'Login with OTP',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: _kSubheadingColor,
+                          color: AppColors.backgroundSmoke,
                         ),
                       ),
                     ],
@@ -678,7 +679,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Text(
           Settings.version,
           style: TextStyle(
-            color: _kFooterColor.withOpacity(0.8),
+            color: AppColors.backgroundSmoke.withOpacity(0.8),
             fontSize: 12,
           ),
         ),
@@ -686,7 +687,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Text(
           '© 2024 Anderson Healthcare',
           style: TextStyle(
-            color: _kFooterColor.withOpacity(0.8),
+            color: AppColors.backgroundSmoke.withOpacity(0.8),
             fontSize: 12,
           ),
         ),

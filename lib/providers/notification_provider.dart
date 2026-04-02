@@ -56,12 +56,12 @@ class LiveNotificationController extends StateNotifier<NotificationState>
 
   /// Reset the provider state on logout - cancels streams without triggering reload
   void reset() {
-    debugPrint("🔄 [Notifications] Resetting notification provider...");
+    debugPrint(" [Notifications] Resetting notification provider...");
     _subscription?.cancel();
     _subscription = null;
     _isRealtimeSetup = false;
     state = const NotificationState();
-    debugPrint("✅ [Notifications] Provider reset complete");
+    debugPrint(" [Notifications] Provider reset complete");
   }
 
   @override
@@ -75,7 +75,7 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     final storage = ref.read(storageServiceProvider);
     final token = storage.getFromSession("pg_admin");
     if (token == null || token.isEmpty) {
-      debugPrint("⏸️ [Notifications] Skipping init - user not logged in");
+      debugPrint(" [Notifications] Skipping init - user not logged in");
       return;
     }
 

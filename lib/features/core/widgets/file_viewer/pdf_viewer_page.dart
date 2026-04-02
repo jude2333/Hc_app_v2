@@ -2,9 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'dart:html' as html;
-
-import 'dart:ui_web' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +10,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+
+import 'pdf_web_stub.dart' if (dart.library.html) 'pdf_web_impl.dart'
+    as pdf_web;
 
 class PdfViewerPage extends ConsumerStatefulWidget {
   final String s3Path;
@@ -120,18 +120,7 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
 
         // Register the factory ONCE per viewType
         if (!_registeredViewTypes.contains(viewType)) {
-          final urlForFactory = _blobUrl!;
-          ui.platformViewRegistry.registerViewFactory(
-            viewType,
-            (int viewId) => html.IFrameElement()
-              ..src = urlForFactory
-              ..style.border = 'none'
-              ..style.width = '100%'
-              ..style.height = '100%'
-              ..setAttribute('allow', 'fullscreen')
-              ..setAttribute(
-                  'sandbox', 'allow-scripts allow-same-origin allow-popups'),
-          );
+          pdf_web.registerIFrameFactory(viewType, _blobUrl!);
           _registeredViewTypes.add(viewType);
         }
 
@@ -174,8 +163,7 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
   String _createWebViewerUrl(Uint8List bytes) {
     final base64Data = base64Encode(bytes);
     final htmlContent = _buildPdfJsHtml(base64Data);
-    final blob = html.Blob([htmlContent], 'text/html');
-    return html.Url.createObjectUrlFromBlob(blob);
+    return pdf_web.createBlobUrl(htmlContent.codeUnits);
   }
 
   /// Builds a self-contained HTML page that uses PDF.js (CDN) to render
