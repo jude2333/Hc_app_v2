@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
@@ -29,8 +29,8 @@ class DBHandler {
   final Map<String, String> _lastSequences = {};
   final Map<String, Map<String, String>> _documentRevisions = {};
 
-  final _workOrderRefreshBus = StreamController<void>.broadcast();
-  Stream<void> get workOrderRefreshStream => _workOrderRefreshBus.stream;
+  // final _workOrderRefreshBus = StreamController<void>.broadcast();
+  // Stream<void> get workOrderRefreshStream => _workOrderRefreshBus.stream;
 
   final _notificationRefreshBus = StreamController<void>.broadcast();
   Stream<void> get notificationRefreshStream => _notificationRefreshBus.stream;
@@ -74,7 +74,7 @@ class DBHandler {
       //   _dbNames!.addAll(centerBasedDB.split(","));
       // }
 
-      String token = await _getToken();
+      // String token = await _getToken();
       // await _setUp(token);
 
       _creating = false;
@@ -158,42 +158,42 @@ class DBHandler {
   //   }
   // }
 
-  Future<void> _createDatabase(String token, String dbName) async {
-    try {
-      // 1. Create local Hive database
-      Box box = await Hive.openBox(dbName);
-      _dbMap[dbName] = box;
+  // Future<void> _createDatabase(String token, String dbName) async {
+  //   try {
+  //     // 1. Create local Hive database
+  //     Box box = await Hive.openBox(dbName);
+  //     _dbMap[dbName] = box;
 
-      _pendingPushes[dbName] = <String>{};
+  //     _pendingPushes[dbName] = <String>{};
 
-      // 3. Create remote CouchDB client
-      String remoteUrl = "${Settings.remoteCouchUrl}/$dbName";
-      final dio = Dio(BaseOptions(
-        baseUrl: remoteUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
-      ));
-      _remoteClients[dbName] = dio;
+  //     // 3. Create remote CouchDB client
+  //     String remoteUrl = "${Settings.remoteCouchUrl}/$dbName";
+  //     final dio = Dio(BaseOptions(
+  //       baseUrl: remoteUrl,
+  //       connectTimeout: const Duration(seconds: 30),
+  //       receiveTimeout: const Duration(seconds: 30),
+  //       headers: {
+  //         "Authorization": "Bearer $token",
+  //         "Content-Type": "application/json",
+  //       },
+  //     ));
+  //     _remoteClients[dbName] = dio;
 
-      // 4. Initialize change notifier
-      _changeNotifiers[dbName] = StreamController.broadcast();
+  //     // 4. Initialize change notifier
+  //     _changeNotifiers[dbName] = StreamController.broadcast();
 
-      // 5. Initialize document revision tracking
-      _documentRevisions[dbName] = {};
+  //     // 5. Initialize document revision tracking
+  //     _documentRevisions[dbName] = {};
 
-      // 6. Set up sync based on database type
-      await _setupSyncForDatabase(dbName);
+  //     // 6. Set up sync based on database type
+  //     await _setupSyncForDatabase(dbName);
 
-      // 7. Start change listener
-      _startChangeListener(dbName);
-    } catch (error) {
-      await retrySetup(dbName);
-    }
-  }
+  //     // 7. Start change listener
+  //     _startChangeListener(dbName);
+  //   } catch (error) {
+  //     await retrySetup(dbName);
+  //   }
+  // }
 
   Stream<List<Map<String, dynamic>>> workOrderStream() async* {
     await init();
@@ -219,67 +219,67 @@ class DBHandler {
     }
   }
 
-  Future<void> _setupSyncForDatabase(String dbName) async {
-    String departmentName =
-        await _storage.getSessionItem("department_name") ?? "";
-    String roleName = await _storage.getSessionItem("role_name") ?? "";
+  // Future<void> _setupSyncForDatabase(String dbName) async {
+  //   String departmentName =
+  //       await _storage.getSessionItem("department_name") ?? "";
+  //   String roleName = await _storage.getSessionItem("role_name") ?? "";
 
-    if (dbName == "temp_db" ||
-        dbName == "login_log" ||
-        dbName == "com_center") {
-      _startSync(dbName, SyncType.pushOnly);
-    } else if (dbName == "pin_codes" || dbName == "last_updated_at") {
-      _startSync(dbName, SyncType.pullOnly);
-    } else if (dbName.contains("work_orders")) {
-      if (departmentName == "HOME COLLECTION" && roleName == "TECHNICIAN") {
-        String empIdStr =
-            await _storage.getSessionItem("logged_in_emp_id") ?? "0";
-        int empId = int.tryParse(empIdStr) ?? 0;
-        _startFilteredSync(dbName, "assigned_id", empId);
-      } else {
-        _startSync(dbName, SyncType.bidirectional);
-      }
-    } else if (dbName.contains("price_list")) {
-      if (roleName == "MANAGER") {
-        _startSync(dbName, SyncType.bidirectional);
-      } else {
-        _startSync(dbName, SyncType.pullOnly);
-      }
-    } else if (dbName.contains("hc_notifications")) {
-      String empIdStr =
-          await _storage.getSessionItem("logged_in_emp_id") ?? "0";
-      int empId = int.tryParse(empIdStr) ?? 0;
-      _startFilteredSync(dbName, "to_id", empId);
-    } else {
-      _startSync(dbName, SyncType.bidirectional);
-    }
-  }
+  //   if (dbName == "temp_db" ||
+  //       dbName == "login_log" ||
+  //       dbName == "com_center") {
+  //     _startSync(dbName, SyncType.pushOnly);
+  //   } else if (dbName == "pin_codes" || dbName == "last_updated_at") {
+  //     _startSync(dbName, SyncType.pullOnly);
+  //   } else if (dbName.contains("work_orders")) {
+  //     if (departmentName == "HOME COLLECTION" && roleName == "TECHNICIAN") {
+  //       String empIdStr =
+  //           await _storage.getSessionItem("logged_in_emp_id") ?? "0";
+  //       int empId = int.tryParse(empIdStr) ?? 0;
+  //       _startFilteredSync(dbName, "assigned_id", empId);
+  //     } else {
+  //       _startSync(dbName, SyncType.bidirectional);
+  //     }
+  //   } else if (dbName.contains("price_list")) {
+  //     if (roleName == "MANAGER") {
+  //       _startSync(dbName, SyncType.bidirectional);
+  //     } else {
+  //       _startSync(dbName, SyncType.pullOnly);
+  //     }
+  //   } else if (dbName.contains("hc_notifications")) {
+  //     String empIdStr =
+  //         await _storage.getSessionItem("logged_in_emp_id") ?? "0";
+  //     int empId = int.tryParse(empIdStr) ?? 0;
+  //     _startFilteredSync(dbName, "to_id", empId);
+  //   } else {
+  //     _startSync(dbName, SyncType.bidirectional);
+  //   }
+  // }
 
-  void _startSync(String dbName, SyncType syncType) {
-    _syncTimers[dbName] = Timer.periodic(
-      const Duration(seconds: 30),
-      (timer) async {
-        try {
-          switch (syncType) {
-            case SyncType.pushOnly:
-              await _replicateToRemote(dbName);
-              break;
-            case SyncType.pullOnly:
-              await _replicateFromRemote(dbName);
-              break;
-            case SyncType.bidirectional:
-              await _replicateToRemote(dbName);
-              await _replicateFromRemote(dbName);
-              break;
-          }
-          _retryDelay = 5000;
-        } catch (error) {
-          debugPrint("Sync error for $dbName: $error");
-          _handleSyncError(dbName, error);
-        }
-      },
-    );
-  }
+  // void _startSync(String dbName, SyncType syncType) {
+  //   _syncTimers[dbName] = Timer.periodic(
+  //     const Duration(seconds: 30),
+  //     (timer) async {
+  //       try {
+  //         switch (syncType) {
+  //           case SyncType.pushOnly:
+  //             await _replicateToRemote(dbName);
+  //             break;
+  //           case SyncType.pullOnly:
+  //             await _replicateFromRemote(dbName);
+  //             break;
+  //           case SyncType.bidirectional:
+  //             await _replicateToRemote(dbName);
+  //             await _replicateFromRemote(dbName);
+  //             break;
+  //         }
+  //         _retryDelay = 5000;
+  //       } catch (error) {
+  //         debugPrint("Sync error for $dbName: $error");
+  //         _handleSyncError(dbName, error);
+  //       }
+  //     },
+  //   );
+  // }
 
   Stream<Map<String, dynamic>> startContinuousStream(String dbName) async* {
     // temp fix
@@ -302,7 +302,7 @@ class DBHandler {
     String currentSeq = 'now';
     _isSyncActive = true;
 
-    debugPrint("🔌 Connected to Real-time Feed (Long Poll Mode)");
+    debugPrint("Connected to Real-time Feed (Long Poll Mode)");
 
     while (_isSyncActive) {
       try {
@@ -327,7 +327,7 @@ class DBHandler {
           final List<dynamic> results = data['results'] ?? [];
 
           if (results.isNotEmpty) {
-            debugPrint("⚡ RECEIVED ${results.length} UPDATES");
+            debugPrint("RECEIVED ${results.length} UPDATES");
             for (var row in results) {
               yield Map<String, dynamic>.from(row);
             }
@@ -353,239 +353,239 @@ class DBHandler {
     debugPrint(" Sync Loop Terminated.");
   }
 
-  void _startFilteredSync(String dbName, String filterField, int filterValue) {
-    _syncTimers[dbName]?.cancel();
-    Timer.run(() async {
-      try {
-        await _pushFilteredChangesToRemote(dbName, filterField, filterValue);
-        await _pullFilteredChangesFromRemote(dbName, filterField, filterValue);
-      } catch (error) {
-        debugPrint("Initial filtered sync error for $dbName: $error");
-      }
-    });
+  // void _startFilteredSync(String dbName, String filterField, int filterValue) {
+  //   _syncTimers[dbName]?.cancel();
+  //   Timer.run(() async {
+  //     try {
+  //       await _pushFilteredChangesToRemote(dbName, filterField, filterValue);
+  //       await _pullFilteredChangesFromRemote(dbName, filterField, filterValue);
+  //     } catch (error) {
+  //       debugPrint("Initial filtered sync error for $dbName: $error");
+  //     }
+  //   });
 
-    _syncTimers[dbName] = Timer.periodic(
-      const Duration(seconds: 30),
-      (timer) async {
-        try {
-          await _pushFilteredChangesToRemote(dbName, filterField, filterValue);
-          await _pullFilteredChangesFromRemote(
-              dbName, filterField, filterValue);
-          _retryDelay = 5000;
-        } catch (error) {
-          _handleSyncError(dbName, error);
-        }
-      },
-    );
-  }
+  //   _syncTimers[dbName] = Timer.periodic(
+  //     const Duration(seconds: 30),
+  //     (timer) async {
+  //       try {
+  //         await _pushFilteredChangesToRemote(dbName, filterField, filterValue);
+  //         await _pullFilteredChangesFromRemote(
+  //             dbName, filterField, filterValue);
+  //         _retryDelay = 5000;
+  //       } catch (error) {
+  //         _handleSyncError(dbName, error);
+  //       }
+  //     },
+  //   );
+  // }
 
-  Future<void> _replicateFromRemote(String dbName) async {
-    if (!_remoteClients.containsKey(dbName) || !_dbMap.containsKey(dbName)) {
-      return;
-    }
+  // Future<void> _replicateFromRemote(String dbName) async {
+  //   if (!_remoteClients.containsKey(dbName) || !_dbMap.containsKey(dbName)) {
+  //     return;
+  //   }
 
-    Dio dio = _remoteClients[dbName]!;
-    // Box box = _dbMap[dbName]!;
-    String lastSeq = _lastSequences[dbName] ?? "0";
+  //   Dio dio = _remoteClients[dbName]!;
+  //   // Box box = _dbMap[dbName]!;
+  //   String lastSeq = _lastSequences[dbName] ?? "0";
 
-    try {
-      Response response = await dio.get("/_changes", queryParameters: {
-        "since": lastSeq,
-        "include_docs": true,
-        "limit": 100,
-      });
+  //   try {
+  //     Response response = await dio.get("/_changes", queryParameters: {
+  //       "since": lastSeq,
+  //       "include_docs": true,
+  //       "limit": 100,
+  //     });
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = response.data;
-        List<dynamic> results = data['results'] ?? [];
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> data = response.data;
+  //       List<dynamic> results = data['results'] ?? [];
 
-        if (data['last_seq'] != null) {
-          _lastSequences[dbName] = data['last_seq'].toString();
-        }
+  //       if (data['last_seq'] != null) {
+  //         _lastSequences[dbName] = data['last_seq'].toString();
+  //       }
 
-        if (dbName.contains('work_orders') && results.isNotEmpty) {
-          _workOrderRefreshBus.add(null);
-        }
+  //       if (dbName.contains('work_orders') && results.isNotEmpty) {
+  //         _workOrderRefreshBus.add(null);
+  //       }
 
-        if (dbName.contains('hc_notifications') && results.isNotEmpty) {
-          _notificationRefreshBus.add(null);
-        }
-      }
-    } catch (error) {
-      if (error is DioException) {
-        debugPrint("Response: ${error.response?.data}");
-      }
-    }
-  }
+  //       if (dbName.contains('hc_notifications') && results.isNotEmpty) {
+  //         _notificationRefreshBus.add(null);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     if (error is DioException) {
+  //       debugPrint("Response: ${error.response?.data}");
+  //     }
+  //   }
+  // }
 
-  Future<void> _replicateToRemote(String dbName) async {
-    if (!_dbMap.containsKey(dbName) || !_remoteClients.containsKey(dbName)) {
-      return;
-    }
+  // Future<void> _replicateToRemote(String dbName) async {
+  //   if (!_dbMap.containsKey(dbName) || !_remoteClients.containsKey(dbName)) {
+  //     return;
+  //   }
 
-    Box box = _dbMap[dbName]!;
-    Dio dio = _remoteClients[dbName]!;
+  //   Box box = _dbMap[dbName]!;
+  //   Dio dio = _remoteClients[dbName]!;
 
-    Set<String>? pendingIds = _pendingPushes[dbName];
-    if (pendingIds == null || pendingIds.isEmpty) return;
+  //   Set<String>? pendingIds = _pendingPushes[dbName];
+  //   if (pendingIds == null || pendingIds.isEmpty) return;
 
-    debugPrint('Pushing ${pendingIds.length} pending changes for $dbName');
-    final idsToProcess = Set<String>.from(pendingIds);
-    _pendingPushes[dbName]!.clear();
+  //   debugPrint('Pushing ${pendingIds.length} pending changes for $dbName');
+  //   final idsToProcess = Set<String>.from(pendingIds);
+  //   _pendingPushes[dbName]!.clear();
 
-    bool somethingPushed = false;
+  //   bool somethingPushed = false;
 
-    for (String docId in idsToProcess) {
-      Map<String, dynamic>? doc;
+  //   for (String docId in idsToProcess) {
+  //     Map<String, dynamic>? doc;
 
-      try {
-        dynamic docData = box.get(docId);
-        if (docData == null) continue;
+  //     try {
+  //       dynamic docData = box.get(docId);
+  //       if (docData == null) continue;
 
-        doc = Map<String, dynamic>.from(docData);
-        doc['_id'] = docId;
-        doc.remove('_local_modified');
+  //       doc = Map<String, dynamic>.from(docData);
+  //       doc['_id'] = docId;
+  //       doc.remove('_local_modified');
 
-        Response response = await dio.put(
-          '/$docId',
-          data: doc,
-          options: Options(validateStatus: (s) => s! < 500),
-        );
+  //       Response response = await dio.put(
+  //         '/$docId',
+  //         data: doc,
+  //         options: Options(validateStatus: (s) => s! < 500),
+  //       );
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          doc['_rev'] = response.data['rev'];
-          doc.remove('_local_modified');
-          await box.put(docId, doc);
-          _updateDocumentRevision(dbName, docId, doc['_rev']!);
-          somethingPushed = true;
-        } else if (response.statusCode == 409) {
-          await _resolveConflict(dbName, docId, doc);
-        } else {
-          _pendingPushes[dbName]!.add(docId);
-        }
-      } catch (error) {
-        _pendingPushes[dbName]!.add(docId);
+  //       if (response.statusCode == 200 || response.statusCode == 201) {
+  //         doc['_rev'] = response.data['rev'];
+  //         doc.remove('_local_modified');
+  //         await box.put(docId, doc);
+  //         _updateDocumentRevision(dbName, docId, doc['_rev']!);
+  //         somethingPushed = true;
+  //       } else if (response.statusCode == 409) {
+  //         await _resolveConflict(dbName, docId, doc);
+  //       } else {
+  //         _pendingPushes[dbName]!.add(docId);
+  //       }
+  //     } catch (error) {
+  //       _pendingPushes[dbName]!.add(docId);
 
-        if (error is DioException &&
-            error.response?.statusCode == 409 &&
-            doc != null) {
-          await _resolveConflict(dbName, docId, doc);
-        }
-      }
-    }
-    if (dbName.contains('work_orders') && somethingPushed) {
-      _workOrderRefreshBus.add(null);
-    }
-    if (dbName.contains('hc_notifications') && somethingPushed) {
-      _notificationRefreshBus.add(null);
-    }
-  }
+  //       if (error is DioException &&
+  //           error.response?.statusCode == 409 &&
+  //           doc != null) {
+  //         await _resolveConflict(dbName, docId, doc);
+  //       }
+  //     }
+  //   }
+  //   if (dbName.contains('work_orders') && somethingPushed) {
+  //     _workOrderRefreshBus.add(null);
+  //   }
+  //   if (dbName.contains('hc_notifications') && somethingPushed) {
+  //     _notificationRefreshBus.add(null);
+  //   }
+  // }
 
-  Future<void> _pushFilteredChangesToRemote(
-      String dbName, String filterField, int filterValue) async {
-    if (!_dbMap.containsKey(dbName) || !_remoteClients.containsKey(dbName)) {
-      return;
-    }
+  // Future<void> _pushFilteredChangesToRemote(
+  //     String dbName, String filterField, int filterValue) async {
+  //   if (!_dbMap.containsKey(dbName) || !_remoteClients.containsKey(dbName)) {
+  //     return;
+  //   }
 
-    Box box = _dbMap[dbName]!;
-    Dio dio = _remoteClients[dbName]!;
+  //   Box box = _dbMap[dbName]!;
+  //   Dio dio = _remoteClients[dbName]!;
 
-    List<String> keys = box.keys.cast<String>().toList();
+  //   List<String> keys = box.keys.cast<String>().toList();
 
-    for (String key in keys) {
-      dynamic docData = box.get(key);
-      if (docData == null) continue;
+  //   for (String key in keys) {
+  //     dynamic docData = box.get(key);
+  //     if (docData == null) continue;
 
-      Map<String, dynamic> doc = Map<String, dynamic>.from(docData);
+  //     Map<String, dynamic> doc = Map<String, dynamic>.from(docData);
 
-      if (doc[filterField] == filterValue && _needsPush(doc, dbName, key)) {
-        try {
-          if (!doc.containsKey('_id')) {
-            doc['_id'] = key;
-          }
+  //     if (doc[filterField] == filterValue && _needsPush(doc, dbName, key)) {
+  //       try {
+  //         if (!doc.containsKey('_id')) {
+  //           doc['_id'] = key;
+  //         }
 
-          Response response = await dio.put("/$key", data: doc);
+  //         Response response = await dio.put("/$key", data: doc);
 
-          if (response.statusCode == 200 || response.statusCode == 201) {
-            doc['_rev'] = response.data['rev'];
-            doc.remove('_local_modified');
-            await box.put(key, doc);
-            _updateDocumentRevision(dbName, key, doc['_rev']);
-          }
-        } catch (error) {
-          if (error is DioException && error.response?.statusCode == 409) {
-            await _resolveConflict(dbName, key, doc);
-          }
-        }
-      }
-    }
-  }
+  //         if (response.statusCode == 200 || response.statusCode == 201) {
+  //           doc['_rev'] = response.data['rev'];
+  //           doc.remove('_local_modified');
+  //           await box.put(key, doc);
+  //           _updateDocumentRevision(dbName, key, doc['_rev']);
+  //         }
+  //       } catch (error) {
+  //         if (error is DioException && error.response?.statusCode == 409) {
+  //           await _resolveConflict(dbName, key, doc);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
-  Future<void> _pullFilteredChangesFromRemote(
-      String dbName, String filterField, int filterValue) async {
-    if (!_remoteClients.containsKey(dbName)) return;
+  // Future<void> _pullFilteredChangesFromRemote(
+  //     String dbName, String filterField, int filterValue) async {
+  //   if (!_remoteClients.containsKey(dbName)) return;
 
-    Dio dio = _remoteClients[dbName]!;
-    Box box = _dbMap[dbName]!;
-    String lastSeq = _lastSequences[dbName] ?? "0";
+  //   Dio dio = _remoteClients[dbName]!;
+  //   Box box = _dbMap[dbName]!;
+  //   String lastSeq = _lastSequences[dbName] ?? "0";
 
-    try {
-      Response response = await dio.get("/_changes", queryParameters: {
-        "since": lastSeq,
-        "include_docs": true,
-        "limit": 100,
-      });
+  //   try {
+  //     Response response = await dio.get("/_changes", queryParameters: {
+  //       "since": lastSeq,
+  //       "include_docs": true,
+  //       "limit": 100,
+  //     });
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = response.data;
-        List<dynamic> results = data['results'] ?? [];
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> data = response.data;
+  //       List<dynamic> results = data['results'] ?? [];
 
-        for (var change in results) {
-          String docId = change['id'];
-          Map<String, dynamic>? doc = change['doc'];
-          bool deleted = change['deleted'] ?? false;
+  //       for (var change in results) {
+  //         String docId = change['id'];
+  //         Map<String, dynamic>? doc = change['doc'];
+  //         bool deleted = change['deleted'] ?? false;
 
-          if (doc != null) {
-            dynamic fieldValue = doc[filterField];
-            bool matches = false;
-            if (fieldValue is int) {
-              matches = fieldValue == filterValue;
-            } else if (fieldValue is String) {
-              matches = int.tryParse(fieldValue) == filterValue;
-            }
+  //         if (doc != null) {
+  //           dynamic fieldValue = doc[filterField];
+  //           bool matches = false;
+  //           if (fieldValue is int) {
+  //             matches = fieldValue == filterValue;
+  //           } else if (fieldValue is String) {
+  //             matches = int.tryParse(fieldValue) == filterValue;
+  //           }
 
-            if (matches) {
-              if (deleted) {
-                await box.delete(docId);
-              } else {
-                await box.put(docId, doc);
-                _updateDocumentRevision(dbName, docId, doc['_rev']);
-              }
-              _notifyChange(dbName, docId, doc, deleted);
-            }
-          }
-        }
+  //           if (matches) {
+  //             if (deleted) {
+  //               await box.delete(docId);
+  //             } else {
+  //               await box.put(docId, doc);
+  //               _updateDocumentRevision(dbName, docId, doc['_rev']);
+  //             }
+  //             _notifyChange(dbName, docId, doc, deleted);
+  //           }
+  //         }
+  //       }
 
-        if (data['last_seq'] != null) {
-          _lastSequences[dbName] = data['last_seq'].toString();
-        }
-      }
-    } catch (error) {
-      if (error is DioException) {
-        debugPrint("Response: ${error.response?.data}");
-      }
-    }
-  }
+  //       if (data['last_seq'] != null) {
+  //         _lastSequences[dbName] = data['last_seq'].toString();
+  //       }
+  //     }
+  //   } catch (error) {
+  //     if (error is DioException) {
+  //       debugPrint("Response: ${error.response?.data}");
+  //     }
+  //   }
+  // }
 
-  void _startChangeListener(String dbName) {
-    // _changeListenerTimers[dbName] =
-    //     Timer.periodic(const Duration(seconds: 15), (timer) async {
-    //   try {
-    //     await _checkForChanges(dbName);
-    //   } catch (error) {
-    //   }
-    // });
-  }
+  // void _startChangeListener(String dbName) {
+  //   // _changeListenerTimers[dbName] =
+  //   //     Timer.periodic(const Duration(seconds: 15), (timer) async {
+  //   //   try {
+  //   //     await _checkForChanges(dbName);
+  //   //   } catch (error) {
+  //   //   }
+  //   // });
+  // }
 
   void _notifyChange(
       String dbName, String docId, Map<String, dynamic>? doc, bool deleted) {
@@ -613,43 +613,43 @@ class DBHandler {
     }
   }
 
-  Future<void> _handleSyncError(String dbName, dynamic error) async {
-    debugPrint("Handling sync error for $dbName: $error");
+  // Future<void> _handleSyncError(String dbName, dynamic error) async {
+  //   debugPrint("Handling sync error for $dbName: $error");
 
-    _retryDelay = min(_retryDelay * 2, 60000);
+  //   _retryDelay = min(_retryDelay * 2, 60000);
 
-    await Future.delayed(Duration(milliseconds: _retryDelay));
+  //   await Future.delayed(Duration(milliseconds: _retryDelay));
 
-    if (_retryDelay > 30000) {
-      await retrySetup(dbName);
-    }
-  }
+  //   if (_retryDelay > 30000) {
+  //     await retrySetup(dbName);
+  //   }
+  // }
 
-  Future<void> retrySetup(String dbName) async {
-    try {
-      _syncTimers[dbName]?.cancel();
-      _changeListenerTimers[dbName]?.cancel();
-      _changeNotifiers[dbName]?.close();
-      _remoteClients[dbName]?.close();
+  // Future<void> retrySetup(String dbName) async {
+  //   try {
+  //     _syncTimers[dbName]?.cancel();
+  //     _changeListenerTimers[dbName]?.cancel();
+  //     _changeNotifiers[dbName]?.close();
+  //     _remoteClients[dbName]?.close();
 
-      if (_dbMap.containsKey(dbName)) {
-        await _dbMap[dbName]!.close();
-        await Hive.deleteBoxFromDisk(dbName);
-      }
+  //     if (_dbMap.containsKey(dbName)) {
+  //       await _dbMap[dbName]!.close();
+  //       await Hive.deleteBoxFromDisk(dbName);
+  //     }
 
-      _dbMap.remove(dbName);
-      _remoteClients.remove(dbName);
-      _syncTimers.remove(dbName);
-      _changeListenerTimers.remove(dbName);
-      _changeNotifiers.remove(dbName);
-      _lastSequences.remove(dbName);
-      _documentRevisions.remove(dbName);
+  //     _dbMap.remove(dbName);
+  //     _remoteClients.remove(dbName);
+  //     _syncTimers.remove(dbName);
+  //     _changeListenerTimers.remove(dbName);
+  //     _changeNotifiers.remove(dbName);
+  //     _lastSequences.remove(dbName);
+  //     _documentRevisions.remove(dbName);
 
-      await _createDatabase(_token, dbName);
-    } catch (error) {
-      // debugPrint("Retry setup failed for $dbName: $error");
-    }
-  }
+  //     await _createDatabase(_token, dbName);
+  //   } catch (error) {
+  //     // debugPrint("Retry setup failed for $dbName: $error");
+  //   }
+  // }
 
   String? _getDocumentRevision(String dbName, String docId) {
     return _documentRevisions[dbName]?[docId];
@@ -791,42 +791,42 @@ class DBHandler {
     };
   }
 
-  Future<void> forceSync(String dbName) async {
-    debugPrint(" Force sync requested for: $dbName");
+  // Future<void> forceSync(String dbName) async {
+  //   debugPrint(" Force sync requested for: $dbName");
 
-    String? resolvedName = resolveName(dbName);
-    if (resolvedName == null) {
-      debugPrint(" Database not found: $dbName");
-      return;
-    }
+  //   String? resolvedName = resolveName(dbName);
+  //   if (resolvedName == null) {
+  //     debugPrint(" Database not found: $dbName");
+  //     return;
+  //   }
 
-    try {
-      debugPrint(" Starting force sync for: $resolvedName");
+  //   try {
+  //     debugPrint(" Starting force sync for: $resolvedName");
 
-      int pendingCount = _pendingPushes[resolvedName]?.length ?? 0;
-      debugPrint(" Pending pushes before sync: $pendingCount");
-      if (pendingCount > 0) {
-        debugPrint(" Pending IDs: ${_pendingPushes[resolvedName]}");
-      }
+  //     int pendingCount = _pendingPushes[resolvedName]?.length ?? 0;
+  //     debugPrint(" Pending pushes before sync: $pendingCount");
+  //     if (pendingCount > 0) {
+  //       debugPrint(" Pending IDs: ${_pendingPushes[resolvedName]}");
+  //     }
 
-      debugPrint("⬆ Starting push for: $resolvedName");
-      await _replicateToRemote(resolvedName);
-      debugPrint(" Push completed for: $resolvedName");
+  //     debugPrint("⬆ Starting push for: $resolvedName");
+  //     await _replicateToRemote(resolvedName);
+  //     debugPrint(" Push completed for: $resolvedName");
 
-      int remainingCount = _pendingPushes[resolvedName]?.length ?? 0;
-      debugPrint(" Remaining pending pushes: $remainingCount");
+  //     int remainingCount = _pendingPushes[resolvedName]?.length ?? 0;
+  //     debugPrint(" Remaining pending pushes: $remainingCount");
 
-      debugPrint("⬇ Starting pull for: $resolvedName");
-      await _replicateFromRemote(resolvedName);
-      debugPrint(" Pull completed for: $resolvedName");
+  //     debugPrint("⬇ Starting pull for: $resolvedName");
+  //     await _replicateFromRemote(resolvedName);
+  //     debugPrint(" Pull completed for: $resolvedName");
 
-      debugPrint(" Force sync completed successfully for: $resolvedName");
-    } catch (e, stackTrace) {
-      debugPrint(" Force sync error for $resolvedName: $e");
-      debugPrint("Stack trace: $stackTrace");
-      rethrow;
-    }
-  }
+  //     debugPrint(" Force sync completed successfully for: $resolvedName");
+  //   } catch (e, stackTrace) {
+  //     debugPrint(" Force sync error for $resolvedName: $e");
+  //     debugPrint("Stack trace: $stackTrace");
+  //     rethrow;
+  //   }
+  // }
 
   Future<List<Map<String, dynamic>>> getAllDocuments(String dbName) async {
     String? resolvedName = resolveName(dbName);
@@ -921,14 +921,14 @@ class DBHandler {
     debugPrint("Paused sync for: $resolvedName");
   }
 
-  Future<void> resumeSync(String dbName) async {
-    String? resolvedName = resolveName(dbName);
-    if (resolvedName == null) return;
+  // Future<void> resumeSync(String dbName) async {
+  //   String? resolvedName = resolveName(dbName);
+  //   if (resolvedName == null) return;
 
-    await _setupSyncForDatabase(resolvedName);
-    _startChangeListener(resolvedName);
-    debugPrint("Resumed sync for: $resolvedName");
-  }
+  //   await _setupSyncForDatabase(resolvedName);
+  //   _startChangeListener(resolvedName);
+  //   debugPrint("Resumed sync for: $resolvedName");
+  // }
 
   Future<List<String>> getConflictedDocuments(String dbName) async {
     List<String> conflicted = [];
@@ -1090,35 +1090,35 @@ class DBHandler {
     return health;
   }
 
-  bool _needsPush(Map<String, dynamic> doc, String dbName, String docId) {
-    if (doc['_local_modified'] == true) return true;
-    if (!doc.containsKey('_rev')) return true;
+  // bool _needsPush(Map<String, dynamic> doc, String dbName, String docId) {
+  //   if (doc['_local_modified'] == true) return true;
+  //   if (!doc.containsKey('_rev')) return true;
 
-    String? trackedRev = _getDocumentRevision(dbName, docId);
-    if (trackedRev == null || trackedRev != doc['_rev']) return true;
+  //   String? trackedRev = _getDocumentRevision(dbName, docId);
+  //   if (trackedRev == null || trackedRev != doc['_rev']) return true;
 
-    return false;
-  }
+  //   return false;
+  // }
 
-  Future<void> _resolveConflict(
-      String dbName, String docId, Map<String, dynamic> localDoc) async {
-    try {
-      Dio dio = _remoteClients[dbName]!;
+  // Future<void> _resolveConflict(
+  //     String dbName, String docId, Map<String, dynamic> localDoc) async {
+  //   try {
+  //     Dio dio = _remoteClients[dbName]!;
 
-      Response response = await dio.get("/$docId");
-      if (response.statusCode == 200) {
-        Map<String, dynamic> remoteDoc = response.data;
+  //     Response response = await dio.get("/$docId");
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> remoteDoc = response.data;
 
-        Box box = _dbMap[dbName]!;
-        await box.put(docId, remoteDoc);
-        _updateDocumentRevision(dbName, docId, remoteDoc['_rev']);
+  //       Box box = _dbMap[dbName]!;
+  //       await box.put(docId, remoteDoc);
+  //       _updateDocumentRevision(dbName, docId, remoteDoc['_rev']);
 
-        _notifyChange(dbName, docId, remoteDoc, false);
-      }
-    } catch (error) {
-      debugPrint("Error resolving conflict for $docId: $error");
-    }
-  }
+  //       _notifyChange(dbName, docId, remoteDoc, false);
+  //     }
+  //   } catch (error) {
+  //     debugPrint("Error resolving conflict for $docId: $error");
+  //   }
+  // }
 }
 
 enum SyncType {

@@ -5,6 +5,7 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
+import 'add_tests_post_completion_page.dart';
 import '../../theme/theme.dart';
 import '../../core/widgets/common/common_widgets.dart';
 import '../providers/technician_work_order_provider.dart';
@@ -77,10 +78,19 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
     return status != 'na' && status != 'finished' && status != 'cancelled';
   }
 
+  /// Can add tests if finished within the last 24 hours.
+  bool _canAddTests() {
+    final status = widget.workOrder.status.toLowerCase();
+    if (status != 'finished') return false;
+    final elapsed = DateTime.now().difference(widget.workOrder.lastUpdatedAt);
+    return elapsed.inHours < 24;
+  }
+
   @override
   Widget build(BuildContext context) {
     final wo = widget.workOrder;
     final canEdit = _checkEditableStatus();
+    final showAddTests = _canAddTests();
 
     return Card(
       margin: EdgeInsets.only(bottom: AppSpacing.sm),
@@ -140,6 +150,11 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
             child: Row(
               children: [
                 _buildActionChip('Copy', () => _onCopy(context)),
+                if (showAddTests) ...[
+                  SizedBox(width: AppSpacing.xs),
+                  _buildActionChip('+ Tests', () => _onAddTests(context),
+                      color: AppColors.primary),
+                ],
                 if (canEdit) ...[
                   SizedBox(width: AppSpacing.xs),
                   _buildActionChip('Start', () => _onStart(context),
@@ -308,7 +323,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
             padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: AppRadius.smAll,
             ),
             child: Text(
@@ -381,6 +396,17 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
       MaterialPageRoute(
         builder: (context) =>
             HCProcessPage(workOrderId: widget.workOrder.docId),
+      ),
+    );
+  }
+
+  void _onAddTests(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AddTestsPostCompletionPage(workOrder: widget.workOrder),
+        fullscreenDialog: true,
       ),
     );
   }

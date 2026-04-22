@@ -1,33 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import '../providers/tracking_ui_providers.dart';
 
 /// Filter bar for the tracking dashboard.
-/// Allows filtering by date and technician status.
-class FilterBar extends StatelessWidget {
-  final DateTime selectedDate;
-  final String? statusFilter;
-  final Function(DateTime) onDateChanged;
-  final Function(String?) onStatusFilterChanged;
-
-  const FilterBar({
-    super.key,
-    required this.selectedDate,
-    this.statusFilter,
-    required this.onDateChanged,
-    required this.onStatusFilterChanged,
-  });
+/// Uses Riverpod to directly read and mutate dashboard state safely.
+class FilterBar extends ConsumerWidget {
+  const FilterBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedDate = ref.watch(selectedDateProvider);
+    final statusFilter = ref.watch(statusFilterProvider);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
-          // Date picker
+          // Elegant Date picker chip
           InkWell(
             onTap: () async {
               final date = await showDatePicker(
@@ -36,60 +31,75 @@ class FilterBar extends StatelessWidget {
                 firstDate: DateTime.now().subtract(const Duration(days: 30)),
                 lastDate: DateTime.now(),
               );
-              if (date != null) onDateChanged(date);
+              if (date != null) {
+                ref.read(selectedDateProvider.notifier).state = date;
+              }
             },
+            borderRadius: BorderRadius.circular(20),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(6),
-                color: Colors.white,
+                color: AppColors.background,
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 6),
+                  const Icon(Icons.calendar_today, size: 14, color: AppColors.primary),
+                  const SizedBox(width: 8),
                   Text(
                     _isToday(selectedDate)
-                        ? 'Today'
+                        ? 'Today, ${DateFormat('MMM d').format(selectedDate)}'
                         : DateFormat('MMM d, yyyy').format(selectedDate),
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    style: AppTextStyles.buttonText.copyWith(color: AppColors.textPrimary),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down, size: 16, color: Colors.grey[600]),
+                  const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          
+          const SizedBox(width: 16),
+          Container(width: 1, height: 24, color: AppColors.divider),
+          const SizedBox(width: 16),
 
-          // Status filter chips
-          _FilterChip(
-            label: 'All',
-            isSelected: statusFilter == null,
-            onTap: () => onStatusFilterChanged(null),
-          ),
-          const SizedBox(width: 6),
-          _FilterChip(
-            label: 'Online',
-            isSelected: statusFilter == 'online',
-            onTap: () => onStatusFilterChanged('online'),
-            color: Colors.green,
-          ),
-          const SizedBox(width: 6),
-          _FilterChip(
-            label: 'Idle',
-            isSelected: statusFilter == 'idle',
-            onTap: () => onStatusFilterChanged('idle'),
-            color: Colors.orange,
-          ),
-          const SizedBox(width: 6),
-          _FilterChip(
-            label: 'Offline',
-            isSelected: statusFilter == 'offline',
-            onTap: () => onStatusFilterChanged('offline'),
-            color: Colors.red,
+          // Status filter chips (horizontally scrollable if tight space)
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: 'All',
+                    isSelected: statusFilter == null,
+                    onTap: () => ref.read(statusFilterProvider.notifier).state = null,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Online',
+                    isSelected: statusFilter == 'online',
+                    onTap: () => ref.read(statusFilterProvider.notifier).state = 'online',
+                    activeColor: AppColors.trackOnline,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Idle',
+                    isSelected: statusFilter == 'idle',
+                    onTap: () => ref.read(statusFilterProvider.notifier).state = 'idle',
+                    activeColor: AppColors.trackIdle,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Offline',
+                    isSelected: statusFilter == 'offline',
+                    onTap: () => ref.read(statusFilterProvider.notifier).state = 'offline',
+                    activeColor: AppColors.trackOffline,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -106,37 +116,36 @@ class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final Color? color;
+  final Color? activeColor;
 
   const _FilterChip({
     required this.label,
     this.isSelected = false,
     required this.onTap,
-    this.color,
+    this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final chipColor = color ?? Colors.blue;
+    final color = activeColor ?? AppColors.primary;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor.withOpacity(0.12) : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? chipColor : Colors.grey[300]!,
-          ),
-        ),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withValues(alpha: 0.5)),
+              )
+            : AppDecorations.inactiveFilterPill,
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? chipColor : Colors.grey[600],
+          style: AppTextStyles.chipText.copyWith(
+            color: isSelected ? color : AppColors.textSecondary,
           ),
         ),
       ),

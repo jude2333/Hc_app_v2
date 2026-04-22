@@ -1,4 +1,4 @@
-/// Data models for the tracking dashboard
+// Data models for the tracking dashboard
 
 class TechnicianStatus {
   final int technicianId;

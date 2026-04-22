@@ -124,6 +124,39 @@ class TrackingRepository {
     }
   }
 
+  /// Create a new geo-fence
+  Future<Map<String, dynamic>?> createFence(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/fence', data: data);
+      return response.data['fence'] as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('[TrackingRepo] createFence error: $e');
+      rethrow;
+    }
+  }
+
+  /// Update an existing geo-fence
+  Future<Map<String, dynamic>?> updateFence(
+      int id, Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.put('/fence/$id', data: data);
+      return response.data['fence'] as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint('[TrackingRepo] updateFence error: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a geo-fence
+  Future<void> deleteFence(int id) async {
+    try {
+      await _dio.delete('/fence/$id');
+    } catch (e) {
+      debugPrint('[TrackingRepo] deleteFence error: $e');
+      rethrow;
+    }
+  }
+
   /// Get daily analytics
   Future<List<Map<String, dynamic>>> getDailyAnalytics({
     int? tenantId,
@@ -148,6 +181,44 @@ class TrackingRepository {
       return response.data;
     } catch (e) {
       return {'status': 'ERROR', 'error': e.toString()};
+    }
+  }
+
+  /// Reverse geocode lat/lng → address string via our backend proxy.
+  /// Returns null on failure (caller should handle gracefully).
+  /// Includes a circuit breaker: after [_maxGeocodeFails] consecutive failures,
+  /// the method short-circuits for the rest of the session to avoid log spam.
+  static int _geocodeConsecutiveFails = 0;
+  static const int _maxGeocodeFails = 3;
+
+  Future<String?> reverseGeocode(double lat, double lng) async {
+    // Circuit breaker — endpoint is down, don't keep hitting it
+    if (_geocodeConsecutiveFails >= _maxGeocodeFails) return null;
+
+    try {
+      final response = await _dio.get('/geocode', queryParameters: {
+        'lat': lat,
+        'lng': lng,
+      });
+      _geocodeConsecutiveFails = 0; // Reset on success
+      return response.data['address'] as String?;
+    } on DioException catch (e) {
+      _geocodeConsecutiveFails++;
+      final code = e.response?.statusCode ?? 0;
+      if (_geocodeConsecutiveFails <= _maxGeocodeFails) {
+        debugPrint('[TrackingRepo] reverseGeocode failed ($code) — '
+            '${_geocodeConsecutiveFails}/$_maxGeocodeFails before circuit break');
+      }
+      if (_geocodeConsecutiveFails >= _maxGeocodeFails) {
+        debugPrint(
+            '[TrackingRepo] ⚡ Circuit breaker OPEN — geocode endpoint returning $code. '
+            'Skipping further attempts. Deploy latest backend to fix.');
+      }
+      return null;
+    } catch (e) {
+      _geocodeConsecutiveFails++;
+      debugPrint('[TrackingRepo] reverseGeocode error: $e');
+      return null;
     }
   }
 }

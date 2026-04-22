@@ -11,16 +11,60 @@ class LocationService {
   LocationService._();
 
   StreamSubscription<Position>? _positionSubscription;
-  final _positionController = StreamController<LocationData>.broadcast();
   bool _isTracking = false;
 
+  // Lazily created StreamController — recreated if previously closed.
+  // This is critical because LocationService is a singleton: dispose() closes
+  // the controller, but the singleton lives forever, and callers may restart
+  // tracking later.
+  StreamController<LocationData>? _positionController;
+
+  StreamController<LocationData> get _controller {
+    if (_positionController == null || _positionController!.isClosed) {
+      _positionController = StreamController<LocationData>.broadcast();
+    }
+    return _positionController!;
+  }
+
   /// Stream of location updates
-  Stream<LocationData> get positionStream => _positionController.stream;
+  Stream<LocationData> get positionStream => _controller.stream;
   bool get isTracking => _isTracking;
 
-  /// Request location permissions (Android)
+  /// Request location permissions
   /// Returns true if all required permissions are granted.
   Future<bool> requestPermissions() async {
+    // On web, the browser handles permissions via Geolocation API prompt
+    if (kIsWeb) {
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          debugPrint('[Location] Location services are disabled');
+          return false;
+        }
+
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            debugPrint('[Location] Web location permission denied');
+            return false;
+          }
+        }
+
+        if (permission == LocationPermission.deniedForever) {
+          debugPrint('[Location] Web location permission permanently denied');
+          return false;
+        }
+
+        debugPrint('[Location] Web location permission granted');
+        return true;
+      } catch (e) {
+        debugPrint('[Location] Web permission error: $e');
+        return false;
+      }
+    }
+
+    // Native Android/iOS flow
     // 1. Check if location services are enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -36,12 +80,9 @@ class LocationService {
     }
 
     // 3. Request "always" (background) location permission
-    // On Android 10+, this opens the special settings page
     var bgStatus = await Permission.locationAlways.request();
     if (!bgStatus.isGranted) {
       debugPrint('[Location] Background location permission denied (non-blocking)');
-      // Don't return false — foreground tracking still works
-      // Background will be limited but functional
     }
 
     debugPrint('[Location] Permissions granted');
@@ -63,16 +104,31 @@ class LocationService {
       return;
     }
 
-    final locationSettings = AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: distanceFilter.toInt(),
-      intervalDuration: Duration(milliseconds: intervalMs),
-      foregroundNotificationConfig: const ForegroundNotificationConfig(
-        notificationTitle: 'Anderson CRM',
-        notificationText: 'Location tracking active',
-        enableWakeLock: true,
-      ),
-    );
+    // Use platform-appropriate settings
+    late LocationSettings locationSettings;
+
+    if (kIsWeb) {
+      // Web: use basic settings (no AndroidSettings/foreground service on web)
+      locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanceFilter.toInt(),
+        timeLimit: null,
+      );
+      debugPrint('[Location] Using Web location settings');
+    } else {
+      // Android/iOS: use AndroidSettings with foreground service
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanceFilter.toInt(),
+        intervalDuration: Duration(milliseconds: intervalMs),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'Anderson CRM',
+          notificationText: 'Location tracking active',
+          enableWakeLock: true,
+        ),
+      );
+      debugPrint('[Location] Using Android location settings');
+    }
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,
@@ -89,7 +145,12 @@ class LocationService {
           timestamp: position.timestamp,
         );
 
-        _positionController.add(locationData);
+        // Guard: geolocator_web can fire one last callback after cancel()
+        // due to the browser's watchPosition race. If controller was closed
+        // between cancel and this callback, silently drop the event.
+        if (!_controller.isClosed) {
+          _controller.add(locationData);
+        }
 
         if (kDebugMode) {
           debugPrint(
@@ -110,8 +171,8 @@ class LocationService {
   }
 
   /// Stop GPS streaming
-  void stopTracking() {
-    _positionSubscription?.cancel();
+  Future<void> stopTracking() async {
+    await _positionSubscription?.cancel();
     _positionSubscription = null;
     _isTracking = false;
     debugPrint('[Location] Tracking stopped');
@@ -149,9 +210,10 @@ class LocationService {
     return null;
   }
 
-  void dispose() {
-    stopTracking();
-    _positionController.close();
+  Future<void> dispose() async {
+    await stopTracking();
+    _positionController?.close();
+    _positionController = null;
   }
 }
 

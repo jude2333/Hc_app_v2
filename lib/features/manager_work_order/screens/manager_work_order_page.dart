@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/components/canceled_work_order_page.dart';
 import 'package:anderson_crm_flutter/features/price_list/screens/manager_price_view_page.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/screens/tech_engagement_page.dart';
+import 'tech_analytics_page.dart';
 
 import '../../theme/theme.dart';
 import '../providers/manager_work_order_provider.dart';
@@ -168,6 +169,15 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const TechEngagementPage())),
+          ),
+          IconButton(
+            tooltip: 'Tech Analytics & Export',
+            icon:
+                const Icon(Icons.analytics_outlined, color: Colors.black87),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const TechAnalyticsPage())),
           ),
           IconButton(
             tooltip: 'Add',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../data/tracking_models.dart';
 
 /// Alerts panel showing recent tracking alerts with severity indicators.
@@ -15,11 +16,11 @@ class AlertsPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle_outline, size: 40, color: Colors.grey[400]),
-            const SizedBox(height: 8),
+            Icon(Icons.check_circle_outline, size: 64, color: AppColors.textHint.withValues(alpha: 0.5)),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'No alerts',
-              style: TextStyle(color: Colors.grey[500], fontSize: 13),
+              style: AppTextStyles.h3.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -28,7 +29,7 @@ class AlertsPanel extends StatelessWidget {
 
     return ListView.builder(
       itemCount: alerts.length,
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       itemBuilder: (context, index) {
         final alert = alerts[index];
         return _AlertItem(alert: alert);
@@ -46,30 +47,36 @@ class _AlertItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color bgColor;
     final Color borderColor;
+    final Color textColor;
 
     if (alert.isCritical) {
-      bgColor = Colors.red.withOpacity(0.06);
-      borderColor = Colors.red.withOpacity(0.3);
+      bgColor = AppColors.error.withValues(alpha: 0.05);
+      borderColor = AppColors.error.withValues(alpha: 0.3);
+      textColor = AppColors.error;
     } else {
-      bgColor = Colors.orange.withOpacity(0.06);
-      borderColor = Colors.orange.withOpacity(0.3);
+      bgColor = AppColors.warning.withValues(alpha: 0.05);
+      borderColor = AppColors.warning.withValues(alpha: 0.3);
+      textColor = AppColors.activityStationary;
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: alert.isRead ? Colors.transparent : bgColor,
-        borderRadius: BorderRadius.circular(8),
+        color: alert.isRead ? AppColors.surface : bgColor,
+        borderRadius: AppRadius.mdAll,
         border: Border.all(
-          color: alert.isRead ? Colors.grey.withOpacity(0.15) : borderColor,
+          color: alert.isRead ? AppColors.divider : borderColor,
         ),
+        boxShadow: alert.isRead ? null : [
+          BoxShadow(color: AppColors.shadowLight, blurRadius: 4, offset: const Offset(0, 2))
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(alert.icon, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
+          Text(alert.icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,47 +85,42 @@ class _AlertItem extends StatelessWidget {
                   children: [
                     if (!alert.isRead)
                       Container(
-                        width: 6,
-                        height: 6,
-                        margin: const EdgeInsets.only(right: 4),
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(right: 6),
                         decoration: const BoxDecoration(
-                          color: Colors.blue,
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                         ),
                       ),
                     Text(
                       _formatAlertType(alert.alertType),
-                      style: TextStyle(
+                      style: AppTextStyles.body.copyWith(
                         fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                        color: alert.isCritical ? Colors.red[700] : Colors.orange[800],
+                        color: textColor,
                       ),
                     ),
                     const Spacer(),
                     Text(
                       _formatTime(alert.createdAt),
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                      style: AppTextStyles.caption,
                     ),
                   ],
                 ),
                 if (alert.message != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     alert.message!,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
                 if (alert.technicianName != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     alert.technicianName!,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[500],
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500),
                   ),
                 ],
               ],

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
-import 'package:anderson_crm_flutter/features/session/storage_service.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import '../services/location_service.dart';
 import '../services/tracking_ws_service.dart';
 import '../services/location_cache_service.dart';
@@ -45,14 +45,14 @@ class TrackingState {
 class TrackingNotifier extends StateNotifier<TrackingState> {
   final LocationService _locationService;
   final TrackingWsService _wsService;
-  final StorageService _storage;
+  final Ref _ref;
 
   StreamSubscription? _locationSub;
   StreamSubscription? _wsSub;
   String? _jwtToken;
   String? _currentWorkOrderDocId;
 
-  TrackingNotifier(this._storage)
+  TrackingNotifier(this._ref)
       : _locationService = LocationService(),
         _wsService = TrackingWsService(),
         super(const TrackingState());
@@ -60,10 +60,12 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   /// Initialize tracking — called after login
   /// Auto-starts tracking if the user is a technician
   Future<void> initialize() async {
-    // Get auth info from session
-    final empId = _storage.getFromSession('logged_in_emp_id');
-    final role = _storage.getFromSession('logged_in_role');
-    _jwtToken = _storage.getFromSession('jwt_token');
+    final storage = _ref.read(storageServiceProvider);
+
+    // Get auth info from session — use the correct keys
+    final empId = storage.getFromSession('logged_in_emp_id');
+    final roleName = storage.getFromSession('role_name');
+    _jwtToken = storage.getFromSession('pg_admin');
 
     if (empId.isEmpty || _jwtToken == null || _jwtToken!.isEmpty) {
       debugPrint('[Tracking] No auth info — skipping tracking init');
@@ -71,9 +73,8 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     }
 
     // Only auto-start for technicians
-    // Managers connect to WS separately via the dashboard
-    if (role.toLowerCase() != 'technician' && role.toLowerCase() != 'tech') {
-      debugPrint('[Tracking] User is $role — not starting technician tracking');
+    if (roleName.toUpperCase() != 'TECHNICIAN') {
+      debugPrint('[Tracking] User is $roleName — not starting technician tracking');
       return;
     }
 
@@ -120,9 +121,9 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   }
 
   /// Stop GPS tracking
-  void stopTracking() {
-    _locationService.stopTracking();
-    _locationSub?.cancel();
+  Future<void> stopTracking() async {
+    await _locationService.stopTracking();
+    await _locationSub?.cancel();
     _locationSub = null;
 
     _wsService.sendTrackingStopped();
@@ -133,7 +134,7 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   /// Toggle tracking on/off
   Future<void> toggleTracking() async {
     if (state.isTracking) {
-      stopTracking();
+      await stopTracking();
     } else {
       await startTracking();
     }
@@ -217,10 +218,10 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
 
   /// Full cleanup — called on logout
   Future<void> shutdown() async {
-    stopTracking();
+    await stopTracking();
     await _wsService.disconnect();
-    _wsSub?.cancel();
-    _locationService.dispose();
+    await _wsSub?.cancel();
+    await _locationService.dispose();
     _wsService.dispose();
   }
 }
@@ -228,9 +229,5 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
 /// Riverpod provider
 final trackingProvider =
     StateNotifierProvider<TrackingNotifier, TrackingState>((ref) {
-  // This will be overridden with the actual StorageService instance
-  // when the app initializes tracking after login
-  throw UnimplementedError(
-    'trackingProvider must be overridden with a StorageService instance',
-  );
+  return TrackingNotifier(ref);
 });

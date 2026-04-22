@@ -36,6 +36,10 @@ class WorkOrder {
   final int? b2bClientId;
   final String b2bClientName;
 
+  // Marketing
+  final String marketingPersonName;
+  final String marketingPersonNumber;
+
   // Status
   final String status;
   final String serverStatus;
@@ -90,6 +94,8 @@ class WorkOrder {
     required this.assignedTo,
     this.b2bClientId,
     required this.b2bClientName,
+    required this.marketingPersonName,
+    required this.marketingPersonNumber,
     required this.status,
     required this.serverStatus,
     required this.billAmount,
@@ -130,6 +136,8 @@ class WorkOrder {
     required String assignedTo,
     int? b2bClientId,
     required String b2bClientName,
+    required String marketingPersonName,
+    required String marketingPersonNumber,
     required String status,
     required String serverStatus,
     required double billAmount,
@@ -166,6 +174,8 @@ class WorkOrder {
       assignedTo: assignedTo,
       b2bClientId: b2bClientId,
       b2bClientName: b2bClientName,
+      marketingPersonName: marketingPersonName,
+      marketingPersonNumber: marketingPersonNumber,
       status: status,
       serverStatus: serverStatus,
       billAmount: billAmount,
@@ -245,6 +255,8 @@ class WorkOrder {
       'pro_id': parsedDocMap['pro_id'] ?? '',
       'b2b_client_id': b2bClientId ?? 0,
       'b2b_client_name': b2bClientName,
+      'marketing_person_name': marketingPersonName,
+      'marketing_person_number': marketingPersonNumber,
       'vip_client': parsedDocMap['vip_client'] ?? 0,
       'urgent': parsedDocMap['urgent'] ?? 0,
       'cghs_client': parsedDocMap['cghs_client'] ?? 0,
@@ -301,6 +313,8 @@ class WorkOrder {
       'assigned_to': assignedTo,
       'b2b_client_id': b2bClientId,
       'b2b_client_name': b2bClientName,
+      'marketing_person_name': marketingPersonName,
+      'marketing_person_number': marketingPersonNumber,
       'status': status,
       'server_status': serverStatus,
       'bill_amount': billAmount,
@@ -339,6 +353,8 @@ class WorkOrder {
     String? assignedTo,
     int? b2bClientId,
     String? b2bClientName,
+    String? marketingPersonName,
+    String? marketingPersonNumber,
     String? status,
     String? serverStatus,
     double? billAmount,
@@ -394,6 +410,12 @@ class WorkOrder {
     if (visitTime != null) updatedDoc['appointment_time'] = visitTime;
     if (b2bClientId != null) updatedDoc['b2b_client_id'] = b2bClientId;
     if (b2bClientName != null) updatedDoc['b2b_client_name'] = b2bClientName;
+    if (marketingPersonName != null) {
+      updatedDoc['marketing_person_name'] = marketingPersonName;
+    }
+    if (marketingPersonNumber != null) {
+      updatedDoc['marketing_person_number'] = marketingPersonNumber;
+    }
     if (status != null) updatedDoc['status'] = status;
     if (serverStatus != null) updatedDoc['server_status'] = serverStatus;
     if (assignedId != null) updatedDoc['assigned_id'] = assignedId;
@@ -454,6 +476,9 @@ class WorkOrder {
       assignedTo: assignedTo ?? this.assignedTo,
       b2bClientId: b2bClientId ?? this.b2bClientId,
       b2bClientName: b2bClientName ?? this.b2bClientName,
+      marketingPersonName: marketingPersonName ?? this.marketingPersonName,
+      marketingPersonNumber:
+          marketingPersonNumber ?? this.marketingPersonNumber,
       status: status ?? this.status,
       serverStatus: serverStatus ?? this.serverStatus,
       billAmount: billAmount ?? this.billAmount,
@@ -593,6 +618,8 @@ class WorkOrder {
         assignedTo: _parseString(row, 'assigned_to'),
         b2bClientId: _parseNullableInt(row, 'b2b_client_id'),
         b2bClientName: _parseString(row, 'b2b_client_name'),
+        marketingPersonName: _parseString(row, 'marketing_person_name'),
+        marketingPersonNumber: _parseString(row, 'marketing_person_number'),
         status: _parseString(row, 'status'),
         serverStatus: _parseString(row, 'server_status'),
         billAmount: _parseDouble(row, 'bill_amount'),
@@ -635,6 +662,8 @@ class WorkOrder {
     List<String>? prescriptionPaths,
     int? b2bClientId,
     String? b2bClientName,
+    String? marketingPersonName,
+    String? marketingPersonNumber,
     bool? vip,
     bool? urgent,
     bool? cghsClient,
@@ -668,6 +697,8 @@ class WorkOrder {
       'pres_photo': prescriptionJoined,
       'b2b_client_id': b2bClientId ?? 0,
       'b2b_client_name': b2bClientName ?? '',
+      'marketing_person_name': marketingPersonName ?? '',
+      'marketing_person_number': marketingPersonNumber ?? '',
       'vip_client': vip == true ? 1 : 0,
       'urgent': urgent == true ? 1 : 0,
       'cghs_client': cghsClient == true ? 1 : 0,
@@ -706,6 +737,8 @@ class WorkOrder {
       assignedTo: '',
       b2bClientId: b2bClientId,
       b2bClientName: b2bClientName ?? '',
+      marketingPersonName: marketingPersonName ?? '',
+      marketingPersonNumber: marketingPersonNumber ?? '',
       status: 'unassigned',
       serverStatus: 'waiting',
       billAmount: 0.0,
@@ -838,6 +871,9 @@ class WorkOrder {
       assignedTo: docMap['assigned_to']?.toString() ?? '',
       b2bClientId: b2bClientId,
       b2bClientName: docMap['b2b_client_name']?.toString() ?? '',
+      marketingPersonName: docMap['marketing_person_name']?.toString() ?? '',
+      marketingPersonNumber:
+          docMap['marketing_person_number']?.toString() ?? '',
       status: docMap['status']?.toString() ?? 'unassigned',
       serverStatus: docMap['server_status']?.toString() ?? 'waiting',
       billAmount: billAmount,

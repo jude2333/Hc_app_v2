@@ -50,6 +50,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   late TextEditingController _pincodeController;
   late TextEditingController _freeTextController;
   late TextEditingController _cancellationReasonController;
+  late TextEditingController _marketingPersonNameController;
+  late TextEditingController _marketingPersonNumberController;
 
   String _salutation = 'Mr';
   String _gender = 'Male';
@@ -112,6 +114,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _pincodeController = TextEditingController();
     _freeTextController = TextEditingController();
     _cancellationReasonController = TextEditingController();
+    _marketingPersonNameController = TextEditingController();
+    _marketingPersonNumberController = TextEditingController();
   }
 
   void _initializeDates() {
@@ -174,6 +178,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _pincodeController.text = wo.pincode;
     _doctorController.text = wo.doctorName;
     _freeTextController.text = wo.freeText;
+    _marketingPersonNameController.text = wo.marketingPersonName;
+    _marketingPersonNumberController.text = wo.marketingPersonNumber;
 
     _gender = wo.gender.isNotEmpty ? wo.gender : 'Male';
     _isVip = wo.vip;
@@ -232,6 +238,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _pincodeController.dispose();
     _freeTextController.dispose();
     _cancellationReasonController.dispose();
+    _marketingPersonNameController.dispose();
+    _marketingPersonNumberController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -341,6 +349,10 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               credit: _credit,
               b2bClientId: _selectedB2BClientId,
               b2bClientName: _selectedB2BClientName,
+              marketingPersonName:
+                  _toTitleCase(_marketingPersonNameController.text.trim()),
+              marketingPersonNumber:
+                  _marketingPersonNumberController.text.trim(),
               sendSms: _sendSms,
               sendWhatsapp: _sendWhatsapp,
               sendEmail: _sendEmail,
@@ -750,6 +762,29 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
           controller: _doctorController,
           decoration: WorkOrderFormStyles.inputDecoration('Referring Doctor',
               icon: Icons.medical_services_outlined, prefix: 'Dr. '),
+        ),
+        SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _marketingPersonNameController,
+                decoration: WorkOrderFormStyles.inputDecoration(
+                    'Marketing Person Name',
+                    icon: Icons.person_outline),
+              ),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: TextFormField(
+                controller: _marketingPersonNumberController,
+                decoration: WorkOrderFormStyles.inputDecoration(
+                    'Marketing Person Number',
+                    icon: Icons.phone_outlined),
+                keyboardType: TextInputType.phone,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: AppSpacing.md),
         _buildB2BToggle(),

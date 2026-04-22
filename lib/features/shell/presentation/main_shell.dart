@@ -9,7 +9,7 @@ import '../../../providers/db_handler_provider.dart';
 import '../../../services/dbHandler_service.dart';
 import '../../../services/cronJob_service.dart';
 import '../../../providers/notification_provider.dart';
-// import '../../../providers/cron_job_provider.dart';
+import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import '../providers/shell_providers.dart';
 import '../widgets/main_app_bar.dart';
 import '../widgets/app_drawer.dart';
@@ -88,10 +88,21 @@ class _MainShellState extends ConsumerState<MainShell> {
       await dbHandler.init();
       _loadNotificationsSafely();
       _setupRealtimeListener();
+
+      // Initialize tracking for technicians (auto-starts GPS + WS)
+      _initializeTracking();
     } catch (e) {
       debugPrint('Background initialization error: $e');
     } finally {
       if (mounted) ref.read(initializingProvider.notifier).state = false;
+    }
+  }
+
+  void _initializeTracking() {
+    try {
+      ref.read(trackingProvider.notifier).initialize();
+    } catch (e) {
+      debugPrint('[MainShell] Tracking init error (non-fatal): $e');
     }
   }
 

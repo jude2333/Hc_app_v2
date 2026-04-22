@@ -75,7 +75,6 @@ class ManagerActions extends ConsumerWidget {
 
   /// Shows a dialog asking the manager whether to notify the patient about
   /// the cancellation via SMS, WhatsApp, and/or Email.
-  /// Mirrors Vue's `close_edit_screen` → `msg_dialog` flow in desktop_view.vue.
   void _showCancellationNotificationDialog(
       BuildContext context, WidgetRef ref) {
     bool sendSms = true;

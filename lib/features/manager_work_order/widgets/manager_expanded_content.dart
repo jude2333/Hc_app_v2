@@ -30,6 +30,9 @@ class ManagerExpandedContent extends ConsumerWidget {
           if (workOrder.prescriptionPhoto.isNotEmpty)
             _buildPrescriptionSection(context, ref),
           if (workOrder.status == 'cancelled') _buildCancellationSection(),
+          if (workOrder.marketingPersonName.isNotEmpty ||
+              workOrder.marketingPersonNumber.isNotEmpty)
+            _buildMarketingSection(),
           _buildProcessSteps(ref),
           const SizedBox(height: AppSpacing.md),
           if (workOrder.parsedDoc['remarks'] != null) _buildRemarksSection(),
@@ -127,6 +130,28 @@ class ManagerExpandedContent extends ConsumerWidget {
       child: _FilledChip(
         label: 'Cancelled: $reason',
         color: AppColors.error,
+      ),
+    );
+  }
+
+  Widget _buildMarketingSection() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          _LabelChip(label: 'Marketing Person', color: AppColors.primary),
+          if (workOrder.marketingPersonName.isNotEmpty)
+            _FilledChip(
+                label: workOrder.marketingPersonName,
+                color: AppColors.secondary),
+          if (workOrder.marketingPersonNumber.isNotEmpty)
+            _FilledChip(
+                label: workOrder.marketingPersonNumber,
+                color: AppColors.secondary),
+        ],
       ),
     );
   }

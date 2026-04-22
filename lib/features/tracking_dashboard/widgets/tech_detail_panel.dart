@@ -1,104 +1,244 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../data/tracking_models.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import '../providers/tracking_ws_provider.dart';
+import '../providers/tracking_ui_providers.dart';
+import '../data/tracking_repository.dart';
 
 /// Detail panel showing information about a selected technician.
-class TechDetailPanel extends StatelessWidget {
-  final TechnicianStatus? technician;
-  final DateTime selectedDate;
+/// Includes reverse geocoding via our backend proxy to show area/landmark names.
+class TechDetailPanel extends ConsumerStatefulWidget {
+  final String token;
 
   const TechDetailPanel({
     super.key,
-    this.technician,
-    required this.selectedDate,
+    required this.token,
   });
 
   @override
+  ConsumerState<TechDetailPanel> createState() => _TechDetailPanelState();
+}
+
+class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
+  // ─── Geocode state ─────────────────────────────────────────
+  // Static cache shared across panel rebuilds (survives tab switches)
+  static final Map<String, String> _geocodeCache = {};
+  // Coords that failed geocoding — avoid retrying the exact same location
+  static final Set<String> _geocodeFailedKeys = {};
+
+  String? _currentAddress;
+  bool _loadingAddress = false;
+  String? _activeGeocodeKey; // The cache key currently being fetched or displayed
+
+  /// Reverse geocode via our Node.js backend proxy (no CORS issues).
+  /// Uses aggressive rounding (3 decimal places ≈ 110m) to reduce API calls.
+  Future<void> _reverseGeocode(double lat, double lng) async {
+    // Round to 3 decimal places for cache key (~110m precision)
+    // This prevents re-geocoding for minor GPS fluctuations
+    final cacheKey = '${lat.toStringAsFixed(3)},${lng.toStringAsFixed(3)}';
+
+    // Already showing this location's address
+    if (cacheKey == _activeGeocodeKey && _currentAddress != null) return;
+
+    // Already failed for this key — don't retry
+    if (_geocodeFailedKeys.contains(cacheKey)) {
+      if (mounted && _activeGeocodeKey != cacheKey) {
+        setState(() {
+          _activeGeocodeKey = cacheKey;
+          _currentAddress = null;
+          _loadingAddress = false;
+        });
+      }
+      return;
+    }
+
+    // Check cache (instant)
+    if (_geocodeCache.containsKey(cacheKey)) {
+      if (mounted) {
+        setState(() {
+          _currentAddress = _geocodeCache[cacheKey];
+          _activeGeocodeKey = cacheKey;
+          _loadingAddress = false;
+        });
+      }
+      return;
+    }
+
+    // Start loading
+    if (mounted) {
+      setState(() {
+        _loadingAddress = true;
+        _activeGeocodeKey = cacheKey;
+      });
+    }
+
+    try {
+      final repo = TrackingRepository(token: widget.token);
+      final address = await repo.reverseGeocode(lat, lng);
+
+      if (address != null && address.isNotEmpty) {
+        _geocodeCache[cacheKey] = address;
+        if (mounted) {
+          setState(() {
+            _currentAddress = address;
+            _loadingAddress = false;
+          });
+        }
+      } else {
+        // API returned empty — mark as failed
+        _geocodeFailedKeys.add(cacheKey);
+        if (mounted) {
+          setState(() {
+            _currentAddress = null;
+            _loadingAddress = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[Geocode] Error: $e');
+      _geocodeFailedKeys.add(cacheKey);
+      if (mounted) {
+        setState(() {
+          _currentAddress = null;
+          _loadingAddress = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (technician == null) {
+    // ─── Read live state from Riverpod ─────────────────────────
+    final wsState = ref.watch(dashboardWsProvider);
+    final selectedTechId = ref.watch(selectedTechProvider)?.technicianId;
+    final tech = selectedTechId != null ? wsState.technicians[selectedTechId] : null;
+
+    // ─── Trigger geocode when tech location changes ───────────
+    if (tech != null && tech.hasLocation) {
+      final newKey = '${tech.lastLatitude!.toStringAsFixed(3)},${tech.lastLongitude!.toStringAsFixed(3)}';
+      if (newKey != _activeGeocodeKey || (_currentAddress == null && !_loadingAddress && !_geocodeFailedKeys.contains(newKey))) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _reverseGeocode(tech.lastLatitude!, tech.lastLongitude!);
+        });
+      }
+    }
+
+    // ─── Reset address state when switching to a different tech ─
+    if (tech == null || (selectedTechId != null && !tech.hasLocation)) {
+      // Tech selected but has no location, or no tech selected
+      if (_currentAddress != null || _loadingAddress) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _currentAddress = null;
+              _loadingAddress = false;
+              _activeGeocodeKey = null;
+            });
+          }
+        });
+      }
+    }
+
+    // ─── Empty state ──────────────────────────────────────────
+    if (tech == null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.person_outline, size: 40, color: Colors.grey[400]),
-            const SizedBox(height: 8),
-            Text(
-              'Select a technician to view details',
-              style: TextStyle(color: Colors.grey[500], fontSize: 13),
-            ),
+            Icon(Icons.person_outline, size: 40, color: AppColors.textHint),
+            const SizedBox(height: AppSpacing.sm),
+            const Text('Select a technician to view details', style: AppTextStyles.caption),
           ],
         ),
       );
     }
 
-    final tech = technician!;
+    // ─── Status color ─────────────────────────────────────────
+    Color statusColor;
+    if (!tech.isOnline) {
+      statusColor = AppColors.trackOffline;
+    } else if (tech.statusLabel == 'Idle') {
+      statusColor = AppColors.trackIdle;
+    } else {
+      statusColor = AppColors.trackOnline;
+    }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with name + status
           Row(
             children: [
-              CircleAvatar(
-                backgroundColor: tech.isOnline ? Colors.green : Colors.grey,
-                radius: 18,
-                child: Text(
-                  tech.technicianName.isNotEmpty
-                      ? tech.technicianName[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: statusColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: CircleAvatar(
+                  backgroundColor: statusColor,
+                  radius: 20,
+                  child: Text(
+                    tech.technicianName.isNotEmpty ? tech.technicianName[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tech.technicianName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      tech.technicianName.isNotEmpty ? tech.technicianName : 'Tech #${tech.technicianId}',
+                      style: AppTextStyles.h3,
                     ),
-                    Text(
-                      tech.statusLabel,
-                      style: TextStyle(
-                        color: tech.isOnline ? Colors.green : Colors.red,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
+                        const SizedBox(width: 4),
+                        Text(
+                          tech.statusLabel,
+                          style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.lg),
+          const Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: AppSpacing.md),
 
           // Stats grid
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: [
               _StatCard(
                 icon: Icons.route,
                 label: 'Distance',
                 value: '${tech.todayDistance.toStringAsFixed(1)} km',
-                color: Colors.blue,
+                color: AppColors.primary,
               ),
               _StatCard(
                 icon: Icons.speed,
                 label: 'Speed',
                 value: '${tech.speedKmh.toStringAsFixed(1)} km/h',
-                color: Colors.orange,
+                color: AppColors.activityStationary,
               ),
               _StatCard(
                 icon: Icons.battery_std,
                 label: 'Battery',
                 value: tech.lastBattery != null ? '${tech.lastBattery}%' : '--',
-                color: (tech.lastBattery ?? 100) < 20 ? Colors.red : Colors.green,
+                color: (tech.lastBattery ?? 100) < 20 ? AppColors.error : AppColors.success,
               ),
               _StatCard(
                 icon: Icons.pin_drop,
@@ -108,23 +248,84 @@ class TechDetailPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
-          // Location info
+          // Location info — with reverse geocoded address
           if (tech.hasLocation) ...[
-            _InfoRow(Icons.location_on, 'Location',
-                '${tech.lastLatitude!.toStringAsFixed(5)}, ${tech.lastLongitude!.toStringAsFixed(5)}'),
+            _buildAddressRow(),
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Icon(Icons.gps_fixed, size: 12, color: AppColors.textHint),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${tech.lastLatitude!.toStringAsFixed(5)}, ${tech.lastLongitude!.toStringAsFixed(5)}',
+                    style: AppTextStyles.caption.copyWith(fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
             if (tech.lastAccuracy != null)
-              _InfoRow(Icons.gps_fixed, 'Accuracy',
-                  '${tech.lastAccuracy!.toStringAsFixed(1)} meters'),
+              _InfoRow(Icons.radar, 'Accuracy', '±${tech.lastAccuracy!.toStringAsFixed(1)} meters'),
+          ] else ...[
+            // No location data available
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(Icons.location_off, size: 16, color: AppColors.trackOffline),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'No location data yet',
+                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
           ],
           if (tech.lastSeenAt != null)
-            _InfoRow(Icons.access_time, 'Last seen',
-                DateFormat('hh:mm a, MMM d').format(tech.lastSeenAt!.toLocal())),
+            _InfoRow(Icons.access_time, 'Last seen', DateFormat('hh:mm a, MMM d').format(tech.lastSeenAt!.toLocal())),
           if (tech.currentWorkOrder != null)
             _InfoRow(Icons.work, 'Current WO', tech.currentWorkOrder!),
           if (tech.lastActivity != null)
             _InfoRow(Icons.directions_walk, 'Activity', tech.lastActivity!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.location_on, size: 16, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _loadingAddress
+                ? Row(
+                    children: [
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textHint),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text('Finding location...', style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
+                    ],
+                  )
+                : Text(
+                    _currentAddress ?? 'Resolving address...',
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                      color: _currentAddress != null ? AppColors.textPrimary : AppColors.textHint,
+                    ),
+                  ),
+          ),
         ],
       ),
     );
@@ -147,23 +348,31 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: (MediaQuery.of(context).size.width / 2) - 30,
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 160),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: color.withValues(alpha: 0.05),
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
-              Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-            ],
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: Icon(icon, size: 14, color: color),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value, style: AppTextStyles.chipText.copyWith(color: color)),
+                Text(label, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+              ],
+            ),
           ),
         ],
       ),
@@ -181,14 +390,14 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text('$label: ', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          Icon(icon, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: AppSpacing.sm),
+          Text('$label: ', style: AppTextStyles.caption),
           Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+            child: Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
           ),
         ],
       ),

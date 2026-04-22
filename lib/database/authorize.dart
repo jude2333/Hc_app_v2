@@ -50,6 +50,12 @@ class Authorize {
             'vertical': "Users",
             'link': "users",
           },
+          {
+            'icon': "mdi-map-marker-path",
+            'title': "Tracking",
+            'vertical': "Tracking",
+            'link': "tracking-dashboard",
+          },
         ];
       }
     }

@@ -231,6 +231,57 @@ class ManagerAssignmentController {
           debugPrint(' Email failed: $result');
         }
       }
+
+      if (workOrder.marketingPersonNumber.isNotEmpty &&
+          workOrder.marketingPersonNumber.length >= 10) {
+        final mktBaseMessage = Map<String, dynamic>.from(baseMessage);
+        mktBaseMessage['recipient_mobile'] = workOrder.marketingPersonNumber;
+        mktBaseMessage['recipient_name'] =
+            workOrder.marketingPersonName.isNotEmpty
+                ? workOrder.marketingPersonName
+                : 'Marketing Person';
+
+        if (sendSms && !Settings.development) {
+          final smsMessage = Map<String, dynamic>.from(mktBaseMessage);
+          smsMessage['_id'] =
+              'sms_center:${Util.getRandomString(5)}:${Util.uuidv4()}';
+          String smsMsg = isReassignment
+              ? SmsTemplate.homeCollectionTechChange(
+                  techName, techMobile, msgUrl)
+              : SmsTemplate.sampleCollection(
+                  workOrder.patientName,
+                  techName,
+                  "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}",
+                  techMobile,
+                  msgUrl);
+          smsMessage['message'] = smsMsg;
+          debugPrint(
+              ' Sending assignment SMS to marketing person ${workOrder.marketingPersonNumber}');
+          await comCenter.sendMsg(smsMessage);
+        }
+
+        if (sendWhatsApp) {
+          final waMessage = Map<String, dynamic>.from(mktBaseMessage);
+          waMessage['_id'] =
+              'whatsapp_center:${Util.getRandomString(5)}:${Util.uuidv4()}';
+          waMessage['template'] = isReassignment
+              ? 'Technician_change_for_hc'
+              : 'hc_technician_allocation3';
+          waMessage['message'] = isReassignment
+              ? [techName, techMobile, msgUrl]
+              : [
+                  workOrder.patientName,
+                  techName,
+                  "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}",
+                  techMobile,
+                  msgUrl
+                ];
+
+          debugPrint(
+              ' Sending assignment WhatsApp to marketing person ${workOrder.marketingPersonNumber}');
+          await comCenter.sendMsg(waMessage);
+        }
+      }
     } catch (e) {
       debugPrint(' Error sending assignment messages: $e');
       rethrow;

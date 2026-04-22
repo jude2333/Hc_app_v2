@@ -7,6 +7,7 @@ import 'package:anderson_crm_flutter/features/shell/presentation/tenant_selector
 import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
+import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import '../providers/shell_providers.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -222,6 +223,8 @@ class AppDrawer extends ConsumerWidget {
         return Icons.receipt_long_rounded;
       case 'mdi-motion-sensor':
         return Icons.people_alt_rounded;
+      case 'mdi-map-marker-path':
+        return Icons.gps_fixed_rounded;
       default:
         return Icons.circle_outlined;
     }
@@ -244,6 +247,11 @@ class AppDrawer extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
+
+              // Shutdown tracking (GPS + WebSocket) if active
+              try {
+                ref.read(trackingProvider.notifier).shutdown();
+              } catch (_) {}
 
               // IMPORTANT: Reset notification provider FIRST (before clearing session)
               // This cancels streams while auth tokens are still valid

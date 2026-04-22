@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../providers/tracking_ws_provider.dart';
+import '../providers/tracking_ui_providers.dart';
 import '../widgets/live_map_view.dart';
 import '../widgets/tech_list_panel.dart';
 import '../widgets/tech_detail_panel.dart';
 import '../widgets/alerts_panel.dart';
 import '../widgets/filter_bar.dart';
+import '../widgets/timeline_panel.dart';
+import '../widgets/fence_manager.dart';
+import '../widgets/analytics_tab.dart';
 import '../data/tracking_models.dart';
+import '../data/tracking_repository.dart';
 
 /// Main tracking dashboard page for managers.
 /// Layout: Filter bar on top, map on left, panels on right.
@@ -14,27 +21,51 @@ class TrackingDashboardPage extends ConsumerStatefulWidget {
   const TrackingDashboardPage({super.key});
 
   @override
-  ConsumerState<TrackingDashboardPage> createState() => _TrackingDashboardPageState();
+  ConsumerState<TrackingDashboardPage> createState() =>
+      _TrackingDashboardPageState();
 }
 
 class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  TechnicianStatus? _selectedTech;
-  DateTime _selectedDate = DateTime.now();
-  String? _statusFilter; // null = all, 'online', 'offline', 'idle'
+  String _token = '';
+  List<Map<String, dynamic>> _fences = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _initWebSocket();
+    _loadFences();
   }
 
   void _initWebSocket() {
-    // TODO: Get token from session/storage and connect
-    // For now, this will be wired up when integrating with the auth flow
-    // ref.read(dashboardWsProvider.notifier).connect(token);
+    final storage = ref.read(storageServiceProvider);
+    _token = storage.getFromSession('pg_admin');
+    if (_token.isNotEmpty) {
+      ref.read(dashboardWsProvider.notifier).connect(_token);
+    }
+  }
+
+  void _refreshTokenAndReconnect() {
+    final storage = ref.read(storageServiceProvider);
+    final freshToken = storage.getFromSession('pg_admin');
+    if (freshToken.isNotEmpty) {
+      _token = freshToken;
+      ref.read(dashboardWsProvider.notifier).disconnect();
+      ref.read(dashboardWsProvider.notifier).connect(_token);
+    }
+  }
+
+  Future<void> _loadFences() async {
+    if (_token.isEmpty) return;
+    try {
+      final repo = TrackingRepository(token: _token);
+      final fences = await repo.getFences();
+      if (mounted) setState(() => _fences = fences);
+    } catch (e) {
+      debugPrint('[Dashboard] Load fences error: $e');
+    }
   }
 
   @override
@@ -46,55 +77,71 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   @override
   Widget build(BuildContext context) {
     final wsState = ref.watch(dashboardWsProvider);
+    final selectedDate = ref.watch(selectedDateProvider);
+    final selectedTech = ref.watch(selectedTechProvider);
     final isWide = MediaQuery.of(context).size.width > 900;
 
+    if (!wsState.isConnected && _token.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final storage = ref.read(storageServiceProvider);
+        final freshToken = storage.getFromSession('pg_admin');
+        if (freshToken != _token && freshToken.isNotEmpty) {
+          _token = freshToken;
+        }
+      });
+    }
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
         title: Row(
           children: [
-            const Icon(Icons.location_on, size: 22),
+            const Icon(Icons.location_on, size: 22, color: AppColors.primary),
             const SizedBox(width: 8),
-            const Text('Technician Tracking'),
-            const SizedBox(width: 12),
+            Text('Technician Tracking', style: AppTextStyles.h3),
+            const SizedBox(width: 16),
             // Connection indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: wsState.isConnected
-                    ? Colors.green.withOpacity(0.15)
-                    : Colors.red.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: wsState.isConnected ? Colors.green : Colors.red,
-                      shape: BoxShape.circle,
+            GestureDetector(
+              onTap: wsState.isConnected ? null : _refreshTokenAndReconnect,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: AppDecorations.pillBadge(
+                  wsState.isConnected ? AppColors.trackOnline : AppColors.error,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: wsState.isConnected ? AppColors.trackOnline : AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    wsState.isConnected ? 'Live' : 'Disconnected',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: wsState.isConnected ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 6),
+                    Text(
+                      wsState.isConnected ? 'Live' : 'Tap to reconnect',
+                      style: AppTextStyles.chipText.copyWith(
+                        color: wsState.isConnected ? AppColors.trackOnline : AppColors.error,
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Text(
               '${wsState.onlineCount}/${wsState.totalCount} online',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: AppTextStyles.caption,
             ),
           ],
         ),
@@ -103,27 +150,23 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {
-                  _tabController.animateTo(2); // Switch to alerts tab
-                },
+                icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+                onPressed: () => _tabController.animateTo(2),
               ),
               if (wsState.unreadAlertCount > 0)
                 Positioned(
-                  right: 6,
-                  top: 6,
+                  right: 8,
+                  top: 8,
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
-                      color: Colors.red,
+                      color: AppColors.error,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       '${wsState.unreadAlertCount > 99 ? "99+" : wsState.unreadAlertCount}',
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -136,18 +179,13 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
       body: Column(
         children: [
           // Filter bar
-          FilterBar(
-            selectedDate: _selectedDate,
-            statusFilter: _statusFilter,
-            onDateChanged: (date) => setState(() => _selectedDate = date),
-            onStatusFilterChanged: (filter) => setState(() => _statusFilter = filter),
-          ),
+          const FilterBar(),
 
           // Main content
           Expanded(
             child: isWide
-                ? _buildWideLayout(wsState)
-                : _buildNarrowLayout(wsState),
+                ? _buildWideLayout(wsState, selectedTech, selectedDate)
+                : _buildNarrowLayout(wsState, selectedTech, selectedDate),
           ),
         ],
       ),
@@ -155,97 +193,116 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   }
 
   /// Desktop/tablet layout: map left, panels right
-  Widget _buildWideLayout(DashboardWsState wsState) {
-    final filteredTechs = _filterTechnicians(wsState.technicianList);
-
+  Widget _buildWideLayout(DashboardWsState wsState, TechnicianStatus? selectedTech, DateTime selectedDate) {
     return Row(
       children: [
         // Map (60% width)
         Expanded(
           flex: 6,
           child: LiveMapView(
-            technicians: filteredTechs,
-            selectedTech: _selectedTech,
-            onTechSelected: (tech) => setState(() => _selectedTech = tech),
+            token: _token,
+            fences: _fences,
           ),
         ),
 
         // Right panels (40% width)
         Expanded(
           flex: 4,
-          child: Column(
-            children: [
-              // Tech list (top half)
-              Expanded(
-                child: TechListPanel(
-                  technicians: filteredTechs,
-                  selectedTech: _selectedTech,
-                  onTechSelected: (tech) => setState(() => _selectedTech = tech),
+          child: Container(
+            color: AppColors.surfaceAlt,
+            child: Column(
+              children: [
+                // Tech list (top portion)
+                const Expanded(
+                  flex: 4,
+                  child: TechListPanel(),
                 ),
-              ),
-              
-              // Tabbed detail panel (bottom half)
-              Expanded(
-                child: Column(
-                  children: [
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: Theme.of(context).primaryColor,
-                      unselectedLabelColor: Colors.grey,
-                      tabs: [
-                        const Tab(text: 'Details', icon: Icon(Icons.info_outline, size: 16)),
-                        const Tab(text: 'Timeline', icon: Icon(Icons.timeline, size: 16)),
-                        Tab(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.warning_amber, size: 16),
-                              const SizedBox(width: 4),
-                              const Text('Alerts'),
-                              if (wsState.unreadAlertCount > 0) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '${wsState.unreadAlertCount}',
-                                    style: const TextStyle(color: Colors.white, fontSize: 9),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          TechDetailPanel(
-                            technician: _selectedTech,
-                            selectedDate: _selectedDate,
-                          ),
-                          // Timeline placeholder — will be built in Phase 5
-                          Center(
-                            child: Text(
-                              _selectedTech != null
-                                  ? 'Timeline for ${_selectedTech!.technicianName}'
-                                  : 'Select a technician to view timeline',
-                              style: TextStyle(color: Colors.grey[500]),
+
+                const Divider(height: 1, color: AppColors.border),
+
+                // Tabbed detail panel (bottom portion)
+                Expanded(
+                  flex: 6,
+                  child: Column(
+                    children: [
+                      Container(
+                        color: AppColors.surface,
+                        child: TabBar(
+                          controller: _tabController,
+                          labelColor: AppColors.primary,
+                          unselectedLabelColor: AppColors.textSecondary,
+                          indicatorColor: AppColors.primary,
+                          indicatorWeight: 3,
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
+                          labelStyle: AppTextStyles.buttonText.copyWith(fontSize: 13),
+                          tabs: [
+                            const Tab(text: 'Details', icon: Icon(Icons.info_outline, size: 18)),
+                            const Tab(text: 'Timeline', icon: Icon(Icons.timeline, size: 18)),
+                            Tab(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.warning_amber, size: 18),
+                                  const SizedBox(width: 4),
+                                  const Text('Alerts'),
+                                  if (wsState.unreadAlertCount > 0) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.error,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${wsState.unreadAlertCount}',
+                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
-                          ),
-                          AlertsPanel(alerts: wsState.recentAlerts),
-                        ],
+                            const Tab(text: 'Fences', icon: Icon(Icons.fence, size: 18)),
+                            const Tab(text: 'Analytics', icon: Icon(Icons.analytics_outlined, size: 18)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            // Details
+                            TechDetailPanel(
+                              token: _token,
+                            ),
+                            // Timeline
+                            TimelinePanel(
+                              technician: selectedTech,
+                              selectedDate: selectedDate,
+                              token: _token,
+                            ),
+                            // Alerts
+                            AlertsPanel(alerts: wsState.recentAlerts),
+                            // Fences
+                            FenceManagerPanel(
+                              token: _token,
+                              fences: _fences,
+                              onFencesChanged: _loadFences,
+                            ),
+                            // Analytics
+                            AnalyticsTab(
+                              token: _token,
+                              selectedDate: selectedDate,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -253,42 +310,23 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   }
 
   /// Mobile layout: stacked
-  Widget _buildNarrowLayout(DashboardWsState wsState) {
-    final filteredTechs = _filterTechnicians(wsState.technicianList);
-
+  Widget _buildNarrowLayout(DashboardWsState wsState, TechnicianStatus? selectedTech, DateTime selectedDate) {
     return Column(
       children: [
         // Map (top 60%)
         Expanded(
           flex: 6,
           child: LiveMapView(
-            technicians: filteredTechs,
-            selectedTech: _selectedTech,
-            onTechSelected: (tech) => setState(() => _selectedTech = tech),
+            token: _token,
+            fences: _fences,
           ),
         ),
         // Tech list (bottom 40%)
-        Expanded(
+        const Expanded(
           flex: 4,
-          child: TechListPanel(
-            technicians: filteredTechs,
-            selectedTech: _selectedTech,
-            onTechSelected: (tech) => setState(() => _selectedTech = tech),
-          ),
+          child: TechListPanel(),
         ),
       ],
     );
-  }
-
-  List<TechnicianStatus> _filterTechnicians(List<TechnicianStatus> techs) {
-    if (_statusFilter == null) return techs;
-    return techs.where((t) {
-      switch (_statusFilter) {
-        case 'online': return t.isOnline;
-        case 'offline': return !t.isOnline;
-        case 'idle': return t.isOnline && t.statusLabel == 'Idle';
-        default: return true;
-      }
-    }).toList();
   }
 }

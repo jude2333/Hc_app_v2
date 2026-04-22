@@ -27,9 +27,9 @@ class DBHandlerService {
     return await _db.getDb(name);
   }
 
-  Future<void> retrySetup(String dbName) async {
-    return await _db.retrySetup(dbName);
-  }
+  // Future<void> retrySetup(String dbName) async {
+  //   return await _db.retrySetup(dbName);
+  // }
 
   Future<String> setUpDBWithTime() async {
     try {

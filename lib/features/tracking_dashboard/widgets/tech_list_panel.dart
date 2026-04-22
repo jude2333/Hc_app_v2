@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
-import '../data/tracking_models.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import '../data/tracking_models.dart';
+import '../providers/tracking_ws_provider.dart';
+import '../providers/tracking_ui_providers.dart';
 
 /// Side panel showing the list of technicians with their current status.
-class TechListPanel extends StatelessWidget {
-  final List<TechnicianStatus> technicians;
-  final TechnicianStatus? selectedTech;
-  final Function(TechnicianStatus) onTechSelected;
-
-  const TechListPanel({
-    super.key,
-    required this.technicians,
-    this.selectedTech,
-    required this.onTechSelected,
-  });
+class TechListPanel extends ConsumerWidget {
+  const TechListPanel({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wsState = ref.watch(dashboardWsProvider);
+    final statusFilter = ref.watch(statusFilterProvider);
+    final selectedTech = ref.watch(selectedTechProvider);
+
+    // Apply local filter
+    final technicians = wsState.technicianList.where((t) {
+      if (statusFilter == null) return true;
+      if (statusFilter == 'online') return t.isOnline;
+      if (statusFilter == 'offline') return !t.isOnline;
+      if (statusFilter == 'idle') return t.isOnline && t.statusLabel == 'Idle';
+      return true;
+    }).toList();
+
     if (technicians.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.people_outline, size: 40, color: Colors.grey),
-            SizedBox(height: 8),
-            Text('No technicians', style: TextStyle(color: Colors.grey)),
+            Icon(Icons.people_outline, size: 40, color: AppColors.textHint),
+            const SizedBox(height: AppSpacing.sm),
+            const Text('No technicians found', style: AppTextStyles.caption),
           ],
         ),
       );
@@ -35,50 +43,51 @@ class TechListPanel extends StatelessWidget {
       children: [
         // Header
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              const Icon(Icons.people, size: 18),
-              const SizedBox(width: 6),
+              const Icon(Icons.people, size: 18, color: AppColors.primary),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 'Technicians (${technicians.length})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: AppTextStyles.buttonText.copyWith(color: AppColors.textPrimary),
               ),
               const Spacer(),
               // Online count
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                padding: AppPadding.badge,
+                decoration: AppDecorations.pillBadge(AppColors.trackOnline),
                 child: Text(
                   '${technicians.where((t) => t.isOnline).length} online',
-                  style: const TextStyle(
-                    color: Colors.green,
+                  style: AppTextStyles.chipText.copyWith(
+                    color: AppColors.trackOnline,
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const Divider(height: 1),
+        const Divider(height: 1, color: AppColors.divider),
 
         // List
         Expanded(
           child: ListView.builder(
             itemCount: technicians.length,
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             itemBuilder: (context, index) {
               final tech = technicians[index];
               final isSelected = selectedTech?.technicianId == tech.technicianId;
 
-              return _TechListItem(
-                tech: tech,
-                isSelected: isSelected,
-                onTap: () => onTechSelected(tech),
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                child: _TechListItem(
+                  tech: tech,
+                  isSelected: isSelected,
+                  onTap: () {
+                    ref.read(selectedTechProvider.notifier).state = tech;
+                  },
+                ),
               );
             },
           ),
@@ -101,108 +110,109 @@ class _TechListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor;
-    final String statusEmoji;
-
+    Color statusColor;
     if (!tech.isOnline) {
-      statusColor = Colors.red;
-      statusEmoji = '🔴';
+      statusColor = AppColors.trackOffline;
     } else if (tech.statusLabel == 'Idle') {
-      statusColor = Colors.orange;
-      statusEmoji = '🟡';
+      statusColor = AppColors.trackIdle;
     } else {
-      statusColor = Colors.green;
-      statusEmoji = '🟢';
+      statusColor = AppColors.trackOnline;
     }
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.08) : null,
-          border: Border(
-            left: BorderSide(
-              color: isSelected ? Colors.blue : Colors.transparent,
-              width: 3,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: isSelected ? AppColors.primary.withValues(alpha: 0.3) : AppColors.divider,
             ),
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.1)),
           ),
-        ),
-        child: Row(
-          children: [
-            // Status dot
-            Text(statusEmoji, style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 8),
+          child: Row(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: statusColor.withValues(alpha: 0.1),
+                child: Text(
+                  tech.technicianName.isNotEmpty ? tech.technicianName[0].toUpperCase() : '?',
+                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
 
-            // Name + status
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tech.technicianName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+              // Name + status
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tech.technicianName.isNotEmpty ? tech.technicianName : 'Tech #${tech.technicianId}',
+                      style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        tech.statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                         ),
-                      ),
-                      if (tech.lastSeenAt != null) ...[
+                        const SizedBox(width: 4),
                         Text(
-                          ' · ${_timeAgo(tech.lastSeenAt!)}',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                          tech.statusLabel,
+                          style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w500),
+                        ),
+                        if (tech.lastSeenAt != null) ...[
+                          Text(
+                            ' · ${_timeAgo(tech.lastSeenAt!)}',
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Distance + battery
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (tech.todayDistance > 0)
+                    Text(
+                      '${tech.todayDistance.toStringAsFixed(1)} km',
+                      style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                  if (tech.lastBattery != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          tech.lastBattery! < 20 ? Icons.battery_alert : Icons.battery_std,
+                          size: 12,
+                          color: tech.lastBattery! < 20 ? AppColors.error : AppColors.textSecondary,
+                        ),
+                        Text(
+                          '${tech.lastBattery}%',
+                          style: AppTextStyles.caption.copyWith(
+                            color: tech.lastBattery! < 20 ? AppColors.error : AppColors.textSecondary,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
                 ],
               ),
-            ),
-
-            // Distance + battery
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (tech.todayDistance > 0)
-                  Text(
-                    '${tech.todayDistance.toStringAsFixed(1)} km',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                  ),
-                if (tech.lastBattery != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        tech.lastBattery! < 20
-                            ? Icons.battery_alert
-                            : Icons.battery_std,
-                        size: 12,
-                        color: tech.lastBattery! < 20 ? Colors.red : Colors.grey,
-                      ),
-                      Text(
-                        '${tech.lastBattery}%',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: tech.lastBattery! < 20 ? Colors.red : Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

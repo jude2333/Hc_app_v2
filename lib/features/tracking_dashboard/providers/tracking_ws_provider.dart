@@ -119,27 +119,25 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
         final status = message['status'] as String?;
         final existing = state.technicians[techId];
 
-        if (existing != null) {
-          final updated = TechnicianStatus(
-            technicianId: techId,
-            tenantId: existing.tenantId,
-            technicianName: message['technician_name'] ?? existing.technicianName,
-            isOnline: status == 'online',
-            isTracking: status == 'online' ? existing.isTracking : false,
-            lastLatitude: existing.lastLatitude,
-            lastLongitude: existing.lastLongitude,
-            lastBattery: existing.lastBattery,
-            lastSpeed: existing.lastSpeed,
-            lastActivity: existing.lastActivity,
-            lastSeenAt: existing.lastSeenAt,
-            todayDistance: existing.todayDistance,
-            todayPings: existing.todayPings,
-            currentWorkOrder: existing.currentWorkOrder,
-          );
-          final newTechs = Map<int, TechnicianStatus>.from(state.technicians);
-          newTechs[techId] = updated;
-          state = state.copyWith(technicians: newTechs);
-        }
+        final updated = TechnicianStatus(
+          technicianId: techId,
+          tenantId: existing?.tenantId ?? 0,
+          technicianName: message['technician_name'] ?? existing?.technicianName ?? 'Tech #$techId',
+          isOnline: status == 'online',
+          isTracking: status == 'online' ? (existing?.isTracking ?? false) : false,
+          lastLatitude: existing?.lastLatitude,
+          lastLongitude: existing?.lastLongitude,
+          lastBattery: existing?.lastBattery,
+          lastSpeed: existing?.lastSpeed,
+          lastActivity: existing?.lastActivity,
+          lastSeenAt: status == 'online' ? DateTime.now() : existing?.lastSeenAt,
+          todayDistance: existing?.todayDistance ?? 0,
+          todayPings: existing?.todayPings ?? 0,
+          currentWorkOrder: existing?.currentWorkOrder,
+        );
+        final newTechs2 = Map<int, TechnicianStatus>.from(state.technicians);
+        newTechs2[techId] = updated;
+        state = state.copyWith(technicians: newTechs2);
         break;
 
       case 'alert':

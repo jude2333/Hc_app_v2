@@ -5,6 +5,7 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
+import 'add_tests_post_completion_page.dart';
 import '../../theme/theme.dart';
 
 /// Technician-specific action buttons for work order rows.
@@ -19,9 +20,17 @@ class TechnicianActions extends ConsumerWidget {
     return status != 'na' && status != 'finished' && status != 'cancelled';
   }
 
+  /// Can add tests if finished within the last 24 hours.
+  bool _canAddTests() {
+    if (workOrder.status.toLowerCase() != 'finished') return false;
+    final elapsed = DateTime.now().difference(workOrder.lastUpdatedAt);
+    return elapsed.inHours < 24;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showActions = _checkStatus();
+    final canAddTests = _canAddTests();
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -32,6 +41,13 @@ class TechnicianActions extends ConsumerWidget {
           onPressed: () => _copyWorkOrder(context, ref),
           tooltip: 'Copy',
         ),
+        if (canAddTests)
+          IconButton(
+            icon: Icon(Icons.post_add,
+                size: AppSizes.iconSm, color: AppColors.primary),
+            onPressed: () => _addTestsPostCompletion(context),
+            tooltip: 'Add Tests',
+          ),
         if (showActions) ...[
           IconButton(
             icon: Icon(Icons.play_circle_outline,
@@ -61,6 +77,17 @@ class TechnicianActions extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+
+  void _addTestsPostCompletion(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AddTestsPostCompletionPage(workOrder: workOrder),
+        fullscreenDialog: true,
+      ),
     );
   }
 
