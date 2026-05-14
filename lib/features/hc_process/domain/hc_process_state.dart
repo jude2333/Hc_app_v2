@@ -20,6 +20,7 @@ class HCProcessState {
 
   final double billAmount;
   final double discount;
+  final bool isDiscountFlat; // false = percentage, true = flat ₹ amount
   final double amountAfterDiscount;
   final double amountReceived;
   final double hcCharges;
@@ -61,6 +62,7 @@ class HCProcessState {
     this.proformaInvLoc = '',
     this.billAmount = 0,
     this.discount = 0,
+    this.isDiscountFlat = false,
     this.amountAfterDiscount = 0,
     this.amountReceived = 0,
     this.hcCharges = 50,
@@ -99,6 +101,7 @@ class HCProcessState {
     String? proformaInvLoc,
     double? billAmount,
     double? discount,
+    bool? isDiscountFlat,
     double? amountAfterDiscount,
     double? amountReceived,
     double? hcCharges,
@@ -136,6 +139,7 @@ class HCProcessState {
       proformaInvLoc: proformaInvLoc ?? this.proformaInvLoc,
       billAmount: billAmount ?? this.billAmount,
       discount: discount ?? this.discount,
+      isDiscountFlat: isDiscountFlat ?? this.isDiscountFlat,
       amountAfterDiscount: amountAfterDiscount ?? this.amountAfterDiscount,
       amountReceived: amountReceived ?? this.amountReceived,
       hcCharges: hcCharges ?? this.hcCharges,

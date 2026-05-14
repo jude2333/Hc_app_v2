@@ -91,6 +91,10 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
     state = state.copyWith(cghsPrice: cghs);
   }
 
+  void setCreditClient(bool credit) {
+    state = state.copyWith(creditClient: credit);
+  }
+
   void setProformaInvLoc(String loc) {
     state = state.copyWith(proformaInvLoc: loc);
   }
@@ -101,6 +105,10 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
 
   void setDiscount(double discount) {
     state = state.copyWith(discount: discount);
+  }
+
+  void setDiscountMode(bool isFlat) {
+    state = state.copyWith(isDiscountFlat: isFlat, discount: 0);
   }
 
   void setAmountAfterDiscount(double amount) {

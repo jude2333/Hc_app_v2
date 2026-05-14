@@ -59,15 +59,48 @@ class HCStepTests extends ConsumerWidget {
               label: const Text('Add Tests'),
             ),
             const SizedBox(width: 8),
-            // CGHS is now set by manager in Add Work Order
-            // and auto-read from work order on HC Process init
-            // if (!state.trialClient) ...[
-            //   Checkbox(
-            //     value: state.cghsPrice,
-            //     onChanged: (v) => notifier.setCghsPrice(v ?? false),
-            //   ),
-            //   const Text('Use CGHS Price'),
-            // ],
+            // CGHS toggle — technician can also set this per Anderson's request
+            if (!state.trialClient) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: state.cghsPrice
+                      ? Colors.orange.shade50
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: state.cghsPrice
+                        ? Colors.orange.shade300
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 28,
+                      child: Switch(
+                        value: state.cghsPrice,
+                        onChanged: (v) => notifier.setCghsPrice(v),
+                        activeColor: Colors.orange,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'CGHS Rate',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: state.cghsPrice
+                            ? Colors.orange.shade800
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 16),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/util.dart';
 import '../../../providers/app_state.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
@@ -10,6 +11,7 @@ import '../../../services/dbHandler_service.dart';
 import '../../../services/cronJob_service.dart';
 import '../../../providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
+import 'package:anderson_crm_flutter/features/tracking/providers/gps_monitor_provider.dart';
 import '../providers/shell_providers.dart';
 import '../widgets/main_app_bar.dart';
 import '../widgets/app_drawer.dart';
@@ -101,6 +103,13 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _initializeTracking() {
     try {
       ref.read(trackingProvider.notifier).initialize();
+
+      // Start GPS monitor for technicians (60s lightweight check)
+      final roleName =
+          ref.read(storageServiceProvider).getFromSession('role_name');
+      if (roleName == 'TECHNICIAN') {
+        ref.read(gpsMonitorProvider.notifier).start();
+      }
     } catch (e) {
       debugPrint('[MainShell] Tracking init error (non-fatal): $e');
     }
@@ -234,59 +243,135 @@ class _MainShellState extends ConsumerState<MainShell> {
         currentPath: _currentPath,
       ),
       endDrawer: NotificationDrawer(isDark: isDark),
-      body: Stack(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(0),
-            color: isDark ? Colors.black : Colors.grey.shade50,
-            child: RefreshIndicator(
-              color: Colors.orange,
-              onRefresh: () async {
-                final dbHandler = ref.read(dbHandlerServiceProvider);
-                await dbHandler.init();
+      body: SelectionArea(
+        child: Column(
+          children: [
+            // GPS-off warning banner (only visible for TECHNICIAN when GPS is disabled)
+            _buildGpsBanner(),
 
-                ref
-                    .read(appNotifierProvider.notifier)
-                    .setToday(Util.getTodayString());
-                await _loadNotificationsSafely();
-              },
-              child: widget.child,
-            ),
-          ),
-          if (isInitializing)
-            Positioned(
-              top: 16,
-              right: 16,
-              child: Card(
-                color: Colors.orange,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+            // Main content
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(0),
+                    color: isDark ? Colors.black : Colors.grey.shade50,
+                    child: RefreshIndicator(
+                      color: Colors.orange,
+                      onRefresh: () async {
+                        final dbHandler = ref.read(dbHandlerServiceProvider);
+                        await dbHandler.init();
+
+                        ref
+                            .read(appNotifierProvider.notifier)
+                            .setToday(Util.getTodayString());
+                        await _loadNotificationsSafely();
+                      },
+                      child: widget.child,
+                    ),
+                  ),
+                  if (isInitializing)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Card(
+                        color: Colors.orange,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              ),
+                              SizedBox(width: 8),
+                              Text('Syncing...',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
                       ),
-                      SizedBox(width: 8),
-                      Text('Syncing...',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold)),
-                    ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: StatusFooter(isDark: isDark),
+    );
+  }
+
+  /// Persistent banner shown when GPS is disabled (TECHNICIAN only)
+  Widget _buildGpsBanner() {
+    final isGpsOn = ref.watch(gpsMonitorProvider);
+    final roleName =
+        ref.read(storageServiceProvider).getFromSession('role_name');
+
+    // Only show for technicians when GPS is OFF
+    if (isGpsOn || roleName != 'TECHNICIAN') {
+      return const SizedBox.shrink();
+    }
+
+    return Material(
+      color: Colors.orange.shade700,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              const Icon(Icons.gps_off, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'GPS is turned off. Please turn on GPS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-            ),
-        ],
+              const SizedBox(width: 8),
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () async {
+                  await Geolocator.openLocationSettings();
+                  // Recheck after user returns from settings
+                  await Future.delayed(const Duration(seconds: 2));
+                  if (mounted) {
+                    ref.read(gpsMonitorProvider.notifier).recheck();
+                  }
+                },
+                child: Text(
+                  'Enable GPS',
+                  style: TextStyle(
+                    color: Colors.orange.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      bottomNavigationBar: StatusFooter(isDark: isDark),
     );
   }
 }

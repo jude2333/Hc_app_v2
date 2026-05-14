@@ -111,8 +111,8 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     if (state.isTracking) return;
 
     await _locationService.startTracking(
-      intervalMs: 30000,   // 30 seconds
-      distanceFilter: 10,  // 10 meters
+      intervalMs: 10000,   // 10 seconds — live tracking
+      distanceFilter: 5,   // 5 meters
     );
 
     _locationSub = _locationService.positionStream.listen(_onLocationUpdate);
@@ -150,9 +150,10 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     state = state.copyWith(lastLocation: location);
 
     if (_wsService.isConnected) {
-      // Send via WebSocket
+      // Send via WebSocket (with battery)
       _wsService.sendLocation(
         location,
+        battery: location.batteryLevel,
         currentWorkOrder: _currentWorkOrderDocId,
       );
     } else {

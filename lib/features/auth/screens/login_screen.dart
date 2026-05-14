@@ -1,14 +1,19 @@
 import 'dart:ui';
 import 'package:anderson_crm_flutter/config/settings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../providers/auth_provider.dart';
 import '../models/auth_state.dart';
 import '../widgets/otp_dialog.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/features/tracking/services/location_service.dart';
+import 'package:anderson_crm_flutter/services/app_update_service.dart';
+import 'package:anderson_crm_flutter/widgets/update_dialog.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -40,8 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   static const _kHeadingColor = Color(0xFF222222);
   static const _kSubheadingColor = Color(0xFF555555);
   static const _kLabelColor = Color(0xFF333333);
-  static const _kHintColor = Color(0xFF999999);
-  static const _kFooterColor = Color(0xFF444444);
+  // static const _kHintColor = Color(0xFF999999);
+  // static const _kFooterColor = Color(0xFF444444);
 
   late final AnimationController _shimmerController;
 
@@ -57,15 +62,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         final authState = ref.read(authProvider);
         _mobileController.text = authState.mobile;
         _mobileFocusNode.requestFocus();
+
+        // Check for app updates (Android only — blocks login if update required)
+        _checkForAppUpdate();
       }
     });
   }
 
+  /// Check if a newer APK is available on the server.
+  /// Shows a blocking dialog if an update is found.
+  Future<void> _checkForAppUpdate() async {
+    final updateInfo = await AppUpdateService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      showUpdateDialog(context, updateInfo);
+    }
+  }
+
   @override
   void dispose() {
+    _shimmerController.stop();
+    _shimmerController.dispose();
     _mobileController.dispose();
     _mobileFocusNode.dispose();
-    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -152,10 +170,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  LIQUID GLASS CARD
-  // ═══════════════════════════════════════════════════════════════════════════
-
   Widget _buildLiquidGlassCard(
       AuthState authState, AuthNotifier notifier, bool isDesktop) {
     return ClipRRect(
@@ -223,14 +237,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               ),
 
-              // ── Card content ──
               Padding(
                 padding: EdgeInsets.all(isDesktop ? _kCardPadding : 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ── Heading ──
                     const Text(
                       'Welcome back',
                       style: TextStyle(
@@ -249,28 +261,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                     ),
                     const SizedBox(height: 28),
-
-                    // ── Error banner ──
                     if (authState.hasError)
                       _buildErrorBanner(authState.errorMessage ?? ''),
-
-                    // ── Mobile input ──
                     _buildMobileInput(authState, notifier),
                     const SizedBox(height: 18),
-
-                    // ── Role selector (if applicable) ──
                     if (authState.currentStep == LoginStep.selectRole)
                       _buildRoleSelector(authState, notifier),
-
-                    // ── Remember checkbox ──
                     _buildRememberCheckbox(authState, notifier),
                     const SizedBox(height: 22),
-
-                    // ── Sign In button (glass style) ──
                     _buildSignInButton(authState, notifier),
                     const SizedBox(height: 14),
-
-                    // ── OTP button (glass outlined) ──
                     _buildOtpButton(authState, notifier),
                   ],
                 ),
@@ -281,10 +281,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     );
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  ERROR BANNER
-  // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildErrorBanner(String message) {
     return Container(
@@ -310,10 +306,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     );
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  MOBILE NUMBER INPUT
-  // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildMobileInput(AuthState authState, AuthNotifier notifier) {
     return Column(
@@ -362,10 +354,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  ROLE SELECTOR  —  Liquid glass role tiles
-  // ═══════════════════════════════════════════════════════════════════════════
-
   IconData _roleIcon(String roleName) {
     switch (roleName.toUpperCase()) {
       case 'MANAGER':
@@ -374,9 +362,213 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         return Icons.biotech_rounded;
       case 'BILLING':
         return Icons.receipt_long_rounded;
+      case 'ADMIN':
+        return Icons.admin_panel_settings_rounded;
       default:
         return Icons.badge_rounded;
     }
+  }
+
+  /// Check location permission for TECHNICIAN role.
+  /// Handles: GPS off, permission not granted, permanently denied.
+  Future<bool> _checkLocationPermission() async {
+    // ── Web flow ──
+    if (kIsWeb) {
+      final locationService = LocationService();
+      final granted = await locationService.requestPermissions();
+      if (granted) return true;
+
+      if (mounted) await _showWebLocationDialog();
+      return false;
+    }
+
+    // ── Android flow ──
+    // Step 1: Check if GPS / Location Services are enabled on the device
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) await _showGpsOffDialog();
+      return false;
+    }
+
+    // Step 2: Check current permission status
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    // Never asked yet → request it (system dialog will show)
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // User tapped "Deny" on the system dialog
+        if (mounted) await _showPermissionDeniedDialog(false);
+        return false;
+      }
+    }
+
+    // Permanently denied ("Don't ask again" was checked)
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) await _showPermissionDeniedDialog(true);
+      return false;
+    }
+
+    // Permission granted (whileInUse or always)
+    return true;
+  }
+
+  /// Dialog: Device GPS is turned OFF
+  Future<void> _showGpsOffDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.gps_off, size: 48, color: Colors.orange),
+        title: const Text('Turn On GPS',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Your device GPS is turned off. \n\nPlease turn on GPS and try again.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, height: 1.5),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.location_on, size: 18),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Geolocator.openLocationSettings();
+            },
+            label:
+                const Text('Enable GPS', style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Dialog: Android permission denied or permanently denied
+  Future<void> _showPermissionDeniedDialog(bool isPermanent) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.location_off, size: 48, color: Colors.red),
+        title: const Text('Location Permission Required',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(
+          isPermanent
+              ? 'Location permission was permanently denied. Tap "Open Settings" below, then enable Location permission for this app.'
+              : 'Location permission is required for technician login. Your live location helps with work order tracking.\n\nTap "Grant Permission" to allow access.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14, height: 1.5),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          if (isPermanent) ...[
+            ElevatedButton.icon(
+              icon: const Icon(Icons.settings, size: 18),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kAndersonBlue,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Geolocator.openAppSettings();
+              },
+              label: const Text('Open Settings',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ] else ...[
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kAndersonBlue,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Grant Permission',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Dialog: Web browser location blocked
+  Future<void> _showWebLocationDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.location_off, size: 48, color: Colors.red),
+        title: const Text('Location Required',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Location access was blocked by your browser. To enable it:',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('1. Click the 🔒 lock icon in the address bar',
+                      style: TextStyle(fontSize: 13, height: 1.6)),
+                  Text('2. Find "Location" and set to "Allow"',
+                      style: TextStyle(fontSize: 13, height: 1.6)),
+                  Text('3. Click "Try Again" below',
+                      style: TextStyle(fontSize: 13, height: 1.6)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kAndersonBlue,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('Try Again', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRoleSelector(AuthState authState, AuthNotifier notifier) {
@@ -418,6 +610,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     splashColor: Colors.white.withOpacity(0.15),
                     highlightColor: Colors.white.withOpacity(0.08),
                     onTap: () async {
+                      // TECHNICIAN must grant location permission before login
+                      if (role.name == 'TECHNICIAN') {
+                        final locationOk = await _checkLocationPermission();
+                        if (!locationOk) return;
+                      }
                       final success =
                           await notifier.selectRole(role.id, role.name);
                       if (success && mounted) {

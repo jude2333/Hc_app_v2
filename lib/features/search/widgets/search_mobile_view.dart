@@ -4,7 +4,7 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
-import 'search_expanded_content.dart';
+import 'package:anderson_crm_flutter/features/manager_work_order/widgets/manager_expanded_content.dart';
 
 class SearchMobileView extends ConsumerWidget {
   final List<Map<String, dynamic>> results;
@@ -212,7 +212,8 @@ class _SearchResultCard extends StatelessWidget {
               ),
             ),
           ),
-          if (isExpanded) SearchExpandedContent(item: item),
+          if (isExpanded)
+            ManagerExpandedContent(workOrder: WorkOrder.fromDocMap(item)),
         ],
       ),
     );

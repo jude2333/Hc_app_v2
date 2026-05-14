@@ -32,8 +32,9 @@ class AndersonCRMApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-        title: 'Anderson CRM',
-        debugShowCheckedModeBanner: false,
-        routerConfig: appRouter);
+      title: 'Anderson CRM',
+      debugShowCheckedModeBanner: false,
+      routerConfig: appRouter,
+    );
   }
 }

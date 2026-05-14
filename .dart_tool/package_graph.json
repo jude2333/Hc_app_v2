@@ -5,8 +5,9 @@
   "packages": [
     {
       "name": "anderson_crm_flutter",
-      "version": "1.0.0+1",
+      "version": "1.1.0+1",
       "dependencies": [
+        "battery_plus",
         "cookie_jar",
         "cron",
         "crypto",
@@ -316,6 +317,18 @@
         "polylabel",
         "proj4dart",
         "vector_math"
+      ]
+    },
+    {
+      "name": "battery_plus",
+      "version": "6.2.3",
+      "dependencies": [
+        "battery_plus_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "upower",
+        "web"
       ]
     },
     {
@@ -988,20 +1001,36 @@
       ]
     },
     {
+      "name": "syncfusion_officecore",
+      "version": "27.2.5",
+      "dependencies": [
+        "flutter",
+        "syncfusion_flutter_core"
+      ]
+    },
+    {
+      "name": "jiffy",
+      "version": "6.2.1",
+      "dependencies": [
+        "intl"
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.3.0",
+      "dependencies": [
+        "archive",
+        "meta",
+        "xml"
+      ]
+    },
+    {
       "name": "xml",
       "version": "6.6.1",
       "dependencies": [
         "collection",
         "meta",
         "petitparser"
-      ]
-    },
-    {
-      "name": "syncfusion_officecore",
-      "version": "27.2.5",
-      "dependencies": [
-        "flutter",
-        "syncfusion_flutter_core"
       ]
     },
     {
@@ -1208,6 +1237,27 @@
       "dependencies": []
     },
     {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "upower",
+      "version": "0.7.0",
+      "dependencies": [
+        "dbus"
+      ]
+    },
+    {
+      "name": "battery_plus_platform_interface",
+      "version": "2.0.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "timezone",
       "version": "0.10.1",
       "dependencies": [
@@ -1341,11 +1391,6 @@
         "meta",
         "xml"
       ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
     },
     {
       "name": "plugin_platform_interface",
@@ -1684,19 +1729,19 @@
       ]
     },
     {
-      "name": "petitparser",
-      "version": "7.0.2",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
-    },
-    {
       "name": "syncfusion_flutter_core",
       "version": "27.2.5",
       "dependencies": [
         "flutter",
         "vector_math"
+      ]
+    },
+    {
+      "name": "petitparser",
+      "version": "7.0.2",
+      "dependencies": [
+        "collection",
+        "meta"
       ]
     },
     {
@@ -1830,22 +1875,6 @@
       "version": "1.0.1",
       "dependencies": [
         "meta"
-      ]
-    },
-    {
-      "name": "jiffy",
-      "version": "6.2.1",
-      "dependencies": [
-        "intl"
-      ]
-    },
-    {
-      "name": "image",
-      "version": "4.3.0",
-      "dependencies": [
-        "archive",
-        "meta",
-        "xml"
       ]
     }
   ],

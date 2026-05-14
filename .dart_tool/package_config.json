@@ -44,6 +44,18 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "battery_plus",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/battery_plus-6.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "battery_plus_platform_interface",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/battery_plus_platform_interface-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
       "name": "boolean_selector",
       "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/boolean_selector-2.1.2",
       "packageUri": "lib/",
@@ -1038,6 +1050,12 @@
       "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/universal_io-2.3.1",
       "packageUri": "lib/",
       "languageVersion": "3.6"
+    },
+    {
+      "name": "upower",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/upower-0.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
     },
     {
       "name": "url_launcher",

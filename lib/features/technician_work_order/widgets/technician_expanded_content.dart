@@ -61,6 +61,14 @@ class _TechnicianExpandedContentState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isCancelled) ...[
+            // Alternate Mobile / Client Code / Doctor Code
+            if (wo.alternateMobile.isNotEmpty)
+              _buildInfoRow('Alt. Mobile', wo.alternateMobile),
+            if (wo.clientCode.isNotEmpty)
+              _buildInfoRow('Client Code', wo.clientCode),
+            if (wo.doctorCode.isNotEmpty)
+              _buildInfoRow('Doctor Code', wo.doctorCode),
+
             // Test Items
             _buildActionRow('Test Items', testItems != null ? 'View' : 'Nil',
                 showAction: testItems != null,

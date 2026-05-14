@@ -10,7 +10,7 @@ class PriceListItem {
   final double baseCost;
   final double minCost;
   final double cghsPrice;
-  final List<Map<String, dynamic>> history;
+  final List<Map<String, dynamic>> history; // jsonb
   final String? createdAt;
   final String? updatedAt;
   final String? lastUpdatedBy;

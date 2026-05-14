@@ -22,6 +22,7 @@ import 'dialogs/settings_dialog.dart';
 
 import '../../../../services/postgresService.dart';
 import '../../../../config/settings.dart';
+import '../../../../providers/storage_provider.dart';
 
 class AddWorkOrderPage extends ConsumerStatefulWidget {
   final WorkOrder? existingWorkOrder;
@@ -52,6 +53,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   late TextEditingController _cancellationReasonController;
   late TextEditingController _marketingPersonNameController;
   late TextEditingController _marketingPersonNumberController;
+  late TextEditingController _alternateMobileController;
+  late TextEditingController _clientCodeController;
+  late TextEditingController _doctorCodeController;
 
   String _salutation = 'Mr';
   String _gender = 'Male';
@@ -76,6 +80,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   bool _sendEmail = true;
 
   bool _isCancelled = false;
+  bool _isAdmin = false;
 
   bool _isInitialized = false;
   bool _hasAttemptedValidation = false;
@@ -93,6 +98,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _initializeControllers();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final storage = ref.read(storageServiceProvider);
+      _isAdmin = storage.getFromSession('role_name') == 'ADMIN';
+
       if (isEditMode) {
         _loadData(widget.existingWorkOrder!, isCopy: false);
       } else if (isCopyMode) {
@@ -116,6 +124,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _cancellationReasonController = TextEditingController();
     _marketingPersonNameController = TextEditingController();
     _marketingPersonNumberController = TextEditingController();
+    _alternateMobileController = TextEditingController();
+    _clientCodeController = TextEditingController();
+    _doctorCodeController = TextEditingController();
   }
 
   void _initializeDates() {
@@ -180,6 +191,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _freeTextController.text = wo.freeText;
     _marketingPersonNameController.text = wo.marketingPersonName;
     _marketingPersonNumberController.text = wo.marketingPersonNumber;
+    _alternateMobileController.text = wo.alternateMobile;
+    _clientCodeController.text = wo.clientCode;
+    _doctorCodeController.text = wo.doctorCode;
 
     _gender = wo.gender.isNotEmpty ? wo.gender : 'Male';
     _isVip = wo.vip;
@@ -240,6 +254,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     _cancellationReasonController.dispose();
     _marketingPersonNameController.dispose();
     _marketingPersonNumberController.dispose();
+    _alternateMobileController.dispose();
+    _clientCodeController.dispose();
+    _doctorCodeController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -353,6 +370,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                   _toTitleCase(_marketingPersonNameController.text.trim()),
               marketingPersonNumber:
                   _marketingPersonNumberController.text.trim(),
+              alternateMobile: _alternateMobileController.text.trim(),
+              clientCode: _clientCodeController.text.trim(),
+              doctorCode: _doctorCodeController.text.trim(),
               sendSms: _sendSms,
               sendWhatsapp: _sendWhatsapp,
               sendEmail: _sendEmail,
@@ -539,6 +559,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                           nameController: _nameController,
                           ageController: _ageController,
                           mobileController: _mobileController,
+                          alternateMobileController: _alternateMobileController,
                           emailController: _emailController,
                           gender: _gender,
                           onSalutationChanged: (v) =>
@@ -575,7 +596,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                   ],
                 ),
               ),
-              if (isEditMode) ...[
+              if (isEditMode && _isAdmin) ...[
                 SizedBox(height: AppSpacing.lg),
                 WorkOrderSectionCard(
                   title: 'Cancellation',
@@ -636,6 +657,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               nameController: _nameController,
               ageController: _ageController,
               mobileController: _mobileController,
+              alternateMobileController: _alternateMobileController,
               emailController: _emailController,
               gender: _gender,
               onSalutationChanged: (v) => _updateGenderFromSalutation(v!),
@@ -661,7 +683,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             color: AppColors.secondary,
             child: _buildAdditionalFields(),
           ),
-          if (isEditMode) ...[
+          if (isEditMode && _isAdmin) ...[
             SizedBox(height: AppSpacing.md),
             WorkOrderSectionCard(
               title: 'Cancellation',
@@ -782,6 +804,26 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                     'Marketing Person Number',
                     icon: Icons.phone_outlined),
                 keyboardType: TextInputType.phone,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _clientCodeController,
+                decoration: WorkOrderFormStyles.inputDecoration('Client Code',
+                    icon: Icons.badge_outlined),
+              ),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: TextFormField(
+                controller: _doctorCodeController,
+                decoration: WorkOrderFormStyles.inputDecoration('Doctor Code',
+                    icon: Icons.local_hospital_outlined),
               ),
             ),
           ],

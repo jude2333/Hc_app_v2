@@ -171,6 +171,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
       if (result == 'OK') {
         await search('', forceRefresh: true);
+        await loadGlobalHistory();
       }
 
       return result;
@@ -221,6 +222,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
 
       if (result == 'OK') {
         await search(state.currentSearchQuery, forceRefresh: true);
+        await loadGlobalHistory();
       }
 
       return result;
@@ -243,6 +245,7 @@ class PriceListNotifier extends StateNotifier<PriceListState> {
       if (result == 'OK') {
         final currentQuery = state.currentSearchQuery;
         await search(currentQuery, forceRefresh: true);
+        await loadGlobalHistory();
         debugPrint(' [PriceListNotifier] Delete successful, list refreshed');
       }
 

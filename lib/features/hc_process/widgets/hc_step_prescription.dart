@@ -139,7 +139,7 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
         ElevatedButton.icon(
           onPressed: state.isLoading ? null : _pickAndUpload,
           style: ElevatedButton.styleFrom(
-            backgroundColor: state.offlineMode ? Colors.orange : Colors.blue,
+            backgroundColor: state.offlineMode ? Colors.white : Colors.white,
           ),
           icon: Icon(state.offlineMode ? Icons.save : Icons.cloud_upload),
           label: Text(

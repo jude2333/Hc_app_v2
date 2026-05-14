@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:battery_plus/battery_plus.dart';
 
 /// Wraps the Geolocator plugin for GPS position streaming.
 /// Handles permission requests and provides a position stream.
@@ -12,6 +13,7 @@ class LocationService {
 
   StreamSubscription<Position>? _positionSubscription;
   bool _isTracking = false;
+  final Battery _battery = Battery();
 
   // Lazily created StreamController — recreated if previously closed.
   // This is critical because LocationService is a singleton: dispose() closes
@@ -90,11 +92,11 @@ class LocationService {
   }
 
   /// Start streaming GPS positions
-  /// [intervalMs] - minimum time between updates (default 30s)
-  /// [distanceFilter] - minimum distance change in meters (default 10m)
+  /// [intervalMs] - minimum time between updates (default 10s for live tracking)
+  /// [distanceFilter] - minimum distance change in meters (default 5m)
   Future<void> startTracking({
-    int intervalMs = 30000,
-    double distanceFilter = 10.0,
+    int intervalMs = 10000,
+    double distanceFilter = 5.0,
   }) async {
     if (_isTracking) return;
 
@@ -133,7 +135,15 @@ class LocationService {
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,
     ).listen(
-      (Position position) {
+      (Position position) async {
+        // Get battery level alongside position (non-blocking)
+        int? battery;
+        try {
+          battery = await _battery.batteryLevel;
+        } catch (_) {
+          // Battery read can fail on web or some devices — non-fatal
+        }
+
         final locationData = LocationData(
           latitude: position.latitude,
           longitude: position.longitude,
@@ -143,6 +153,7 @@ class LocationService {
           altitude: position.altitude,
           isMock: position.isMocked,
           timestamp: position.timestamp,
+          batteryLevel: battery,
         );
 
         // Guard: geolocator_web can fire one last callback after cancel()
@@ -205,9 +216,12 @@ class LocationService {
 
   /// Get battery level (0-100)
   Future<int?> getBatteryLevel() async {
-    // Battery info isn't available via geolocator — use device_info_plus
-    // For now, return null and let the caller provide it
-    return null;
+    try {
+      return await _battery.batteryLevel;
+    } catch (e) {
+      debugPrint('[Location] Battery read error: $e');
+      return null;
+    }
   }
 
   Future<void> dispose() async {
@@ -227,6 +241,7 @@ class LocationData {
   final double altitude;
   final bool isMock;
   final DateTime? timestamp;
+  final int? batteryLevel;
 
   LocationData({
     required this.latitude,
@@ -237,6 +252,7 @@ class LocationData {
     this.altitude = 0,
     this.isMock = false,
     this.timestamp,
+    this.batteryLevel,
   });
 
   /// Whether the device is moving (speed > 0.5 m/s ≈ 1.8 km/h)
@@ -262,6 +278,7 @@ class LocationData {
     'is_mock': isMock,
     'is_moving': isMoving,
     'activity_type': activityType,
+    'battery_level': batteryLevel,
     'recorded_at': (timestamp ?? DateTime.now()).toUtc().toIso8601String(),
   };
 }

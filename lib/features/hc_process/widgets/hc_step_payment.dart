@@ -56,9 +56,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
     final state = ref.watch(hcProcessProvider(widget.workOrderId));
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
 
-    String finishMode = 'normal';
-    String finishLabel = 'Finish Work Order';
-
     if (state.b2bClient) {
       return _buildSpecialFinish(state, 'b2b', 'B2B Client', Colors.purple);
     }
@@ -108,7 +105,7 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           maxLines: 3,
         ),
         const SizedBox(height: 24),
-        _buildSummaryCard(state),
+        _buildDetailedSummaryCard(state),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
@@ -158,24 +155,158 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
     );
   }
 
-  Widget _buildSummaryCard(HCProcessState state) {
+  /// Detailed bill breakdown so technicians can clearly see why the total
+  /// differs from the test amount. Shows every line item individually.
+  Widget _buildDetailedSummaryCard(HCProcessState state) {
+    final hasDiscount = state.discount > 0;
+    final discountLabel = state.isDiscountFlat
+        ? '₹${state.discount.toStringAsFixed(0)} off'
+        : '${state.discount.toStringAsFixed(0)}% off';
+
     return Card(
-      color: Colors.blue.shade50,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Summary',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const Divider(),
-            Text('Patient: ${state.workOrder?.patientName ?? "N/A"}'),
-            Text('Tests: ${state.selectedTests.length}'),
-            Text('Bill Amount: ₹${state.billAmount}'),
-            Text('Amount Received: ₹${state.amountReceived}'),
-            Text('Photos Uploaded: ${state.uploadedPhotoPaths.length}'),
+            // Header
+            Row(
+              children: [
+                Icon(Icons.receipt_long, size: 20, color: Colors.blue.shade700),
+                const SizedBox(width: 8),
+                Text(
+                  'Bill Summary',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Patient & Tests
+            _summaryRow(
+              'Patient',
+              state.workOrder?.patientName ?? 'N/A',
+              isLabel: true,
+            ),
+            _summaryRow(
+              'Tests',
+              '${state.selectedTests.length} test(s)',
+              isLabel: true,
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+
+            // Billing breakdown
+            _summaryRow(
+              'Test Amount',
+              '₹${state.billAmount.toStringAsFixed(0)}',
+            ),
+            if (hasDiscount)
+              _summaryRow(
+                'Discount ($discountLabel)',
+                '- ₹${(state.billAmount - state.amountAfterDiscount).toStringAsFixed(0)}',
+                valueColor: Colors.red.shade600,
+              ),
+            if (hasDiscount)
+              _summaryRow(
+                'After Discount',
+                '₹${state.amountAfterDiscount.toStringAsFixed(0)}',
+              ),
+            if (state.hcCharges > 0)
+              _summaryRow(
+                'Home Collection Charges',
+                '+ ₹${state.hcCharges.toStringAsFixed(0)}',
+                valueColor: Colors.orange.shade700,
+              ),
+            if (state.disposableCharges > 0)
+              _summaryRow(
+                'Disposable Charges',
+                '+ ₹${state.disposableCharges.toStringAsFixed(0)}',
+                valueColor: Colors.orange.shade700,
+              ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, thickness: 1.5),
+            const SizedBox(height: 8),
+
+            // Net total
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total Amount to Collect',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '₹${state.amountReceived.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Photos uploaded
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            _summaryRow(
+              'Prescriptions Uploaded',
+              '${state.uploadedPhotoPaths.length} photo(s)',
+              isLabel: true,
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Reusable row for summary items
+  Widget _summaryRow(String label, String value,
+      {bool isLabel = false, Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: isLabel ? 13 : 14,
+                color: isLabel ? Colors.grey.shade600 : Colors.black87,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isLabel ? 13 : 14,
+              fontWeight: isLabel ? FontWeight.normal : FontWeight.w600,
+              color: valueColor ??
+                  (isLabel ? Colors.grey.shade600 : Colors.black87),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -185,9 +316,9 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Payment & Finish',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -217,7 +348,7 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
           maxLines: 3,
         ),
         const SizedBox(height: 24),
-        _buildSummaryCard(state),
+        _buildDetailedSummaryCard(state),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,

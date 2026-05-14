@@ -43,7 +43,7 @@ class _HCStepDelayState extends ConsumerState<HCStepDelay> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
-              'Delayed by ${state.delayMins} minutes',
+              'You are late by ${state.delayMins}. Please give reason for the delay.',
               style: const TextStyle(
                 color: Colors.red,
                 fontWeight: FontWeight.bold,

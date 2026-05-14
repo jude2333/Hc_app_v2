@@ -56,7 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       return _buildComingSoonScreen('Dashboard Yet To Come');
     }
 
-    if (_roleName == 'MANAGER') {
+    if (_roleName == 'MANAGER' || _roleName == 'ADMIN') {
       return _buildManagerDashboard();
     } else if (_roleName == 'TECHNICIAN') {
       return _buildComingSoonScreen('Technician Dashboard - Coming Soon');

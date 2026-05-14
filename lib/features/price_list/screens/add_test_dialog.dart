@@ -369,12 +369,28 @@ class _SearchTestSheet extends ConsumerStatefulWidget {
 }
 
 class _SearchTestSheetState extends ConsumerState<_SearchTestSheet> {
+  final _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(priceListProvider.notifier).init();
+      // Reset search to show all items when sheet opens
+      ref.read(priceListProvider.notifier).search('');
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSelect(Map<String, dynamic> item) {
+    widget.onSelect(item);
+    // Clear search field and reset results after selection
+    _searchController.clear();
+    ref.read(priceListProvider.notifier).search('');
   }
 
   Widget _buildSkeleton() {
@@ -448,6 +464,7 @@ class _SearchTestSheetState extends ConsumerState<_SearchTestSheet> {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: _searchController,
                     autofocus: true,
                     decoration: InputDecoration(
                       hintText: 'Search (Name, Dept, >500)',
@@ -502,7 +519,7 @@ class _SearchTestSheetState extends ConsumerState<_SearchTestSheet> {
                           final cghsPrice = item.cghsPrice;
 
                           return InkWell(
-                            onTap: () => widget.onSelect(item.toDisplayMap()),
+                            onTap: () => _handleSelect(item.toDisplayMap()),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 12),
@@ -565,7 +582,9 @@ class _DataCell extends StatelessWidget {
             fontSize: 12,
             fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
             color: color ?? Colors.black87),
-        overflow: TextOverflow.ellipsis,
+        softWrap: true,
+        maxLines: 3,
+        overflow: TextOverflow.visible,
       ),
     );
   }

@@ -33,6 +33,10 @@ class ManagerExpandedContent extends ConsumerWidget {
           if (workOrder.marketingPersonName.isNotEmpty ||
               workOrder.marketingPersonNumber.isNotEmpty)
             _buildMarketingSection(),
+          if (workOrder.alternateMobile.isNotEmpty ||
+              workOrder.clientCode.isNotEmpty ||
+              workOrder.doctorCode.isNotEmpty)
+            _buildCodesSection(),
           _buildProcessSteps(ref),
           const SizedBox(height: AppSpacing.md),
           if (workOrder.parsedDoc['remarks'] != null) _buildRemarksSection(),
@@ -76,6 +80,27 @@ class ManagerExpandedContent extends ConsumerWidget {
             WOTableCell(workOrder.email),
           ],
         ),
+        if (workOrder.alternateMobile.isNotEmpty) ...[
+          TableRow(
+            decoration: BoxDecoration(color: AppColors.surfaceAlt),
+            children: const [
+              WOTableHeader('Alt. Mobile'),
+              WOTableHeader('Client Code'),
+              WOTableHeader('Doctor Code'),
+              WOTableHeader(''),
+              WOTableHeader(''),
+            ],
+          ),
+          TableRow(
+            children: [
+              WOTableCell(workOrder.alternateMobile),
+              WOTableCell(workOrder.clientCode),
+              WOTableCell(workOrder.doctorCode),
+              WOTableCell(''),
+              WOTableCell(''),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -151,6 +176,35 @@ class ManagerExpandedContent extends ConsumerWidget {
             _FilledChip(
                 label: workOrder.marketingPersonNumber,
                 color: AppColors.secondary),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCodesSection() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (workOrder.alternateMobile.isNotEmpty) ...[
+            _LabelChip(label: 'Alt. Mobile', color: AppColors.primary),
+            _FilledChip(
+                label: workOrder.alternateMobile,
+                color: AppColors.secondary),
+          ],
+          if (workOrder.clientCode.isNotEmpty) ...[
+            _LabelChip(label: 'Client Code', color: AppColors.primary),
+            _FilledChip(
+                label: workOrder.clientCode, color: AppColors.secondary),
+          ],
+          if (workOrder.doctorCode.isNotEmpty) ...[
+            _LabelChip(label: 'Doctor Code', color: AppColors.primary),
+            _FilledChip(
+                label: workOrder.doctorCode, color: AppColors.secondary),
+          ],
         ],
       ),
     );

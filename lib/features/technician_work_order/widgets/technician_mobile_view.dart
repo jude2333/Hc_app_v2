@@ -225,10 +225,16 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
         },
         children: [
           _tableRow('Mobile', wo.mobile),
+          if (wo.alternateMobile.isNotEmpty)
+            _tableRow('Alt. Mobile', wo.alternateMobile),
           _tableRow('App. Time', '${wo.formattedVisitDate} ${wo.visitTime}'),
           _tableRow('My Status', '',
               statusWidget: StatusChip(status: wo.status)),
           if (!isCancelled) ...[
+            if (wo.clientCode.isNotEmpty)
+              _tableRow('Client Code', wo.clientCode),
+            if (wo.doctorCode.isNotEmpty)
+              _tableRow('Doctor Code', wo.doctorCode),
             _tableRow('Test Items', testItems != null ? 'View' : 'Nil',
                 isViewable: testItems != null,
                 onTap: testItems != null ? () => _viewTests(testItems) : null),

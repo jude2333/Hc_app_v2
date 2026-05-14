@@ -257,6 +257,9 @@ class WorkOrder {
       'b2b_client_name': b2bClientName,
       'marketing_person_name': marketingPersonName,
       'marketing_person_number': marketingPersonNumber,
+      'alternate_mobile': parsedDocMap['alternate_mobile'] ?? '',
+      'client_code': parsedDocMap['client_code'] ?? '',
+      'doctor_code': parsedDocMap['doctor_code'] ?? '',
       'vip_client': parsedDocMap['vip_client'] ?? 0,
       'urgent': parsedDocMap['urgent'] ?? 0,
       'cghs_client': parsedDocMap['cghs_client'] ?? 0,
@@ -313,8 +316,6 @@ class WorkOrder {
       'assigned_to': assignedTo,
       'b2b_client_id': b2bClientId,
       'b2b_client_name': b2bClientName,
-      'marketing_person_name': marketingPersonName,
-      'marketing_person_number': marketingPersonNumber,
       'status': status,
       'server_status': serverStatus,
       'bill_amount': billAmount,
@@ -396,6 +397,9 @@ class WorkOrder {
     String? paymentMethod,
     String? gpayRef,
     String? remarks,
+    String? alternateMobile,
+    String? clientCode,
+    String? doctorCode,
   }) {
     //  OPTIMIZATION 5: Deep Copy to break references
     final updatedDoc = _deepCopyMap(parsedDocMap);
@@ -416,6 +420,11 @@ class WorkOrder {
     if (marketingPersonNumber != null) {
       updatedDoc['marketing_person_number'] = marketingPersonNumber;
     }
+    if (alternateMobile != null) {
+      updatedDoc['alternate_mobile'] = alternateMobile;
+    }
+    if (clientCode != null) updatedDoc['client_code'] = clientCode;
+    if (doctorCode != null) updatedDoc['doctor_code'] = doctorCode;
     if (status != null) updatedDoc['status'] = status;
     if (serverStatus != null) updatedDoc['server_status'] = serverStatus;
     if (assignedId != null) updatedDoc['assigned_id'] = assignedId;
@@ -535,11 +544,14 @@ class WorkOrder {
   bool get sendEmail => (settings['send_email'] ?? 1) == 1;
 
   String get mobile => parsedDocMap['mobile'] ?? '';
+  String get alternateMobile => parsedDocMap['alternate_mobile'] ?? '';
   String get email => parsedDocMap['email'] ?? '';
   String get address => parsedDocMap['address'] ?? '';
   String get age => parsedDocMap['age'] ?? '';
   String get gender => parsedDocMap['gender'] ?? '';
   String get pincode => parsedDocMap['pincode'] ?? '';
+  String get clientCode => parsedDocMap['client_code'] ?? '';
+  String get doctorCode => parsedDocMap['doctor_code'] ?? '';
 
   List<dynamic> get testItems => parsedDocMap['test_items'] ?? [];
   List<dynamic> get timeLine => parsedDocMap['time_line'] ?? [];
@@ -618,8 +630,10 @@ class WorkOrder {
         assignedTo: _parseString(row, 'assigned_to'),
         b2bClientId: _parseNullableInt(row, 'b2b_client_id'),
         b2bClientName: _parseString(row, 'b2b_client_name'),
-        marketingPersonName: _parseString(row, 'marketing_person_name'),
-        marketingPersonNumber: _parseString(row, 'marketing_person_number'),
+        marketingPersonName:
+            parsedMap['marketing_person_name']?.toString() ?? '',
+        marketingPersonNumber:
+            parsedMap['marketing_person_number']?.toString() ?? '',
         status: _parseString(row, 'status'),
         serverStatus: _parseString(row, 'server_status'),
         billAmount: _parseDouble(row, 'bill_amount'),
@@ -664,6 +678,9 @@ class WorkOrder {
     String? b2bClientName,
     String? marketingPersonName,
     String? marketingPersonNumber,
+    String? alternateMobile,
+    String? clientCode,
+    String? doctorCode,
     bool? vip,
     bool? urgent,
     bool? cghsClient,
@@ -699,6 +716,9 @@ class WorkOrder {
       'b2b_client_name': b2bClientName ?? '',
       'marketing_person_name': marketingPersonName ?? '',
       'marketing_person_number': marketingPersonNumber ?? '',
+      'alternate_mobile': alternateMobile ?? '',
+      'client_code': clientCode ?? '',
+      'doctor_code': doctorCode ?? '',
       'vip_client': vip == true ? 1 : 0,
       'urgent': urgent == true ? 1 : 0,
       'cghs_client': cghsClient == true ? 1 : 0,

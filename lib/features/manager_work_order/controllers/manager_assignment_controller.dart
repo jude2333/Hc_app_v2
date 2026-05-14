@@ -155,33 +155,28 @@ class ManagerAssignmentController {
         'updated_at': Util.getTimeStamp(),
       };
 
-      if (sendSms) {
-        if (Settings.development) {
-          debugPrint(' Skipping assignment SMS in development mode');
-          return;
+      if (sendSms && !Settings.development) {
+        String smsMsg;
+        if (isReassignment) {
+          smsMsg = SmsTemplate.homeCollectionTechChange(
+              techName, techMobile, msgUrl);
         } else {
-          String smsMsg;
-          if (isReassignment) {
-            smsMsg = SmsTemplate.homeCollectionTechChange(
-                techName, techMobile, msgUrl);
-          } else {
-            final appTime =
-                "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}";
-            smsMsg = SmsTemplate.sampleCollection(
-                workOrder.patientName, techName, appTime, techMobile, msgUrl);
-          }
+          final appTime =
+              "${DateFormat('dd-MM-yyyy').format(workOrder.visitDate)} ${workOrder.visitTime}";
+          smsMsg = SmsTemplate.sampleCollection(
+              workOrder.patientName, techName, appTime, techMobile, msgUrl);
+        }
 
-          final smsMessage = Map<String, dynamic>.from(baseMessage);
-          smsMessage['_id'] = 'sms_center:$idPart:${Util.uuidv4()}';
-          smsMessage['message'] = smsMsg;
+        final smsMessage = Map<String, dynamic>.from(baseMessage);
+        smsMessage['_id'] = 'sms_center:$idPart:${Util.uuidv4()}';
+        smsMessage['message'] = smsMsg;
 
-          debugPrint(' Sending assignment SMS to ${workOrder.mobile}');
-          final result = await comCenter.sendMsg(smsMessage);
-          if (result == 'OK') {
-            debugPrint(' SMS sent successfully');
-          } else {
-            debugPrint(' SMS failed: $result');
-          }
+        debugPrint(' Sending assignment SMS to ${workOrder.mobile}');
+        final result = await comCenter.sendMsg(smsMessage);
+        if (result == 'OK') {
+          debugPrint(' SMS sent successfully');
+        } else {
+          debugPrint(' SMS failed: $result');
         }
       }
 

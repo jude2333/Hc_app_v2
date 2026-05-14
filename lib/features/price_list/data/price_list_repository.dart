@@ -296,16 +296,40 @@ class PriceListRepository {
       final results = await _db.getAll('''
         SELECT id, invest_name, history 
         FROM price_list 
-        WHERE history IS NOT NULL AND history != '[]'
+        WHERE history IS NOT NULL 
+          AND history != '[]' 
+          AND history != '' 
+          AND history != 'null'
+          AND LENGTH(history) > 2
         ORDER BY updated_at DESC
       ''');
+
+      debugPrint(
+          ' [PriceListRepo] Query returned ${results.length} rows with history data');
 
       final List<Map<String, dynamic>> allHistory = [];
 
       for (final row in results) {
         try {
-          final historyJson = row['history']?.toString() ?? '[]';
-          final List<dynamic> itemHistory = jsonDecode(historyJson);
+          final rawHistory = row['history'];
+          debugPrint(
+              ' [PriceListRepo] Row ${row['invest_name']}: history type=${rawHistory.runtimeType}, value=${rawHistory.toString().substring(0, rawHistory.toString().length > 100 ? 100 : rawHistory.toString().length)}...');
+
+          List<dynamic> itemHistory;
+
+          if (rawHistory is List) {
+            // Already parsed as a List (PowerSync may deserialize JSONB)
+            itemHistory = rawHistory;
+          } else if (rawHistory is String) {
+            itemHistory = jsonDecode(rawHistory);
+          } else {
+            debugPrint(
+                ' [PriceListRepo] Unexpected history type: ${rawHistory.runtimeType}');
+            continue;
+          }
+
+          debugPrint(
+              ' [PriceListRepo] Parsed ${itemHistory.length} entries for ${row['invest_name']}');
 
           for (final entry in itemHistory) {
             if (entry is Map<String, dynamic>) {
@@ -314,19 +338,28 @@ class PriceListRepository {
                 'item_id': row['id'],
                 'invest_name': row['invest_name'],
               });
+            } else if (entry is Map) {
+              allHistory.add({
+                ...Map<String, dynamic>.from(entry),
+                'item_id': row['id'],
+                'invest_name': row['invest_name'],
+              });
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          debugPrint(
+              ' [PriceListRepo] Error parsing history for ${row['id']}: $e');
+        }
       }
 
       allHistory.sort((a, b) {
-        final aTime = a['time_stamp']?.toString() ?? '';
-        final bTime = b['time_stamp']?.toString() ?? '';
-        return bTime.compareTo(aTime);
+        final aTime = _parseHistoryTimestamp(a['time_stamp']?.toString() ?? '');
+        final bTime = _parseHistoryTimestamp(b['time_stamp']?.toString() ?? '');
+        return bTime.compareTo(aTime); // descending (newest first)
       });
 
       final limited = allHistory.take(limit).toList();
-      debugPrint(' [PriceListRepo] Found ${limited.length} history entries');
+      debugPrint(' [PriceListRepo] Final history entries: ${limited.length}');
       return limited;
     } catch (e) {
       debugPrint(' [PriceListRepo] getGlobalHistory error: $e');
@@ -337,5 +370,34 @@ class PriceListRepository {
   double _extractNumber(String query) {
     final match = RegExp(r'[\d.]+').firstMatch(query);
     return match != null ? double.tryParse(match.group(0)!) ?? 0 : 0;
+  }
+
+  /// Parses "DD-MM-YYYY h:mm:ss am/pm" into DateTime for sorting
+  DateTime _parseHistoryTimestamp(String stamp) {
+    try {
+      // "03-05-2026 2:45:56 pm"
+      final parts = stamp.split(' ');
+      if (parts.length < 3) return DateTime(2000);
+
+      final dateParts = parts[0].split('-');
+      if (dateParts.length != 3) return DateTime(2000);
+
+      final day = int.parse(dateParts[0]);
+      final month = int.parse(dateParts[1]);
+      final year = int.parse(dateParts[2]);
+
+      final timeParts = parts[1].split(':');
+      var hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      final second = timeParts.length > 2 ? int.parse(timeParts[2]) : 0;
+
+      final ampm = parts[2].toLowerCase();
+      if (ampm == 'pm' && hour != 12) hour += 12;
+      if (ampm == 'am' && hour == 12) hour = 0;
+
+      return DateTime(year, month, day, hour, minute, second);
+    } catch (e) {
+      return DateTime(2000); // fallback for unparseable timestamps
+    }
   }
 }

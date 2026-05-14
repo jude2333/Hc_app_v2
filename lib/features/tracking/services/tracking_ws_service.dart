@@ -15,6 +15,7 @@ class TrackingWsService {
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
   
   bool _isConnected = false;
+  bool _isDisposed = false;
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
@@ -58,9 +59,10 @@ class TrackingWsService {
       // Listen for incoming messages
       _subscription = _channel!.stream.listen(
         (dynamic data) {
+          if (_isDisposed) return;
           try {
             final message = jsonDecode(data.toString()) as Map<String, dynamic>;
-            _messageController.add(message);
+            if (!_isDisposed) _messageController.add(message);
 
             if (kDebugMode && message['type'] != 'ack') {
               debugPrint('[TrackingWS] Received: ${message['type']}');
@@ -87,7 +89,7 @@ class TrackingWsService {
 
   /// Send a location ping to the server
   void sendLocation(LocationData location, {int? battery, String? currentWorkOrder}) {
-    if (!_isConnected || _channel == null) return;
+    if (!_isConnected || _channel == null || _isDisposed) return;
 
     final message = {
       'type': 'location',
@@ -105,7 +107,7 @@ class TrackingWsService {
 
   /// Send tracking stopped notification
   void sendTrackingStopped() {
-    if (!_isConnected || _channel == null) return;
+    if (!_isConnected || _channel == null || _isDisposed) return;
     try {
       _channel!.sink.add(jsonEncode({'type': 'tracking_stopped'}));
     } catch (e) {
@@ -141,6 +143,7 @@ class TrackingWsService {
     debugPrint('[TrackingWS] Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts)...');
 
     _reconnectTimer = Timer(delay, () {
+      if (_isDisposed) return;
       // The caller needs to reconnect with token+role — 
       // we can't store them. The provider handles this.
       _messageController.add({'type': '_reconnect_needed'});
@@ -164,6 +167,7 @@ class TrackingWsService {
   }
 
   void dispose() {
+    _isDisposed = true;
     disconnect();
     _messageController.close();
   }

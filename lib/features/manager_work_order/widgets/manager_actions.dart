@@ -5,6 +5,7 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import '../providers/manager_work_order_provider.dart';
 import '../controllers/manager_assignment_controller.dart';
 import '../../theme/theme.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 
 class ManagerActions extends ConsumerWidget {
   final WorkOrder workOrder;
@@ -14,6 +15,8 @@ class ManagerActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final finished = ['Finished', 'cancelled'].contains(workOrder.status);
+    final storage = ref.read(storageServiceProvider);
+    final isAdmin = storage.getFromSession('role_name') == 'ADMIN';
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -31,12 +34,13 @@ class ManagerActions extends ConsumerWidget {
             onPressed: () => _editWorkOrder(context, ref),
             tooltip: 'Edit',
           ),
-          IconButton(
-            icon: Icon(Icons.delete,
-                size: AppSizes.iconSm - 2, color: AppColors.error),
-            onPressed: () => _confirmDelete(context, ref),
-            tooltip: 'Delete',
-          ),
+          if (isAdmin)
+            IconButton(
+              icon: Icon(Icons.delete,
+                  size: AppSizes.iconSm - 2, color: AppColors.error),
+              onPressed: () => _confirmDelete(context, ref),
+              tooltip: 'Delete',
+            ),
         ],
       ],
     );

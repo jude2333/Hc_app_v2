@@ -6,6 +6,7 @@ class PatientDetailsSection extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController ageController;
   final TextEditingController mobileController;
+  final TextEditingController alternateMobileController;
   final TextEditingController emailController;
   final String salutation;
   final String gender;
@@ -17,6 +18,7 @@ class PatientDetailsSection extends StatelessWidget {
     required this.nameController,
     required this.ageController,
     required this.mobileController,
+    required this.alternateMobileController,
     required this.emailController,
     required this.salutation,
     required this.gender,
@@ -122,6 +124,16 @@ class PatientDetailsSection extends StatelessWidget {
         //       'Email Address (Optional)',
         //       icon: Icons.email_outlined),
         // ),
+        SizedBox(height: AppSpacing.md),
+        TextFormField(
+          controller: alternateMobileController,
+          keyboardType: TextInputType.phone,
+          maxLength: 10,
+          decoration: WorkOrderFormStyles.inputDecoration(
+                  'Alternate Mobile (Optional)',
+                  icon: Icons.phone_callback_outlined)
+              .copyWith(counterText: ""),
+        ),
       ],
     );
   }

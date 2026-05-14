@@ -12,27 +12,7 @@ class HistorySheet extends ConsumerStatefulWidget {
 
 class _HistorySheetState extends ConsumerState<HistorySheet> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _filteredHistory = [];
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateFilteredHistory();
-    });
-  }
-
-  void _updateFilteredHistory() {
-    final state = ref.read(priceListProvider);
-    if (_searchController.text.isEmpty) {
-      setState(() {
-        _filteredHistory = List.from(state.globalHistory);
-      });
-    } else {
-      _onSearchChanged(_searchController.text);
-    }
-  }
+  String _searchQuery = '';
 
   @override
   void dispose() {
@@ -40,40 +20,30 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
-    final state = ref.read(priceListProvider);
-    final fullList = state.globalHistory;
-
-    if (query.isEmpty) {
-      setState(() {
-        _filteredHistory = List.from(fullList);
-      });
-      return;
-    }
-
-    final lowerQuery = query.toLowerCase();
-    setState(() {
-      _filteredHistory = fullList.where((item) {
-        final summary = (item['summary'] ?? '').toString().toLowerCase();
-        final action = (item['action'] ?? '').toString().toLowerCase();
-        final name = (item['emp_name'] ?? '').toString().toLowerCase();
-
-        return summary.contains(lowerQuery) ||
-            action.contains(lowerQuery) ||
-            name.contains(lowerQuery);
-      }).toList();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(priceListProvider);
 
-    ref.listen<PriceListState>(priceListProvider, (previous, next) {
-      if (previous?.globalHistory != next.globalHistory) {
-        _updateFilteredHistory();
-      }
-    });
+    // Derive filtered list directly from provider state
+    final fullList = state.globalHistory;
+    final List<Map<String, dynamic>> filteredHistory;
+
+    if (_searchQuery.isEmpty) {
+      filteredHistory = fullList;
+    } else {
+      final lowerQuery = _searchQuery.toLowerCase();
+      filteredHistory = fullList.where((item) {
+        final summary = (item['summary'] ?? '').toString().toLowerCase();
+        final action = (item['action'] ?? '').toString().toLowerCase();
+        final name = (item['emp_name'] ?? '').toString().toLowerCase();
+        return summary.contains(lowerQuery) ||
+            action.contains(lowerQuery) ||
+            name.contains(lowerQuery);
+      }).toList();
+    }
+
+    debugPrint(
+        ' [HistorySheet] build: ${fullList.length} total, ${filteredHistory.length} filtered, isLoading=${state.isLoading}');
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -120,7 +90,9 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
             ),
             onChanged: (val) {
               Future.delayed(const Duration(milliseconds: 300), () {
-                if (_searchController.text == val) _onSearchChanged(val);
+                if (_searchController.text == val && mounted) {
+                  setState(() => _searchQuery = val);
+                }
               });
             },
           ),
@@ -143,14 +115,14 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
           Expanded(
             child: state.isLoading
                 ? _buildSkeletonLoading()
-                : _filteredHistory.isEmpty
+                : filteredHistory.isEmpty
                     ? const Center(
                         child: Text("No records found",
                             style: TextStyle(color: Colors.grey)))
                     : ListView.builder(
-                        itemCount: _filteredHistory.length,
+                        itemCount: filteredHistory.length,
                         itemBuilder: (context, index) {
-                          final item = _filteredHistory[index];
+                          final item = filteredHistory[index];
 
                           return RepaintBoundary(
                             child: Column(

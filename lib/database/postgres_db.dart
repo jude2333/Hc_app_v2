@@ -155,7 +155,11 @@ class PostgresDB {
           "in app login: ${response.statusCode} ${jsonEncode(response.data)}");
       if (response.statusCode == 200) {
         final appVersion = response.data['app_version']?.toString() ?? "";
+
+        debugPrint("postgres db app login ------>: $appVersion");
+
         await _storage.saveSessionItem("APP_VERSION", appVersion);
+
         return response.statusCode.toString();
       }
     } catch (e) {
@@ -233,7 +237,15 @@ class PostgresDB {
 
           await _storage.saveSessionItem("role_list", roleListStr.join(','));
 
-          const checkRoleList = ['170', '120', '240', '250', '280', '270'];
+          const checkRoleList = [
+            '10',
+            '170',
+            '120',
+            '240',
+            '250',
+            '280',
+            '270'
+          ];
           await _storage.saveSessionItem(
               "check_role_list", checkRoleList.join(','));
 
@@ -255,7 +267,15 @@ class PostgresDB {
 
           await _storage.saveSessionItem("final_role", finalRole.join(','));
         } else {
-          const checkRoleList = ['170', '120', '240', '250', '280', '270'];
+          const checkRoleList = [
+            '10',
+            '170',
+            '120',
+            '240',
+            '250',
+            '280',
+            '270'
+          ];
           await _storage.saveSessionItem("role_list", "");
 
           if (checkRoleList.contains(userDetails['role_id'].toString())) {

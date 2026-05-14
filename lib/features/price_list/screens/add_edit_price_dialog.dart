@@ -325,10 +325,10 @@ class _AddEditPriceDialogState extends ConsumerState<AddEditPriceDialog> {
       },
       fieldViewBuilder:
           (context, textEditingController, focusNode, onFieldSubmitted) {
-        textEditingController.text = controller.text;
-        textEditingController.addListener(() {
-          controller.text = textEditingController.text;
-        });
+        // Sync only if different to avoid infinite notification loops
+        if (textEditingController.text != controller.text) {
+          textEditingController.text = controller.text;
+        }
 
         return TextFormField(
           controller: textEditingController,

@@ -103,6 +103,13 @@ class HCProcessController {
       final updatedDocMap = Map<String, dynamic>.from(currentOrder.parsedDoc);
       updatedDocMap.addAll(updatedProcessDoc.toJson());
 
+      // Sync technician toggle states back to the doc JSON
+      // This ensures badges (CGHS, Credit) reflect what the technician chose
+      updatedDocMap['cghs_client'] = _state.cghsPrice ? 1 : 0;
+      updatedDocMap['credit'] = _state.creditClient
+          ? 1
+          : (_state.trialClient ? 2 : 0);
+
       String docDbs = storage.getFromSession('doc_dbs') ?? '';
       if (docDbs.isNotEmpty) updatedDocMap['doc_dbs'] = docDbs;
       updatedDocMap['updated_at'] = DateTime.now().toIso8601String();
@@ -179,28 +186,66 @@ class HCProcessController {
 
     final workOrder = _state.workOrder;
     if (workOrder != null) {
-      String aptDate = workOrder.visitDate.toIso8601String().split('T')[0];
+      // Try visit_time column first, then fall back to doc.appointment_time
       String aptTime = workOrder.visitTime;
+      if (aptTime.isEmpty) {
+        aptTime = workOrder.parsedDocMap['appointment_time']?.toString() ?? '';
+      }
 
       if (aptTime.isNotEmpty) {
         try {
-          final appointmentDateTime = DateTime.parse('$aptDate $aptTime');
-          final now = DateTime.now();
-          final difference = now.difference(appointmentDateTime);
+          // appointment_date in doc is "dd-MM-yyyy", visitDate is DateTime
+          final aptDate =
+              workOrder.visitDate.toIso8601String().split('T')[0]; // yyyy-MM-dd
 
-          if (difference.inMinutes > -30) {
-            _notifier.setDelayReason("On Time");
+          // Handle both "HH:mm" and "H:mm" formats
+          final timeParts = aptTime.split(':');
+          if (timeParts.length >= 2) {
+            final hour = int.tryParse(timeParts[0]) ?? 0;
+            final minute = int.tryParse(timeParts[1]) ?? 0;
 
-            Future.microtask(() => afterFirstStep());
-            return;
-          }
+            final dateParts = aptDate.split('-');
+            final appointmentDateTime = DateTime(
+              int.parse(dateParts[0]), // year
+              int.parse(dateParts[1]), // month
+              int.parse(dateParts[2]), // day
+              hour,
+              minute,
+            );
 
-          if (difference.inMinutes > 15) {
-            _notifier.setDelayMins('${difference.inMinutes}');
+            final now = DateTime.now();
+            // difference = now - appointment
+            // Positive = technician is LATE, Negative = technician is EARLY
+            final difference = now.difference(appointmentDateTime);
+
+            debugPrint(
+                '[HCProcess] Appointment: $appointmentDateTime, Now: $now, Diff: ${difference.inMinutes} min');
+
+            // Vue uses (appointment - now) > -30 which means: skip if ≤30min late
+            // Flutter uses (now - appointment), so condition is: skip if <30min late
+            // This covers: early (negative diff), on-time (0), slightly late (<30)
+            if (difference.inMinutes < 30) {
+              _notifier.setDelayReason("On Time");
+              Future.microtask(() => afterFirstStep());
+              return;
+            }
+
+            // Technician is 30+ minutes late — show delay reason
+            final lateMins = difference.inMinutes;
+            if (lateMins < 60) {
+              _notifier.setDelayMins('$lateMins minutes');
+            } else {
+              final hours = lateMins ~/ 60;
+              final mins = lateMins % 60;
+              _notifier.setDelayMins('$hours hour(s) and $mins minute(s)');
+            }
           }
         } catch (e) {
-          debugPrint('Date parse error: $e');
+          debugPrint('[HCProcess] Date parse error: $e');
         }
+      } else {
+        debugPrint(
+            '[HCProcess] No appointment time found — skipping delay check');
       }
     }
 
@@ -389,8 +434,11 @@ class HCProcessController {
       return;
     }
 
+    String discountLabel = _state.isDiscountFlat
+        ? 'Rs. ${_state.discount.toStringAsFixed(0)} flat discount'
+        : '${_state.discount}% discount';
     String step3Summary =
-        'Rs. ${_state.billAmount}. Received Rs. ${_state.amountReceived} with ${_state.discount}% discount.';
+        'Rs. ${_state.billAmount}. Received Rs. ${_state.amountReceived} with $discountLabel.';
 
     var processDoc = _state.processDoc!.copyWith(
       discount: _state.discount,
@@ -419,9 +467,17 @@ class HCProcessController {
       double hcc = _state.hcCharges;
       double dis = _state.disposableCharges;
 
-      double moneyAfterDiscount = bill;
-      if (discountVal > 0) {
-        moneyAfterDiscount = bill - (bill * discountVal / 100);
+      double moneyAfterDiscount;
+
+      if (_state.isDiscountFlat) {
+        // Flat ₹ discount: subtract directly, clamp to 0
+        moneyAfterDiscount = (bill - discountVal).clamp(0, bill);
+      } else {
+        // Percentage discount
+        moneyAfterDiscount = bill;
+        if (discountVal > 0) {
+          moneyAfterDiscount = bill - (bill * discountVal / 100);
+        }
       }
 
       if (_state.creditClient) {
@@ -444,6 +500,28 @@ class HCProcessController {
       }
     } catch (e) {
       debugPrint('Calc Error: $e');
+    }
+  }
+
+  /// Handles credit_client toggle change (matches Vue's credit_change()).
+  /// Resets billing amounts based on credit + CGHS combination.
+  void onCreditChange() {
+    if (_state.creditClient) {
+      if (_state.cghsPrice) {
+        // CGHS + Credit: only collect HC + Disposable charges
+        _notifier.setDiscount(0);
+        calculateDiscount();
+      } else {
+        // Credit only: collect nothing
+        _notifier.setDiscount(0);
+        _notifier.updateBillingState(
+          amountAfterDiscount: 0,
+          amountReceived: 0,
+        );
+      }
+    } else {
+      // Turned off credit: recalculate normally
+      calculateDiscount();
     }
   }
 

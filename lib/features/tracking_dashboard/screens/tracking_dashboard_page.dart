@@ -103,15 +103,21 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
         ),
         title: Row(
           children: [
-            const Icon(Icons.location_on, size: 22, color: AppColors.primary),
+            const Icon(Icons.location_on, size: 20, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                isWide ? 'Technician Tracking' : 'Tracking',
+                style: AppTextStyles.h3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             const SizedBox(width: 8),
-            Text('Technician Tracking', style: AppTextStyles.h3),
-            const SizedBox(width: 16),
             // Connection indicator
             GestureDetector(
               onTap: wsState.isConnected ? null : _refreshTokenAndReconnect,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: AppDecorations.pillBadge(
                   wsState.isConnected ? AppColors.trackOnline : AppColors.error,
                 ),
@@ -119,29 +125,33 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      width: 7,
+                      height: 7,
                       decoration: BoxDecoration(
-                        color: wsState.isConnected ? AppColors.trackOnline : AppColors.error,
+                        color: wsState.isConnected
+                            ? AppColors.trackOnline
+                            : AppColors.error,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
-                      wsState.isConnected ? 'Live' : 'Tap to reconnect',
+                      wsState.isConnected ? 'Live' : 'Reconnect',
                       style: AppTextStyles.chipText.copyWith(
-                        color: wsState.isConnected ? AppColors.trackOnline : AppColors.error,
-                        fontSize: 11,
+                        color: wsState.isConnected
+                            ? AppColors.trackOnline
+                            : AppColors.error,
+                        fontSize: 10,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 6),
             Text(
-              '${wsState.onlineCount}/${wsState.totalCount} online',
-              style: AppTextStyles.caption,
+              '${wsState.onlineCount}/${wsState.totalCount}',
+              style: AppTextStyles.caption.copyWith(fontSize: 11),
             ),
           ],
         ),
@@ -150,23 +160,28 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.textSecondary),
                 onPressed: () => _tabController.animateTo(2),
               ),
               if (wsState.unreadAlertCount > 0)
                 Positioned(
                   right: 8,
                   top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '${wsState.unreadAlertCount > 99 ? "99+" : wsState.unreadAlertCount}',
-                      style: const TextStyle(
-                        color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${wsState.unreadAlertCount > 99 ? "99+" : wsState.unreadAlertCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -193,7 +208,8 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   }
 
   /// Desktop/tablet layout: map left, panels right
-  Widget _buildWideLayout(DashboardWsState wsState, TechnicianStatus? selectedTech, DateTime selectedDate) {
+  Widget _buildWideLayout(DashboardWsState wsState,
+      TechnicianStatus? selectedTech, DateTime selectedDate) {
     return Row(
       children: [
         // Map (60% width)
@@ -235,10 +251,15 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
                           indicatorWeight: 3,
                           isScrollable: true,
                           tabAlignment: TabAlignment.start,
-                          labelStyle: AppTextStyles.buttonText.copyWith(fontSize: 13),
+                          labelStyle:
+                              AppTextStyles.buttonText.copyWith(fontSize: 13),
                           tabs: [
-                            const Tab(text: 'Details', icon: Icon(Icons.info_outline, size: 18)),
-                            const Tab(text: 'Timeline', icon: Icon(Icons.timeline, size: 18)),
+                            const Tab(
+                                text: 'Details',
+                                icon: Icon(Icons.info_outline, size: 18)),
+                            const Tab(
+                                text: 'Timeline',
+                                icon: Icon(Icons.timeline, size: 18)),
                             Tab(
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -249,22 +270,30 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
                                   if (wsState.unreadAlertCount > 0) ...[
                                     const SizedBox(width: 4),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: AppColors.error,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
                                         '${wsState.unreadAlertCount}',
-                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],
                                 ],
                               ),
                             ),
-                            const Tab(text: 'Fences', icon: Icon(Icons.fence, size: 18)),
-                            const Tab(text: 'Analytics', icon: Icon(Icons.analytics_outlined, size: 18)),
+                            const Tab(
+                                text: 'Fences',
+                                icon: Icon(Icons.fence, size: 18)),
+                            const Tab(
+                                text: 'Analytics',
+                                icon: Icon(Icons.analytics_outlined, size: 18)),
                           ],
                         ),
                       ),
@@ -309,22 +338,111 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
     );
   }
 
-  /// Mobile layout: stacked
-  Widget _buildNarrowLayout(DashboardWsState wsState, TechnicianStatus? selectedTech, DateTime selectedDate) {
+  /// Mobile layout: stacked vertically — map, tech list, then tabbed panels
+  Widget _buildNarrowLayout(DashboardWsState wsState,
+      TechnicianStatus? selectedTech, DateTime selectedDate) {
     return Column(
       children: [
-        // Map (top 60%)
+        // Map (top 35%)
         Expanded(
-          flex: 6,
+          flex: 35,
           child: LiveMapView(
             token: _token,
             fences: _fences,
           ),
         ),
-        // Tech list (bottom 40%)
+        // Tech list (25%)
         const Expanded(
-          flex: 4,
+          flex: 25,
           child: TechListPanel(),
+        ),
+
+        const Divider(height: 1, color: AppColors.border),
+
+        // Tabbed detail panels (bottom 40%)
+        Expanded(
+          flex: 40,
+          child: Column(
+            children: [
+              Container(
+                color: AppColors.surface,
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.primary,
+                  indicatorWeight: 3,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelStyle: AppTextStyles.buttonText.copyWith(fontSize: 12),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  tabs: [
+                    const Tab(
+                        text: 'Details',
+                        icon: Icon(Icons.info_outline, size: 16)),
+                    const Tab(
+                        text: 'Timeline', icon: Icon(Icons.timeline, size: 16)),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.warning_amber, size: 16),
+                          const SizedBox(width: 4),
+                          const Text('Alerts'),
+                          if (wsState.unreadAlertCount > 0) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${wsState.unreadAlertCount}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const Tab(
+                        text: 'Fences', icon: Icon(Icons.fence, size: 16)),
+                    const Tab(
+                        text: 'Analytics',
+                        icon: Icon(Icons.analytics_outlined, size: 16)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    TechDetailPanel(token: _token),
+                    TimelinePanel(
+                      technician: selectedTech,
+                      selectedDate: selectedDate,
+                      token: _token,
+                    ),
+                    AlertsPanel(alerts: wsState.recentAlerts),
+                    FenceManagerPanel(
+                      token: _token,
+                      fences: _fences,
+                      onFencesChanged: _loadFences,
+                    ),
+                    AnalyticsTab(
+                      token: _token,
+                      selectedDate: selectedDate,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
