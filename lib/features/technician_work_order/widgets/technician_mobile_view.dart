@@ -21,17 +21,13 @@ class TechnicianMobileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchQuery = ref.watch(techSearchPod);
-
-    final filtered = searchQuery.isEmpty
-        ? workOrders
-        : workOrders.where((wo) {
-            final term = searchQuery.toLowerCase();
-            return wo.searchableText.contains(term);
-          }).toList();
+    // Use the centralized filtered+sorted provider
+    final filtered = ref.watch(techFilteredWorkOrdersPod);
+    final currentFilter = ref.watch(techStatusFilterPod);
 
     return Column(
       children: [
+        // Search bar
         Padding(
           padding: EdgeInsets.all(AppSpacing.md),
           child: WorkOrderSearchBar(
@@ -40,6 +36,48 @@ class TechnicianMobileView extends ConsumerWidget {
             padding: EdgeInsets.zero,
           ),
         ),
+
+        // Status filter chips
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip(ref, 'All', 'all', currentFilter),
+                SizedBox(width: AppSpacing.xs),
+                _buildFilterChip(ref, 'New', 'new', currentFilter),
+                SizedBox(width: AppSpacing.xs),
+                _buildFilterChip(ref, 'In Progress', 'in_progress', currentFilter),
+                SizedBox(width: AppSpacing.xs),
+                _buildFilterChip(ref, 'Finished', 'finished', currentFilter),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: AppSpacing.sm),
+
+        // Sort option row
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Row(
+            children: [
+              Text(
+                '${filtered.length} order(s)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              _buildSortDropdown(ref),
+            ],
+          ),
+        ),
+        SizedBox(height: AppSpacing.xs),
+
+        // Work order list
         Expanded(
           child: filtered.isEmpty
               ? Center(
@@ -54,6 +92,76 @@ class TechnicianMobileView extends ConsumerWidget {
                     );
                   },
                 ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(
+      WidgetRef ref, String label, String value, String current) {
+    final isSelected = current == value;
+    return GestureDetector(
+      onTap: () => ref.read(techStatusFilterPod.notifier).state = value,
+      child: Container(
+        padding:
+            EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: AppRadius.lgAll,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.tableBorder,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortDropdown(WidgetRef ref) {
+    final sortCol = ref.watch(techSortColumnPod);
+    final sortAsc = ref.watch(techSortAscendingPod);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.sort, size: 14, color: AppColors.textSecondary),
+        SizedBox(width: 4),
+        DropdownButton<String>(
+          value: sortCol,
+          isDense: true,
+          underline: const SizedBox.shrink(),
+          style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+          items: const [
+            DropdownMenuItem(value: 'priority', child: Text('Status Priority')),
+            DropdownMenuItem(value: 'date', child: Text('Date & Time')),
+            DropdownMenuItem(value: 'name', child: Text('Patient Name')),
+            DropdownMenuItem(value: 'status', child: Text('Status')),
+          ],
+          onChanged: (v) {
+            if (v != null) {
+              ref.read(techSortColumnPod.notifier).state = v;
+            }
+          },
+        ),
+        IconButton(
+          icon: Icon(
+            sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
+            size: 14,
+            color: AppColors.textSecondary,
+          ),
+          onPressed: () =>
+              ref.read(techSortAscendingPod.notifier).state = !sortAsc,
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          tooltip: sortAsc ? 'Ascending' : 'Descending',
         ),
       ],
     );

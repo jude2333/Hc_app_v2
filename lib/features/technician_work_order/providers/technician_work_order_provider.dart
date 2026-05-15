@@ -287,12 +287,51 @@ final techSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
 // UI State Pods (autoDispose so they reset on navigation away)
 // ---------------------------------------------------------------------------
 final techSearchPod = AutoDisposeStateProvider<String>((_) => '');
-final techSortColumnPod = AutoDisposeStateProvider<String>((_) => 'date');
-final techSortAscendingPod = AutoDisposeStateProvider<bool>((_) => false);
+final techSortColumnPod = AutoDisposeStateProvider<String>((_) => 'priority');
+final techSortAscendingPod = AutoDisposeStateProvider<bool>((_) => true);
+
+/// Status filter: 'all', 'new', 'in_progress', 'finished'
+final techStatusFilterPod = AutoDisposeStateProvider<String>((_) => 'all');
+
+// ---------------------------------------------------------------------------
+// Status priority helper — lower number = higher priority (shows first)
+//
+//  0 = New / Assigned (not yet started)
+//  1 = In-progress    (First Step through Fifth Step)
+//  2 = Finished
+//  3 = Cancelled / NA / Unknown
+// ---------------------------------------------------------------------------
+int _statusPriority(String status) {
+  final s = status.toLowerCase().trim();
+  if (s == 'assigned' || s.startsWith('un')) return 0;
+  if (s.contains('step')) return 1;
+  if (s == 'finished') return 2;
+  if (s == 'cancelled' || s == 'na' || s.isEmpty) return 3;
+  return 1; // fallback: treat unknown as in-progress
+}
+
+/// Human-readable group label for display
+String statusGroupLabel(String status) {
+  switch (_statusPriority(status)) {
+    case 0:
+      return 'New';
+    case 1:
+      return 'In Progress';
+    case 2:
+      return 'Finished';
+    case 3:
+      return 'Cancelled';
+    default:
+      return 'Other';
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Derived filtered + sorted list — cached by Riverpod, recomputes only
-// when inputs (workOrders, search, sort) change.
+// when inputs (workOrders, search, sort, statusFilter) change.
+//
+// Default order: New → In-Progress → Finished → Cancelled
+// Within each group: latest appointment date+time first
 // ---------------------------------------------------------------------------
 final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
   final woState = ref.watch(
@@ -301,7 +340,9 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
   final search = ref.watch(techSearchPod);
   final sortCol = ref.watch(techSortColumnPod);
   final sortAsc = ref.watch(techSortAscendingPod);
+  final statusFilter = ref.watch(techStatusFilterPod);
 
+  // 1. Search filter
   List<WorkOrder> filtered = search.isEmpty
       ? List.from(woState)
       : woState.where((wo) {
@@ -309,6 +350,24 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
           return wo.searchableText.contains(term);
         }).toList();
 
+  // 2. Status filter
+  if (statusFilter != 'all') {
+    filtered = filtered.where((wo) {
+      final priority = _statusPriority(wo.status);
+      switch (statusFilter) {
+        case 'new':
+          return priority == 0;
+        case 'in_progress':
+          return priority == 1;
+        case 'finished':
+          return priority == 2;
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
+  // 3. Sort
   filtered.sort((a, b) {
     int cmp = 0;
     switch (sortCol) {
@@ -316,12 +375,25 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
         cmp = a.patientName.compareTo(b.patientName);
         break;
       case 'status':
-        cmp = a.status.compareTo(b.status);
+        cmp = _statusPriority(a.status).compareTo(_statusPriority(b.status));
+        if (cmp == 0) {
+          // Within same priority group, sort by date+time descending (latest first)
+          cmp = b.visitDate.compareTo(a.visitDate);
+          if (cmp == 0) cmp = b.visitTime.compareTo(a.visitTime);
+        }
         break;
       case 'date':
-      default:
         cmp = a.visitDate.compareTo(b.visitDate);
         if (cmp == 0) cmp = a.visitTime.compareTo(b.visitTime);
+        break;
+      case 'priority':
+      default:
+        // Default: status priority first, then latest appointment first within group
+        cmp = _statusPriority(a.status).compareTo(_statusPriority(b.status));
+        if (cmp == 0) {
+          cmp = b.visitDate.compareTo(a.visitDate);
+          if (cmp == 0) cmp = b.visitTime.compareTo(a.visitTime);
+        }
         break;
     }
     return sortAsc ? cmp : -cmp;
@@ -329,3 +401,4 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
 
   return filtered;
 });
+
