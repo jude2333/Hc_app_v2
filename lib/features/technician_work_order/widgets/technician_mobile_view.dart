@@ -48,7 +48,8 @@ class TechnicianMobileView extends ConsumerWidget {
                 SizedBox(width: AppSpacing.xs),
                 _buildFilterChip(ref, 'New', 'new', currentFilter),
                 SizedBox(width: AppSpacing.xs),
-                _buildFilterChip(ref, 'In Progress', 'in_progress', currentFilter),
+                _buildFilterChip(
+                    ref, 'In Progress', 'in_progress', currentFilter),
                 SizedBox(width: AppSpacing.xs),
                 _buildFilterChip(ref, 'Finished', 'finished', currentFilter),
               ],
@@ -103,8 +104,7 @@ class TechnicianMobileView extends ConsumerWidget {
     return GestureDetector(
       onTap: () => ref.read(techStatusFilterPod.notifier).state = value,
       child: Container(
-        padding:
-            EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.surface,
           borderRadius: AppRadius.lgAll,
@@ -219,7 +219,7 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
                       Row(
                         children: [
                           Flexible(
-                            child: Text(
+                            child: CopyableText(
                               '${wo.patientName} [${wo.age} / ${wo.gender}]',
                               style: AppTextStyles.h3,
                               overflow: TextOverflow.ellipsis,
@@ -332,9 +332,9 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
           1: FlexColumnWidth(3),
         },
         children: [
-          _tableRow('Mobile', wo.mobile),
+          _tableRow('Mobile', wo.mobile, isPhoneNumber: true),
           if (wo.alternateMobile.isNotEmpty)
-            _tableRow('Alt. Mobile', wo.alternateMobile),
+            _tableRow('Alt. Mobile', wo.alternateMobile, isPhoneNumber: true),
           _tableRow('App. Time', '${wo.formattedVisitDate} ${wo.visitTime}'),
           _tableRow('My Status', '',
               statusWidget: StatusChip(status: wo.status)),
@@ -360,10 +360,14 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
   }
 
   TableRow _tableRow(String label, String value,
-      {Widget? statusWidget, bool isViewable = false, VoidCallback? onTap}) {
+      {Widget? statusWidget,
+      bool isViewable = false,
+      VoidCallback? onTap,
+      bool isPhoneNumber = false}) {
     final valueWidget = statusWidget ??
-        Text(
+        CopyableText(
           value,
+          isPhoneNumber: isPhoneNumber,
           style: TextStyle(
             fontSize: 13,
             color: isViewable ? AppColors.primary : AppColors.textPrimary,
@@ -596,7 +600,8 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
           children: [
             _viewMoreRow('Address', wo.address.isEmpty ? 'N/A' : wo.address),
             _viewMoreRow('Pincode', wo.pincode.isEmpty ? 'N/A' : wo.pincode),
-            _viewMoreRow('Mobile', wo.mobile.isEmpty ? 'N/A' : wo.mobile),
+            _viewMoreRow('Mobile', wo.mobile.isEmpty ? 'N/A' : wo.mobile,
+                isPhoneNumber: true),
             _viewMoreRow(
                 'Additional Info', wo.freeText.isEmpty ? 'N/A' : wo.freeText),
             _viewMoreRow(
@@ -616,19 +621,29 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
     );
   }
 
-  Widget _viewMoreRow(String label, String value) {
+  Widget _viewMoreRow(String label, String value,
+      {bool isPhoneNumber = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
-          children: [
-            TextSpan(
-                text: '$label : ',
-                style: TextStyle(fontWeight: FontWeight.w500)),
-            TextSpan(text: value),
-          ],
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label : ',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Flexible(
+            child: CopyableText(
+              value,
+              isPhoneNumber: isPhoneNumber,
+              style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+            ),
+          ),
+        ],
       ),
     );
   }

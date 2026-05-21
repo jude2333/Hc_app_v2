@@ -295,16 +295,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     }
 
     if (isMobile) {
-      return ManagerMobileView(
-        workOrders: ref.watch(managerFilteredWorkOrdersPod),
-        searchQuery: ref.watch(managerSearchPod),
-        onSearchChanged: (value) {
-          _searchDebounce?.cancel();
-          _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-            ref.read(managerSearchPod.notifier).state = value;
-          });
-        },
-      );
+      return const ManagerMobileView();
     }
 
     return Padding(

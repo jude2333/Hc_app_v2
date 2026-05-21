@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
@@ -8,27 +9,34 @@ import '../widgets/manager_expanded_content.dart';
 import '../widgets/manager_actions.dart';
 import '../controllers/manager_assignment_controller.dart';
 import 'package:anderson_crm_flutter/features/theme/app_spacing.dart';
+import '../providers/manager_work_order_provider.dart';
 
-class ManagerMobileView extends ConsumerWidget {
-  final List<WorkOrder> workOrders;
-  final String searchQuery;
-  final Function(String) onSearchChanged;
-
-  const ManagerMobileView({
-    super.key,
-    required this.workOrders,
-    required this.searchQuery,
-    required this.onSearchChanged,
-  });
+class ManagerMobileView extends ConsumerStatefulWidget {
+  const ManagerMobileView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filtered = workOrders;
+  ConsumerState<ManagerMobileView> createState() => _ManagerMobileViewState();
+}
+
+class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = ref.watch(managerFilteredWorkOrdersPod);
+    final currentFilter = ref.watch(managerStatusFilterPod);
 
     return Column(
       children: [
+        // Search bar
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Search patients...',
@@ -42,25 +50,56 @@ class ManagerMobileView extends ConsumerWidget {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
-            onChanged: onSearchChanged,
+            onChanged: (v) {
+              _searchDebounce?.cancel();
+              _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+                ref.read(managerSearchPod.notifier).state = v;
+              });
+            },
           ),
         ),
+
+        // Status filter chips
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip('All', 'all', currentFilter),
+                const SizedBox(width: 6),
+                _buildFilterChip('New', 'new', currentFilter),
+                const SizedBox(width: 6),
+                _buildFilterChip('In Progress', 'in_progress', currentFilter),
+                const SizedBox(width: 6),
+                _buildFilterChip('Finished', 'finished', currentFilter),
+                const SizedBox(width: 6),
+                _buildFilterChip('Cancelled', 'cancelled', currentFilter),
+              ],
+            ),
+          ),
+        ),
+
+        // Count + sort row
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
             children: [
               Text(
-                '${filtered.length} work orders',
+                '${filtered.length} work order(s)',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const Spacer(),
+              _buildSortDropdown(),
             ],
           ),
         ),
+
+        // List
         Expanded(
           child: filtered.isEmpty
               ? _buildEmptyState()
@@ -69,12 +108,85 @@ class ManagerMobileView extends ConsumerWidget {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
-                    return _MobileWorkOrderCard(
-                      workOrder: filtered[index],
-                      index: index + 1,
+                    return RepaintBoundary(
+                      child: _MobileWorkOrderCard(
+                        workOrder: filtered[index],
+                        index: index + 1,
+                      ),
                     );
                   },
                 ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value, String current) {
+    final isSelected = current == value;
+    return GestureDetector(
+      onTap: () => ref.read(managerStatusFilterPod.notifier).state = value,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: AppRadius.lgAll,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.tableBorder,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortDropdown() {
+    final sortCol = ref.watch(managerSortColumnPod);
+    final sortAsc = ref.watch(managerSortAscendingPod);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.sort, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: 4),
+        DropdownButton<String>(
+          value: sortCol,
+          isDense: true,
+          underline: const SizedBox.shrink(),
+          style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+          items: const [
+            DropdownMenuItem(value: 'date', child: Text('Date & Time')),
+            DropdownMenuItem(value: 'time', child: Text('Time')),
+            DropdownMenuItem(value: 'name', child: Text('Patient Name')),
+            DropdownMenuItem(value: 'status', child: Text('Status')),
+            DropdownMenuItem(
+                value: 'server_status', child: Text('Server Status')),
+            DropdownMenuItem(value: 'assigned_to', child: Text('Assigned To')),
+          ],
+          onChanged: (v) {
+            if (v != null) {
+              ref.read(managerSortColumnPod.notifier).state = v;
+            }
+          },
+        ),
+        IconButton(
+          icon: Icon(
+            sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
+            size: 14,
+            color: AppColors.textSecondary,
+          ),
+          onPressed: () =>
+              ref.read(managerSortAscendingPod.notifier).state = !sortAsc,
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          tooltip: sortAsc ? 'Ascending' : 'Descending',
         ),
       ],
     );
@@ -108,7 +220,7 @@ class ManagerMobileView extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Try adjusting your search or date',
+            'Try adjusting your search or filter',
             style: TextStyle(
               fontSize: 13,
               color: AppColors.textHint,
@@ -192,12 +304,27 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                               layout: BadgeLayout.row,
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              '${wo.gender} • ${wo.age} • ${wo.mobile}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  '${wo.gender} • ${wo.age} • ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: CopyableText(
+                                    wo.mobile,
+                                    isPhoneNumber: true,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -255,7 +382,7 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                           size: 14, color: AppColors.textHint),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
+                        child: CopyableText(
                           wo.assignedTo.isNotEmpty
                               ? wo.assignedTo
                               : 'Unassigned',
@@ -264,9 +391,6 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                             color: wo.assignedTo.isNotEmpty
                                 ? AppColors.textPrimary
                                 : AppColors.textHint,
-                            fontStyle: wo.assignedTo.isEmpty
-                                ? FontStyle.italic
-                                : FontStyle.normal,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

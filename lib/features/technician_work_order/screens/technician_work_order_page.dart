@@ -490,7 +490,7 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
                   ),
                   _buildCell(wo.gender, flex: 2),
                   _buildCell(wo.age, flex: 1),
-                  _buildCell(wo.mobile, flex: 3),
+                  _buildCell(wo.mobile, flex: 3, isPhoneNumber: true),
                   _buildCell(wo.formattedVisitDate, flex: 3),
                   _buildCell(wo.visitTime, flex: 2),
                   Expanded(flex: 3, child: StatusChip(status: wo.status)),
@@ -519,11 +519,13 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
     );
   }
 
-  Widget _buildCell(String text, {required int flex}) {
+  Widget _buildCell(String text, {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
         flex: flex,
         child: Container(
             padding: AppPadding.sm,
-            child: Text(text, overflow: TextOverflow.ellipsis)));
+            child: CopyableText(text,
+                overflow: TextOverflow.ellipsis,
+                isPhoneNumber: isPhoneNumber)));
   }
 }

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
@@ -63,7 +64,8 @@ class _TechnicianExpandedContentState
           if (!isCancelled) ...[
             // Alternate Mobile / Client Code / Doctor Code
             if (wo.alternateMobile.isNotEmpty)
-              _buildInfoRow('Alt. Mobile', wo.alternateMobile),
+              _buildInfoRow('Alt. Mobile', wo.alternateMobile,
+                  isPhoneNumber: true),
             if (wo.clientCode.isNotEmpty)
               _buildInfoRow('Client Code', wo.clientCode),
             if (wo.doctorCode.isNotEmpty)
@@ -139,7 +141,8 @@ class _TechnicianExpandedContentState
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(String label, String value,
+      {Color? valueColor, bool isPhoneNumber = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
@@ -151,7 +154,8 @@ class _TechnicianExpandedContentState
                   style:
                       TextStyle(color: AppColors.textSecondary, fontSize: 13))),
           Expanded(
-            child: Text(value,
+            child: CopyableText(value,
+                isPhoneNumber: isPhoneNumber,
                 style: TextStyle(
                     fontSize: 13,
                     color: valueColor ?? AppColors.textPrimary,

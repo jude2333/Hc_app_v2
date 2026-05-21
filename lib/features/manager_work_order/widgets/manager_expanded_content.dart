@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/components/time_line_page.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
 import '../../theme/theme.dart';
@@ -93,7 +94,7 @@ class ManagerExpandedContent extends ConsumerWidget {
           ),
           TableRow(
             children: [
-              WOTableCell(workOrder.alternateMobile),
+              WOTableCell(workOrder.alternateMobile, isPhoneNumber: true),
               WOTableCell(workOrder.clientCode),
               WOTableCell(workOrder.doctorCode),
               WOTableCell(''),
@@ -175,7 +176,8 @@ class ManagerExpandedContent extends ConsumerWidget {
           if (workOrder.marketingPersonNumber.isNotEmpty)
             _FilledChip(
                 label: workOrder.marketingPersonNumber,
-                color: AppColors.secondary),
+                color: AppColors.secondary,
+                isPhoneNumber: true),
         ],
       ),
     );
@@ -193,7 +195,8 @@ class ManagerExpandedContent extends ConsumerWidget {
             _LabelChip(label: 'Alt. Mobile', color: AppColors.primary),
             _FilledChip(
                 label: workOrder.alternateMobile,
-                color: AppColors.secondary),
+                color: AppColors.secondary,
+                isPhoneNumber: true),
           ],
           if (workOrder.clientCode.isNotEmpty) ...[
             _LabelChip(label: 'Client Code', color: AppColors.primary),
@@ -557,8 +560,10 @@ class _BorderedChip extends StatelessWidget {
 class _FilledChip extends StatelessWidget {
   final String label;
   final Color color;
+  final bool isPhoneNumber;
 
-  const _FilledChip({required this.label, required this.color});
+  const _FilledChip(
+      {required this.label, required this.color, this.isPhoneNumber = false});
 
   @override
   Widget build(BuildContext context) {
@@ -568,8 +573,9 @@ class _FilledChip extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Text(
+      child: CopyableText(
         label,
+        isPhoneNumber: isPhoneNumber,
         style:
             TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
       ),

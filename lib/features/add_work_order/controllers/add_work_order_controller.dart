@@ -34,6 +34,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
     required bool isEditMode,
     required bool isCopyMode,
     WorkOrder? existingWorkOrder,
+    WorkOrder? copyFrom,
     required String collectionDate,
     required TimeOfDay? collectionTime,
     required String salutation,
@@ -250,7 +251,25 @@ class AddWorkOrderController extends StateNotifier<bool> {
           final log = "${Util.gettime()} - $managerName - Work Order Copied";
           final docMap = jsonDecode(workOrder.doc);
           docMap['time_line'] = [log];
-          final finalOrder = workOrder.copyWith(doc: jsonEncode(docMap));
+
+          final String finalAssignedTo = copyFrom?.assignedTo ?? '';
+          final int? finalAssignedId = copyFrom?.assignedId;
+          final String finalStatus =
+              finalAssignedTo.isNotEmpty ? 'assigned' : 'unassigned';
+          final String finalServerStatus = 'waiting';
+
+          docMap['status'] = finalStatus;
+          docMap['server_status'] = finalServerStatus;
+          docMap['assigned_to'] = finalAssignedTo;
+          docMap['assigned_id'] = finalAssignedId;
+
+          final finalOrder = workOrder.copyWith(
+            doc: jsonEncode(docMap),
+            status: finalStatus,
+            serverStatus: finalServerStatus,
+            assignedTo: finalAssignedTo,
+            assignedId: finalAssignedId,
+          );
 
           final success = await ref
               .read(managerWorkOrderRepositoryProvider)

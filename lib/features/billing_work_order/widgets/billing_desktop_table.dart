@@ -195,7 +195,7 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
                     layout: BadgeLayout.row,
                   ),
                 ),
-                _buildCell(order.mobile, flex: 2),
+                _buildCell(order.mobile, flex: 2, isPhoneNumber: true),
                 _buildCell(order.formattedShortDate, flex: 2),
                 _buildCell(order.visitTime, flex: 1),
                 _buildCell(order.formattedCalculatedTotal, flex: 2),
@@ -238,13 +238,15 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
     );
   }
 
-  Widget _buildCell(String text, {required int flex}) {
+  Widget _buildCell(String text, {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
       flex: flex,
       child: Container(
         padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
-        child: Text(text, overflow: TextOverflow.ellipsis),
+        child: CopyableText(text,
+            overflow: TextOverflow.ellipsis,
+            isPhoneNumber: isPhoneNumber),
       ),
     );
   }
@@ -367,7 +369,7 @@ class _DetailRow extends StatelessWidget {
             child: Text('$label:',
                 style: const TextStyle(fontWeight: FontWeight.w500)),
           ),
-          Expanded(child: Text(value.isEmpty ? 'N/A' : value)),
+          Expanded(child: CopyableText(value.isEmpty ? 'N/A' : value)),
         ],
       ),
     );

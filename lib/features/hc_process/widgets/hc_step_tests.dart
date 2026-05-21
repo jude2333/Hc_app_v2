@@ -13,7 +13,6 @@ class HCStepTests extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(hcProcessProvider(workOrderId));
     final notifier = ref.read(hcProcessProvider(workOrderId).notifier);
-    final controller = ref.read(hcProcessControllerProvider(workOrderId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,12 +46,9 @@ class HCStepTests extends ConsumerWidget {
                     notifier.setProformaInvLoc(
                         result['proformalocation'].toString());
                   }
-
-                  if (state.selectedTests.isNotEmpty) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      controller.afterSecondStep();
-                    });
-                  }
+                  // Do NOT auto-advance to step 3 here.
+                  // The technician must review the test list and press
+                  // "Save & Continue" themselves (Issue #2 fix).
                 }
               },
               icon: const Icon(Icons.add),
@@ -105,18 +101,77 @@ class HCStepTests extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         if (state.selectedTests.isNotEmpty) ...[
-          const Text(
-            'Selected Tests:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              const Text(
+                'Selected Tests:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (state.cghsPrice) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange.shade300),
+                  ),
+                  child: Text(
+                    'CGHS Rates Applied',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
+          const SizedBox(height: 8),
           ...state.selectedTests.asMap().entries.map((entry) {
             final test = entry.value;
+
+            // Issue #1: Show the correct price based on CGHS toggle.
+            // When CGHS is on, prefer cghs_price; fall back to base_cost.
+            final baseCost =
+                double.tryParse(test['base_cost']?.toString() ?? '0') ?? 0;
+            final cghsCost =
+                double.tryParse(test['cghs_price']?.toString() ?? '0') ?? 0;
+            final displayPrice =
+                state.cghsPrice && cghsCost > 0 ? cghsCost : baseCost;
+            final isCghsRate = state.cghsPrice && cghsCost > 0;
+
             return ListTile(
+              contentPadding: EdgeInsets.zero,
               title: Text(test['invest_name'] ?? 'Unknown'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('₹${test['base_cost'] ?? '0'}'),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '₹${displayPrice.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isCghsRate
+                              ? Colors.orange.shade700
+                              : Colors.black87,
+                        ),
+                      ),
+                      if (isCghsRate && baseCost > 0)
+                        Text(
+                          'MRP ₹${baseCost.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                    ],
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 18),
                     onPressed: () => notifier.removeTest(entry.key),
@@ -127,9 +182,17 @@ class HCStepTests extends ConsumerWidget {
           }),
           const Divider(),
           Text(
-            'Total: ₹${state.totalAmount}',
+            'Total: ₹${state.totalAmount.toStringAsFixed(0)}',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
+          if (state.cghsPrice)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'CGHS rates applied where available',
+                style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+              ),
+            ),
         ],
       ],
     );

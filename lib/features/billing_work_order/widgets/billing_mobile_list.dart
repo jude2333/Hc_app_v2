@@ -10,6 +10,7 @@ import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/work_order_chips.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
 import '../providers/billing_work_order_provider.dart';
 
 class BillingMobileList extends ConsumerWidget {
@@ -182,21 +183,31 @@ class _BillingCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: CopyableText(
                           order.patientName,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       _buildBadges(),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${order.mobile} • ${order.formattedShortDate} ${order.visitTime}',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  Row(
+                    children: [
+                      CopyableText(
+                        order.mobile,
+                        isPhoneNumber: true,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
+                      Text(
+                        ' • ${order.formattedShortDate} ${order.visitTime}',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -230,7 +241,7 @@ class _BillingCard extends StatelessWidget {
                 ),
               ],
               const Spacer(),
-              Text(
+              CopyableText(
                 order.formattedCalculatedTotal,
                 style: const TextStyle(
                   color: Colors.green,
@@ -426,8 +437,10 @@ class _DetailRow extends StatelessWidget {
                     fontWeight: FontWeight.w500, color: Colors.grey)),
           ),
           Expanded(
-              child: Text(value.isEmpty ? 'N/A' : value,
-                  style: const TextStyle(fontWeight: FontWeight.w500))),
+              child: CopyableText(
+                value.isEmpty ? 'N/A' : value,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              )),
         ],
       ),
     );

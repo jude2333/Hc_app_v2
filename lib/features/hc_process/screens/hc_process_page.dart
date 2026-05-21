@@ -635,11 +635,32 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
 
   Widget _buildStepperControls(BuildContext context, ControlsDetails details) {
     final state = ref.watch(hcProcessProvider(widget.workOrderId));
+    // Back is allowed on step 2 (Tests → Arrival) and step 3 (Billing → Tests)
+    final showBack = details.stepIndex == 1 || details.stepIndex == 2;
 
     return Container(
       margin: const EdgeInsets.only(top: 24),
       child: Row(
         children: [
+          if (showBack) ...[
+            OutlinedButton.icon(
+              onPressed: state.isLoading ? null : details.onStepCancel,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                side: BorderSide(color: Colors.grey.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+              label: const Text('Back'),
+            ),
+            const SizedBox(width: 12),
+          ],
           if (details.stepIndex < 5)
             Expanded(
               child: ElevatedButton(
@@ -662,46 +683,25 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Continue',
-                            style: TextStyle(
+                            // Step 2 (index 1): label as save action so it's clear
+                            details.stepIndex == 1
+                                ? 'Save & Continue'
+                                : 'Continue',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_rounded, size: 20),
                         ],
                       ),
               ),
             ),
-          // if (details.stepIndex > 0) ...[
-          //   const SizedBox(width: 12),
-          //   OutlinedButton(
-          //     onPressed: state.isLoading ? null : details.onStepCancel,
-          //     style: OutlinedButton.styleFrom(
-          //       foregroundColor: AppColors.textSecondary,
-          //       padding: const EdgeInsets.symmetric(
-          //         horizontal: 24,
-          //         vertical: 16,
-          //       ),
-          //       side: BorderSide(color: Colors.grey.shade300),
-          //       shape: RoundedRectangleBorder(
-          //         borderRadius: BorderRadius.circular(12),
-          //       ),
-          //     ),
-          //     child: const Row(
-          //     //   children: [
-          //     //     Icon(Icons.arrow_back_rounded, size: 18),
-          //     //     SizedBox(width: 6),
-          //     //     Text('Back'),
-          //     //   ],
-          //     // ),
-          //   ),
-          // ],
         ],
       ),
     );

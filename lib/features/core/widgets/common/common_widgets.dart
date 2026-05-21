@@ -8,3 +8,4 @@ export 'table_widgets.dart';
 export 'sortable_header.dart';
 export 'search_bar.dart';
 export 'flex_cells.dart';
+export 'copyable_text.dart';

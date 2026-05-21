@@ -139,7 +139,14 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
             isAscending: sortAsc,
             onSort: handleSort,
           ),
-          const HeaderCell('Time', flex: 2),
+          SortableHeader(
+            label: 'Time',
+            sortKey: 'time',
+            flex: 2,
+            currentSortColumn: sortCol,
+            isAscending: sortAsc,
+            onSort: handleSort,
+          ),
           SortableHeader(
             label: 'Status',
             sortKey: 'status',
@@ -148,8 +155,22 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
             isAscending: sortAsc,
             onSort: handleSort,
           ),
-          const HeaderCell('Server Status', flex: 3),
-          const HeaderCell('Assigned To', flex: 4),
+          SortableHeader(
+            label: 'Server Status',
+            sortKey: 'server_status',
+            flex: 3,
+            currentSortColumn: sortCol,
+            isAscending: sortAsc,
+            onSort: handleSort,
+          ),
+          SortableHeader(
+            label: 'Assigned To',
+            sortKey: 'assigned_to',
+            flex: 4,
+            currentSortColumn: sortCol,
+            isAscending: sortAsc,
+            onSort: handleSort,
+          ),
           const Expanded(
               flex: 3,
               child: Text('Actions',
@@ -212,7 +233,7 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
                   ),
                   _buildCell(wo.gender, flex: 2),
                   _buildCell(wo.age, flex: 1),
-                  _buildCell(wo.mobile, flex: 3),
+                  _buildCell(wo.mobile, flex: 3, isPhoneNumber: true),
                   _buildCell(wo.formattedVisitDate, flex: 3),
                   _buildCell(wo.visitTime, flex: 2),
                   Expanded(
@@ -247,12 +268,15 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
     );
   }
 
-  Widget _buildCell(String text, {required int flex}) {
+  Widget _buildCell(String text,
+      {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
         flex: flex,
         child: Container(
             padding: AppPadding.sm,
-            child: Text(text, overflow: TextOverflow.ellipsis)));
+            child: CopyableText(text,
+                overflow: TextOverflow.ellipsis,
+                isPhoneNumber: isPhoneNumber)));
   }
 
   void _showAssignDialog(BuildContext context, WorkOrder workOrder) {

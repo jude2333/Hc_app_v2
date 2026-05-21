@@ -218,6 +218,9 @@ final managerSelectedDatePod =
 
 final managerSearchPod = StateProvider<String>((_) => '');
 
+/// Status filter for mobile view: 'all', 'new', 'in_progress', 'finished'
+final managerStatusFilterPod = StateProvider<String>((_) => 'all');
+
 final managerSortColumnPod = StateProvider<String>((_) => 'date');
 
 final managerSortAscendingPod = StateProvider<bool>((_) => false);
@@ -229,7 +232,9 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
   final search = ref.watch(managerSearchPod);
   final sortCol = ref.watch(managerSortColumnPod);
   final sortAsc = ref.watch(managerSortAscendingPod);
+  final statusFilter = ref.watch(managerStatusFilterPod);
 
+  // 1. Search filter
   List<WorkOrder> filtered = search.isEmpty
       ? List.from(woState)
       : woState.where((wo) {
@@ -237,14 +242,54 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
           return wo.searchableText.contains(term);
         }).toList();
 
+  // 2. Status filter (used by mobile view chips)
+  if (statusFilter != 'all') {
+    filtered = filtered.where((wo) {
+      final s = wo.status.toLowerCase().trim();
+      switch (statusFilter) {
+        case 'new':
+          return s == 'assigned' || s.startsWith('un');
+        case 'in_progress':
+          return s.contains('step');
+        case 'finished':
+          return s == 'finished';
+        case 'cancelled':
+          return s == 'cancelled' || s == 'na';
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
+  // 3. Sort
   filtered.sort((a, b) {
     int cmp = 0;
     switch (sortCol) {
       case 'name':
-        cmp = a.patientName.compareTo(b.patientName);
+        cmp = a.patientName.toLowerCase().compareTo(b.patientName.toLowerCase());
         break;
       case 'status':
         cmp = a.status.compareTo(b.status);
+        break;
+      case 'server_status':
+        cmp = a.serverStatus.compareTo(b.serverStatus);
+        break;
+      case 'assigned_to':
+        // Empty (Unassigned) always last when ascending
+        final aEmpty = a.assignedTo.isEmpty;
+        final bEmpty = b.assignedTo.isEmpty;
+        if (aEmpty && bEmpty) {
+          cmp = 0;
+        } else if (aEmpty) {
+          cmp = 1;
+        } else if (bEmpty) {
+          cmp = -1;
+        } else {
+          cmp = a.assignedTo.toLowerCase().compareTo(b.assignedTo.toLowerCase());
+        }
+        break;
+      case 'time':
+        cmp = a.visitTime.compareTo(b.visitTime);
         break;
       case 'date':
       default:

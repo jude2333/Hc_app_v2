@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
+import 'copyable_text.dart';
 
 /// Layout options for NameWithBadges widget.
 enum BadgeLayout { row, column }
@@ -58,7 +59,7 @@ class NameWithBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final flags = _getFlags();
-    final nameWidget = Text(
+    final nameWidget = CopyableText(
       workOrder.patientName,
       style: const TextStyle(fontWeight: FontWeight.bold),
       overflow: TextOverflow.ellipsis,

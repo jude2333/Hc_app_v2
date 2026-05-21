@@ -243,69 +243,64 @@ class _MainShellState extends ConsumerState<MainShell> {
         currentPath: _currentPath,
       ),
       endDrawer: NotificationDrawer(isDark: isDark),
-      body: SelectionArea(
-        child: Column(
-          children: [
-            // GPS-off warning banner (only visible for TECHNICIAN when GPS is disabled)
-            _buildGpsBanner(),
+      body: Column(
+        children: [
+          _buildGpsBanner(),
+          Expanded(
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(0),
+                  color: isDark ? Colors.black : Colors.grey.shade50,
+                  child: RefreshIndicator(
+                    color: Colors.orange,
+                    onRefresh: () async {
+                      final dbHandler = ref.read(dbHandlerServiceProvider);
+                      await dbHandler.init();
 
-            // Main content
-            Expanded(
-              child: Stack(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(0),
-                    color: isDark ? Colors.black : Colors.grey.shade50,
-                    child: RefreshIndicator(
-                      color: Colors.orange,
-                      onRefresh: () async {
-                        final dbHandler = ref.read(dbHandlerServiceProvider);
-                        await dbHandler.init();
-
-                        ref
-                            .read(appNotifierProvider.notifier)
-                            .setToday(Util.getTodayString());
-                        await _loadNotificationsSafely();
-                      },
-                      child: widget.child,
-                    ),
+                      ref
+                          .read(appNotifierProvider.notifier)
+                          .setToday(Util.getTodayString());
+                      await _loadNotificationsSafely();
+                    },
+                    child: widget.child,
                   ),
-                  if (isInitializing)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Card(
-                        color: Colors.orange,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              SizedBox(
-                                width: 12,
-                                height: 12,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              ),
-                              SizedBox(width: 8),
-                              Text('Syncing...',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                ),
+                if (isInitializing)
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Card(
+                      color: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            ),
+                            SizedBox(width: 8),
+                            Text('Syncing...',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold)),
+                          ],
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: StatusFooter(isDark: isDark),
     );

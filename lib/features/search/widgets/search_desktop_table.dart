@@ -4,6 +4,7 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
 import 'package:anderson_crm_flutter/features/manager_work_order/widgets/manager_expanded_content.dart';
 
 class SearchDesktopTable extends ConsumerWidget {
@@ -175,7 +176,7 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
                   ),
                   _buildCell('${item['gender'] ?? ''}', flex: 2),
                   _buildCell('${item['age'] ?? ''}', flex: 1),
-                  _buildCell('${item['mobile'] ?? ''}', flex: 3),
+                  _buildCell('${item['mobile'] ?? ''}', flex: 3, isPhoneNumber: true),
                   _buildCell('${item['appointment_date'] ?? ''}', flex: 3),
                   _buildCell('${item['appointment_time'] ?? ''}', flex: 2),
                   Expanded(
@@ -232,7 +233,7 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
     );
   }
 
-  Widget _buildCell(String text, {required int flex}) {
+  Widget _buildCell(String text, {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
       flex: flex,
       child: Container(
@@ -240,7 +241,9 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
           horizontal: AppSpacing.xs,
           vertical: AppSpacing.xs,
         ),
-        child: Text(text, overflow: TextOverflow.ellipsis),
+        child: CopyableText(text,
+            overflow: TextOverflow.ellipsis,
+            isPhoneNumber: isPhoneNumber),
       ),
     );
   }
@@ -287,7 +290,7 @@ class _NameWithBadges extends StatelessWidget {
     return Row(
       children: [
         Flexible(
-          child: Text(
+          child: CopyableText(
             '${item['name'] ?? ''}',
             overflow: TextOverflow.ellipsis,
           ),

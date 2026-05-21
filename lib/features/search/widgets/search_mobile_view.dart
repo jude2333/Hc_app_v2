@@ -4,6 +4,7 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
 import 'package:anderson_crm_flutter/features/manager_work_order/widgets/manager_expanded_content.dart';
 
 class SearchMobileView extends ConsumerWidget {
@@ -136,7 +137,7 @@ class _SearchResultCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            CopyableText(
                               name,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -171,8 +172,9 @@ class _SearchResultCard extends StatelessWidget {
                     children: [
                       Icon(Icons.phone, size: 14, color: AppColors.textHint),
                       SizedBox(width: AppSpacing.xs),
-                      Text(
+                      CopyableText(
                         mobile,
+                        isPhoneNumber: true,
                         style: TextStyle(
                             fontSize: 13, color: AppColors.textSecondary),
                       ),
@@ -180,7 +182,7 @@ class _SearchResultCard extends StatelessWidget {
                       Icon(Icons.calendar_today,
                           size: 14, color: AppColors.textHint),
                       SizedBox(width: AppSpacing.xs),
-                      Text(
+                      CopyableText(
                         '$date $time',
                         style: TextStyle(
                             fontSize: 13, color: AppColors.textSecondary),
@@ -196,7 +198,7 @@ class _SearchResultCard extends StatelessWidget {
                       if (item['assigned_to'] != null) ...[
                         SizedBox(width: AppSpacing.sm),
                         Flexible(
-                          child: Text(
+                          child: CopyableText(
                             '→ ${item['assigned_to']}',
                             style: TextStyle(
                               fontSize: 12,

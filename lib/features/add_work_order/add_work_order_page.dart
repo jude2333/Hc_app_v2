@@ -348,6 +348,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               isEditMode: isEditMode,
               isCopyMode: isCopyMode,
               existingWorkOrder: widget.existingWorkOrder,
+              copyFrom: widget.copyFrom,
               collectionDate: _collectionDate,
               collectionTime: _collectionTime,
               salutation: _salutation,
