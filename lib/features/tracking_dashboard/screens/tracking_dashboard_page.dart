@@ -71,6 +71,7 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   @override
   void dispose() {
     _tabController.dispose();
+    ref.read(dashboardWsProvider.notifier).disconnect();
     super.dispose();
   }
 

@@ -32,6 +32,55 @@ class LocationCacheService {
     }
   }
 
+  /// Add multiple pings to the local cache in a single transaction
+  static Future<void> cachePings(List<Map<String, dynamic>> pings) async {
+    if (pings.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getStringList(_cacheKey) ?? [];
+
+      for (final ping in pings) {
+        cached.add(jsonEncode(ping));
+      }
+
+      // Trim if too large (keep most recent)
+      if (cached.length > _maxCacheSize) {
+        cached.removeRange(0, cached.length - _maxCacheSize);
+      }
+
+      await prefs.setStringList(_cacheKey, cached);
+      debugPrint('[LocationCache] Cached ${pings.length} pings in batch (${cached.length} total)');
+    } catch (e) {
+      debugPrint('[LocationCache] Batch cache error: $e');
+    }
+  }
+
+  /// Get all cached pings WITHOUT clearing the cache.
+  /// Used for safe sync: read first, clear only after successful upload.
+  static Future<List<Map<String, dynamic>>> peekCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getStringList(_cacheKey) ?? [];
+
+      if (cached.isEmpty) return [];
+
+      return cached
+          .map((s) {
+            try {
+              return jsonDecode(s) as Map<String, dynamic>;
+            } catch (_) {
+              return null;
+            }
+          })
+          .where((p) => p != null)
+          .cast<Map<String, dynamic>>()
+          .toList();
+    } catch (e) {
+      debugPrint('[LocationCache] Peek error: $e');
+      return [];
+    }
+  }
+
   /// Get all cached pings and clear the cache
   static Future<List<Map<String, dynamic>>> drainCache() async {
     try {

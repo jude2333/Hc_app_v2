@@ -7,13 +7,14 @@ import 'location_service.dart';
 
 /// WebSocket service for real-time location tracking communication.
 ///
-/// Connects to wss://server/tracking?token=JWT&role=technician|manager
+/// Connects to wss://server/tracking using WebSocket subprotocols for auth.
+/// Subprotocols: ['auth', <JWT>, <role>] where role is 'technician' or 'manager'.
 /// Handles auto-reconnection with exponential backoff.
 class TrackingWsService {
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
-  
+
   bool _isConnected = false;
   bool _isDisposed = false;
   bool _shouldReconnect = true;
@@ -42,13 +43,17 @@ class TrackingWsService {
       final baseUrl = Settings.nodeUrl
           .replaceFirst('https://', 'wss://')
           .replaceFirst('http://', 'ws://');
-      
-      final wsUrl = '$baseUrl/tracking?token=$token&role=$role';
-      
-      debugPrint('[TrackingWS] Connecting as $role to $baseUrl/tracking...');
 
-      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
-      
+      final wsUrl = '$baseUrl/tracking';
+
+      debugPrint(
+          '[TrackingWS] Connecting as $role to $wsUrl with subprotocols...');
+
+      _channel = WebSocketChannel.connect(
+        Uri.parse(wsUrl),
+        protocols: ['auth', token, role],
+      );
+
       // Wait for the connection to be established
       await _channel!.ready;
 
@@ -88,7 +93,8 @@ class TrackingWsService {
   }
 
   /// Send a location ping to the server
-  void sendLocation(LocationData location, {int? battery, String? currentWorkOrder}) {
+  void sendLocation(LocationData location,
+      {int? battery, String? currentWorkOrder}) {
     if (!_isConnected || _channel == null || _isDisposed) return;
 
     final message = {
@@ -126,25 +132,38 @@ class TrackingWsService {
     }
   }
 
-  /// Schedule reconnection with exponential backoff
+  /// Schedule reconnection with exponential backoff.
+  /// Stops after [_maxReconnectAttempts] to avoid infinite loops (e.g. expired JWT).
+  static const int _maxReconnectAttempts = 10;
+
   void _scheduleReconnect() {
     if (!_shouldReconnect) return;
 
     _reconnectTimer?.cancel();
     _reconnectAttempts++;
 
-    // Exponential backoff: 1s, 2s, 4s, 8s, 16s, max 30s
+    // Give up after max attempts
+    if (_reconnectAttempts > _maxReconnectAttempts) {
+      debugPrint(
+          '[TrackingWS] Max reconnect attempts ($_maxReconnectAttempts) exhausted — giving up');
+      _shouldReconnect = false;
+      if (!_isDisposed && !_messageController.isClosed) {
+        _messageController.add({'type': '_reconnect_exhausted'});
+      }
+      return;
+    }
+
+    // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
     final delay = Duration(
-      seconds: (_reconnectAttempts < 5)
-          ? (1 << _reconnectAttempts)
-          : 30,
+      seconds: (_reconnectAttempts < 5) ? (1 << _reconnectAttempts) : 30,
     );
 
-    debugPrint('[TrackingWS] Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts)...');
+    debugPrint(
+        '[TrackingWS] Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts/$_maxReconnectAttempts)...');
 
     _reconnectTimer = Timer(delay, () {
       if (_isDisposed) return;
-      // The caller needs to reconnect with token+role — 
+      // The caller needs to reconnect with token+role —
       // we can't store them. The provider handles this.
       _messageController.add({'type': '_reconnect_needed'});
     });
@@ -156,11 +175,11 @@ class TrackingWsService {
     _reconnectTimer?.cancel();
     _heartbeatTimer?.cancel();
     _subscription?.cancel();
-    
+
     try {
       await _channel?.sink.close();
     } catch (_) {}
-    
+
     _channel = null;
     _isConnected = false;
     debugPrint('[TrackingWS] Disconnected');

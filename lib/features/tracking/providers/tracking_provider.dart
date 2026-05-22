@@ -52,6 +52,11 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   String? _jwtToken;
   String? _currentWorkOrderDocId;
 
+  // H4 Performance Optimization: Batching offline writes
+  final _inMemoryCache = <Map<String, dynamic>>[];
+  Timer? _flushTimer;
+  int _persistedCacheSize = 0;
+
   TrackingNotifier(this._ref)
       : _locationService = LocationService(),
         _wsService = TrackingWsService(),
@@ -80,14 +85,43 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
 
     debugPrint('[Tracking] Initializing tracking for technician $empId');
 
+    // Load initial cached pings count
+    _persistedCacheSize = await LocationCacheService.getCacheSize();
+    state = state.copyWith(cachedPings: _persistedCacheSize);
+
     // Listen for WebSocket messages
     _wsSub = _wsService.messageStream.listen(_handleWsMessage);
+
+    // Start flush timer for in-memory offline pings
+    _startFlushTimer();
 
     // Connect WebSocket
     await _connectWebSocket();
 
     // Start GPS tracking
     await startTracking();
+  }
+
+  void _startFlushTimer() {
+    _flushTimer?.cancel();
+    _flushTimer = Timer.periodic(const Duration(seconds: 60), (_) => _flushInMemoryCache());
+  }
+
+  void _stopFlushTimer() {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+  }
+
+  Future<void> _flushInMemoryCache() async {
+    if (_inMemoryCache.isEmpty) return;
+
+    final pingsToCache = List<Map<String, dynamic>>.from(_inMemoryCache);
+    _inMemoryCache.clear();
+
+    await LocationCacheService.cachePings(pingsToCache);
+    
+    _persistedCacheSize = await LocationCacheService.getCacheSize();
+    state = state.copyWith(cachedPings: _persistedCacheSize);
   }
 
   /// Connect to the tracking WebSocket server
@@ -97,6 +131,9 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     try {
       await _wsService.connect(token: _jwtToken!, role: 'technician');
       state = state.copyWith(isConnected: true);
+
+      // Flush any pending in-memory cache to disk before syncing
+      await _flushInMemoryCache();
 
       // Sync any cached pings
       await _syncCachedPings();
@@ -157,14 +194,19 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
         currentWorkOrder: _currentWorkOrderDocId,
       );
     } else {
-      // Cache for later
-      LocationCacheService.cachePing({
+      // Cache in-memory first to avoid main-thread serialization bottlenecks on every 10s ping
+      _inMemoryCache.add({
         ...location.toJson(),
         'current_work_order': _currentWorkOrderDocId,
       });
-      LocationCacheService.getCacheSize().then((size) {
-        state = state.copyWith(cachedPings: size);
-      });
+
+      // Update UI state synchronously (persisted count is known + current in-memory count)
+      state = state.copyWith(cachedPings: _persistedCacheSize + _inMemoryCache.length);
+
+      // Flush if we hit bulk size of 5
+      if (_inMemoryCache.length >= 5) {
+        _flushInMemoryCache();
+      }
     }
   }
 
@@ -175,7 +217,7 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     switch (type) {
       case 'connected':
         debugPrint('[Tracking] Server acknowledged connection');
-        state = state.copyWith(isConnected: true);
+        state = state.copyWith(isConnected: true, error: null);
         break;
       case 'ack':
         // Location ping acknowledged — nothing to do
@@ -185,14 +227,23 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
         debugPrint('[Tracking] Reconnecting WebSocket...');
         _connectWebSocket();
         break;
+      case '_reconnect_exhausted':
+        // All reconnect attempts failed — likely expired JWT
+        debugPrint('[Tracking] Reconnect exhausted — connection lost');
+        state = state.copyWith(
+          isConnected: false,
+          error: 'Connection lost — please re-login',
+        );
+        break;
       default:
         break;
     }
   }
 
-  /// Sync cached pings to server via REST bulk endpoint
+  /// Sync cached pings to server via REST bulk endpoint.
+  /// Uses peek-then-clear to avoid losing pings if the upload fails.
   Future<void> _syncCachedPings() async {
-    final pings = await LocationCacheService.drainCache();
+    final pings = await LocationCacheService.peekCache();
     if (pings.isEmpty) return;
 
     debugPrint('[Tracking] Syncing ${pings.length} cached pings...');
@@ -206,23 +257,28 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
           headers: {'Authorization': 'Bearer $_jwtToken'},
         ),
       );
+      // Only clear cache after successful upload
+      await LocationCacheService.clearCache();
+      _persistedCacheSize = 0;
       state = state.copyWith(cachedPings: 0);
       debugPrint('[Tracking] Cached pings synced successfully');
     } catch (e) {
-      debugPrint('[Tracking] Bulk sync failed: $e');
-      // Re-cache the pings
-      for (final ping in pings) {
-        await LocationCacheService.cachePing(ping);
-      }
+      debugPrint('[Tracking] Bulk sync failed (cache preserved): $e');
+      // Cache is NOT cleared — pings remain for next retry
     }
   }
 
   /// Full cleanup — called on logout
   Future<void> shutdown() async {
+    _stopFlushTimer();
     await stopTracking();
     await _wsService.disconnect();
     await _wsSub?.cancel();
     await _locationService.dispose();
+
+    // Flush any remaining in-memory pings to disk before shutdown/logout
+    await _flushInMemoryCache();
+
     _wsService.dispose();
   }
 }

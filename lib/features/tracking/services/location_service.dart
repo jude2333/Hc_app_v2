@@ -92,11 +92,11 @@ class LocationService {
   }
 
   /// Start streaming GPS positions
-  /// [intervalMs] - minimum time between updates (default 10s for live tracking)
-  /// [distanceFilter] - minimum distance change in meters (default 5m)
+  /// [intervalMs] - minimum time between updates (default 3s for real-time tracking)
+  /// [distanceFilter] - minimum distance change in meters (default 2m)
   Future<void> startTracking({
-    int intervalMs = 10000,
-    double distanceFilter = 5.0,
+    int intervalMs = 3000,
+    double distanceFilter = 2.0,
   }) async {
     if (_isTracking) return;
 
@@ -228,6 +228,7 @@ class LocationService {
     await stopTracking();
     _positionController?.close();
     _positionController = null;
+    _isTracking = false; // Ensure flag is reset — singleton survives across sessions
   }
 }
 

@@ -16,6 +16,11 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   bool _shouldReconnect = true;
+  static const int _maxReconnectAttempts = 10;
+
+  // Throttling for UI updates
+  final _pendingTechUpdates = <int, TechnicianStatus>{};
+  Timer? _throttleTimer;
 
   TrackingDashboardWsNotifier() : super(const DashboardWsState());
 
@@ -32,10 +37,13 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
           .replaceFirst('https://', 'wss://')
           .replaceFirst('http://', 'ws://');
 
-      final wsUrl = '$baseUrl/tracking?token=$token&role=manager';
-      debugPrint('[DashboardWS] Connecting as manager...');
+      final wsUrl = '$baseUrl/tracking';
+      debugPrint('[DashboardWS] Connecting as manager with subprotocols...');
 
-      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      _channel = WebSocketChannel.connect(
+        Uri.parse(wsUrl),
+        protocols: ['auth', token, 'manager'],
+      );
       await _channel!.ready;
 
       state = state.copyWith(isConnected: true);
@@ -88,7 +96,7 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
       case 'tech_location':
         // Live location update from a technician
         final techId = message['technician_id'] as int;
-        final existing = state.technicians[techId];
+        final existing = _pendingTechUpdates[techId] ?? state.technicians[techId];
         
         final updated = TechnicianStatus(
           technicianId: techId,
@@ -108,16 +116,15 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
           currentWorkOrder: message['current_work_order'],
         );
 
-        final newTechs = Map<int, TechnicianStatus>.from(state.technicians);
-        newTechs[techId] = updated;
-        state = state.copyWith(technicians: newTechs);
+        _pendingTechUpdates[techId] = updated;
+        _scheduleThrottleTimer();
         break;
 
       case 'tech_status':
         // Online/offline status change
         final techId = message['technician_id'] as int;
         final status = message['status'] as String?;
-        final existing = state.technicians[techId];
+        final existing = _pendingTechUpdates[techId] ?? state.technicians[techId];
 
         final updated = TechnicianStatus(
           technicianId: techId,
@@ -135,9 +142,9 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
           todayPings: existing?.todayPings ?? 0,
           currentWorkOrder: existing?.currentWorkOrder,
         );
-        final newTechs2 = Map<int, TechnicianStatus>.from(state.technicians);
-        newTechs2[techId] = updated;
-        state = state.copyWith(technicians: newTechs2);
+
+        _pendingTechUpdates[techId] = updated;
+        _scheduleThrottleTimer();
         break;
 
       case 'alert':
@@ -159,6 +166,23 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
     _eventController.add(message);
   }
 
+  void _scheduleThrottleTimer() {
+    if (_throttleTimer != null && _throttleTimer!.isActive) {
+      return;
+    }
+    _throttleTimer = Timer(const Duration(milliseconds: 2000), _flushPendingUpdates);
+  }
+
+  void _flushPendingUpdates() {
+    if (_pendingTechUpdates.isEmpty) return;
+
+    final newTechs = Map<int, TechnicianStatus>.from(state.technicians);
+    newTechs.addAll(_pendingTechUpdates);
+    
+    state = state.copyWith(technicians: newTechs);
+    _pendingTechUpdates.clear();
+  }
+
   void _handleDisconnect() {
     state = state.copyWith(isConnected: false);
     _subscription?.cancel();
@@ -168,10 +192,24 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
   }
 
   void _scheduleReconnect() {
+    if (!_shouldReconnect) return;
+
     _reconnectTimer?.cancel();
     _reconnectAttempts++;
+
+    // Give up after max attempts
+    if (_reconnectAttempts > _maxReconnectAttempts) {
+      debugPrint(
+          '[DashboardWS] Max reconnect attempts ($_maxReconnectAttempts) exhausted — giving up');
+      _shouldReconnect = false;
+      state = state.copyWith(isConnected: false);
+      _eventController.add({'type': '_reconnect_exhausted'});
+      return;
+    }
+
     final delay = Duration(seconds: _reconnectAttempts < 5 ? (1 << _reconnectAttempts) : 30);
-    debugPrint('[DashboardWS] Reconnecting in ${delay.inSeconds}s...');
+    debugPrint(
+        '[DashboardWS] Reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempts/$_maxReconnectAttempts)...');
     _reconnectTimer = Timer(delay, () {
       if (_token != null) connect(_token!);
     });
@@ -180,9 +218,12 @@ class TrackingDashboardWsNotifier extends StateNotifier<DashboardWsState> {
   Future<void> disconnect() async {
     _shouldReconnect = false;
     _reconnectTimer?.cancel();
+    _throttleTimer?.cancel();
     _subscription?.cancel();
     try { await _channel?.sink.close(); } catch (_) {}
     _channel = null;
+    _pendingTechUpdates.clear();
+    _reconnectAttempts = 0;
     state = state.copyWith(isConnected: false);
   }
 
