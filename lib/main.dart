@@ -13,9 +13,9 @@ void main() async {
 
   // Disable browser's native right-click menu on web so Flutter's
   // popup menus (copy/call/sms) aren't blocked by Chrome's overlay.
-  if (kIsWeb) {
-    BrowserContextMenu.disableContextMenu();
-  }
+  // if (kIsWeb) {
+  //   BrowserContextMenu.disableContextMenu();
+  // }
   try {
     // Initialize Hive
     // await Hive.initFlutter();

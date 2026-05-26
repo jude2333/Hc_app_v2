@@ -301,6 +301,11 @@ class TestItem {
   final double? minCost;
   final double? cghsPrice;
 
+  // Per-test discount fields
+  final double? discountValue;    // raw input (e.g. 10 means ₹10 or 10%)
+  final bool discountIsFlat;      // true = flat ₹, false = percentage
+  final double? discountedPrice;  // computed price after discount
+
   TestItem({
     this.deptId,
     this.deptName,
@@ -310,6 +315,9 @@ class TestItem {
     this.baseCost,
     this.minCost,
     this.cghsPrice,
+    this.discountValue,
+    this.discountIsFlat = false,
+    this.discountedPrice,
   });
 
   factory TestItem.fromJson(Map<String, dynamic> json) {
@@ -328,6 +336,13 @@ class TestItem {
       cghsPrice: json['cghs_price'] != null
           ? double.tryParse(json['cghs_price'].toString())
           : null,
+      discountValue: json['discount_value'] != null
+          ? double.tryParse(json['discount_value'].toString())
+          : null,
+      discountIsFlat: json['discount_type'] == 'flat',
+      discountedPrice: json['discounted_price'] != null
+          ? double.tryParse(json['discounted_price'].toString())
+          : null,
     );
   }
 
@@ -341,6 +356,11 @@ class TestItem {
       'base_cost': baseCost?.toString() ?? '0',
       'min_cost': minCost?.toString() ?? '0',
       'cghs_price': cghsPrice?.toString() ?? '0',
+      if (discountValue != null && discountedPrice != null) ...{
+        'discount_value': discountValue,
+        'discount_type': discountIsFlat ? 'flat' : 'percent',
+        'discounted_price': discountedPrice,
+      },
     };
   }
 }

@@ -87,6 +87,87 @@ class HCProcessNotifier extends StateNotifier<HCProcessState> {
     state = state.copyWith(totalAmount: amount);
   }
 
+  /// Apply a manual discount to a specific test at [index].
+  /// Computes discounted_price, updates the test map, and recalculates totals.
+  void applyTestDiscount(int index, double value, bool isFlat) {
+    if (index < 0 || index >= state.selectedTests.length) return;
+
+    final tests = state.selectedTests
+        .map((t) => Map<String, dynamic>.from(t))
+        .toList();
+    final test = tests[index];
+
+    // Determine active price (CGHS or base)
+    final baseCost =
+        double.tryParse(test['base_cost']?.toString() ?? '0') ?? 0;
+    final cghsCost =
+        double.tryParse(test['cghs_price']?.toString() ?? '0') ?? 0;
+    final activePrice =
+        (state.cghsPrice && cghsCost > 0) ? cghsCost : baseCost;
+
+    // Compute discounted price
+    double discountedPrice;
+    if (isFlat) {
+      discountedPrice = (activePrice - value).clamp(0, activePrice);
+    } else {
+      discountedPrice = activePrice - (activePrice * value / 100);
+      discountedPrice = discountedPrice.clamp(0, activePrice);
+    }
+
+    test['discount_value'] = value;
+    test['discount_type'] = isFlat ? 'flat' : 'percent';
+    test['discounted_price'] = discountedPrice;
+    tests[index] = test;
+
+    final newTotal = _recomputeTestTotal(tests);
+    state = state.copyWith(
+      selectedTests: tests,
+      totalAmount: newTotal,
+      billAmount: newTotal,
+    );
+  }
+
+  /// Clear the discount on a specific test at [index].
+  void clearTestDiscount(int index) {
+    if (index < 0 || index >= state.selectedTests.length) return;
+
+    final tests = state.selectedTests
+        .map((t) => Map<String, dynamic>.from(t))
+        .toList();
+    final test = tests[index];
+
+    test.remove('discount_value');
+    test.remove('discount_type');
+    test.remove('discounted_price');
+    tests[index] = test;
+
+    final newTotal = _recomputeTestTotal(tests);
+    state = state.copyWith(
+      selectedTests: tests,
+      totalAmount: newTotal,
+      billAmount: newTotal,
+    );
+  }
+
+  /// Recompute total from all tests, using discounted_price where available.
+  double _recomputeTestTotal(List<Map<String, dynamic>> tests) {
+    double total = 0;
+    for (final t in tests) {
+      final dp = double.tryParse(t['discounted_price']?.toString() ?? '');
+      if (dp != null) {
+        total += dp;
+      } else {
+        final bc =
+            double.tryParse(t['base_cost']?.toString() ?? '0') ?? 0;
+        final cc =
+            double.tryParse(t['cghs_price']?.toString() ?? '0') ?? 0;
+        total += (state.cghsPrice && cc > 0) ? cc : bc;
+      }
+    }
+    return total;
+  }
+
+
   void setCghsPrice(bool cghs) {
     state = state.copyWith(cghsPrice: cghs);
   }

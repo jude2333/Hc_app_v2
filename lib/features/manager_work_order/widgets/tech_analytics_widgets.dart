@@ -793,3 +793,264 @@ class _HeaderText extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Skeleton Loading Widgets (Natively built, no extra dependencies)
+// ---------------------------------------------------------------------------
+
+class SkeletonBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final BorderRadius? borderRadius;
+  final EdgeInsetsGeometry? margin;
+
+  const SkeletonBox({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius,
+    this.margin,
+  });
+
+  @override
+  State<SkeletonBox> createState() => _SkeletonBoxState();
+}
+
+class _SkeletonBoxState extends State<SkeletonBox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          margin: widget.margin,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE2E8F0).withOpacity(_animation.value), // Beautiful slate-200 color
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(6),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class AnalyticsAggregateCardSkeleton extends StatelessWidget {
+  const AnalyticsAggregateCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header shimmer
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFEDF2F7),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(7)),
+            ),
+            child: Row(
+              children: const [
+                SkeletonBox(width: 18, height: 18),
+                SizedBox(width: 8),
+                SkeletonBox(width: 180, height: 14),
+              ],
+            ),
+          ),
+          // Stats Row Shimmer
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            child: Row(
+              children: List.generate(8, (index) => Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.border.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    SkeletonBox(width: 50, height: 10),
+                    SizedBox(height: 4),
+                    SkeletonBox(width: 40, height: 14),
+                  ],
+                ),
+              )),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TechAnalyticsCardSkeleton extends StatelessWidget {
+  const TechAnalyticsCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          // Avatar
+          const SkeletonBox(
+            width: 36,
+            height: 36,
+            borderRadius: BorderRadius.all(Radius.circular(18)),
+          ),
+          const SizedBox(width: 12),
+          // Name + orders
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                SkeletonBox(width: 120, height: 14),
+                SizedBox(height: 6),
+                SkeletonBox(width: 160, height: 12),
+              ],
+            ),
+          ),
+          // Revenue
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              SkeletonBox(width: 70, height: 14),
+              SizedBox(height: 4),
+              SkeletonBox(width: 50, height: 10),
+            ],
+          ),
+          const SizedBox(width: 12),
+          const SkeletonBox(width: 16, height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+class TechAnalyticsDesktopTableSkeleton extends StatelessWidget {
+  const TechAnalyticsDesktopTableSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: AppSizes.cardElevation,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+      child: Column(
+        children: [
+          // Header row (matches original layout)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Row(
+              children: const [
+                Expanded(flex: 3, child: _HeaderText('Technician')),
+                Expanded(flex: 1, child: _HeaderText('Orders', align: TextAlign.center)),
+                Expanded(flex: 1, child: _HeaderText('Done', align: TextAlign.center)),
+                Expanded(flex: 1, child: _HeaderText('Cancelled', align: TextAlign.center)),
+                Expanded(flex: 2, child: _HeaderText('Received', align: TextAlign.right)),
+                Expanded(flex: 2, child: _HeaderText('HC Chrg', align: TextAlign.right)),
+                Expanded(flex: 1, child: _HeaderText('Cash', align: TextAlign.right)),
+                Expanded(flex: 1, child: _HeaderText('GPay', align: TextAlign.right)),
+                Expanded(flex: 1, child: _HeaderText('Tests', align: TextAlign.center)),
+                SizedBox(width: 32),
+              ],
+            ),
+          ),
+          // Skeleton rows
+          Expanded(
+            child: ListView.builder(
+              itemCount: 8,
+              itemBuilder: (ctx, index) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: index % 2 == 0 ? AppColors.tableRowEven : AppColors.tableRowOdd,
+                    border: Border(bottom: BorderSide(color: AppColors.divider)),
+                  ),
+                  child: Row(
+                    children: [
+                      // Tech Info
+                      Expanded(
+                        flex: 3,
+                        child: Row(
+                          children: const [
+                            SkeletonBox(width: 24, height: 24, borderRadius: BorderRadius.all(Radius.circular(12))),
+                            SizedBox(width: 8),
+                            SkeletonBox(width: 100, height: 12),
+                          ],
+                        ),
+                      ),
+                      // Orders
+                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 20, height: 12))),
+                      // Done
+                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 20, height: 12))),
+                      // Cancelled
+                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 16, height: 12))),
+                      // Received
+                      const Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 50, height: 12))),
+                      // HC Chrg
+                      const Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 45, height: 12))),
+                      // Cash
+                      const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 35, height: 12))),
+                      // GPay
+                      const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 35, height: 12))),
+                      // Tests
+                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 20, height: 12))),
+                      const SizedBox(width: 32, child: Center(child: SkeletonBox(width: 16, height: 16))),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

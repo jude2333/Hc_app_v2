@@ -34,6 +34,11 @@ class HCProcessController {
   Future<void> loadWorkOrder() async {
     _notifier.setLoading(true);
 
+    // Clear stale test selection from previous work orders
+    // (SharedPreferences key is global, not scoped per work order)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('selected_tests');
+
     try {
       final powerSync = _ref.read(powerSyncServiceProvider);
       final rowMap = await powerSync.getWorkOrderById(workOrderId);
@@ -437,8 +442,17 @@ class HCProcessController {
     String discountLabel = _state.isDiscountFlat
         ? 'Rs. ${_state.discount.toStringAsFixed(0)} flat discount'
         : '${_state.discount}% discount';
+
+    // Count tests with individual discounts
+    final testsWithDiscount = _state.selectedTests
+        .where((t) => t['discounted_price'] != null)
+        .length;
+    String testDiscountNote = testsWithDiscount > 0
+        ? ' Individual discount on $testsWithDiscount test(s).'
+        : '';
+
     String step3Summary =
-        'Rs. ${_state.billAmount}. Received Rs. ${_state.amountReceived} with $discountLabel.';
+        'Rs. ${_state.billAmount}. Received Rs. ${_state.amountReceived} with $discountLabel.$testDiscountNote';
 
     var processDoc = _state.processDoc!.copyWith(
       discount: _state.discount,

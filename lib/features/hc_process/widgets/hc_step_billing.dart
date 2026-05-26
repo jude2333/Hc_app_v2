@@ -16,6 +16,10 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
   late TextEditingController _discountController;
   late TextEditingController _hcChargesController;
   late TextEditingController _dispChargesController;
+  late TextEditingController _testDiscountController;
+
+  int? _expandedTestIndex;
+  bool _testDiscountIsFlat = false;
 
   @override
   void initState() {
@@ -23,6 +27,7 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     _discountController = TextEditingController(text: '0');
     _hcChargesController = TextEditingController(text: '50');
     _dispChargesController = TextEditingController(text: '30');
+    _testDiscountController = TextEditingController();
   }
 
   @override
@@ -30,6 +35,7 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     _discountController.dispose();
     _hcChargesController.dispose();
     _dispChargesController.dispose();
+    _testDiscountController.dispose();
     super.dispose();
   }
 
@@ -117,7 +123,8 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                     padding: EdgeInsets.only(top: 6),
                     child: Text(
                       'CGHS Credit — Only HC & Disposable Charges apply',
-                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                          color: Colors.orange, fontWeight: FontWeight.w600),
                     ),
                   )
                 else if (state.creditClient)
@@ -125,7 +132,8 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                     padding: EdgeInsets.only(top: 6),
                     child: Text(
                       'Credit Client — No Payment Required',
-                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                          color: Colors.orange, fontWeight: FontWeight.w600),
                     ),
                   ),
               ],
@@ -194,6 +202,12 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           ),
         ),
         const SizedBox(height: 16),
+
+        // ── Individual Test Discount Section ──
+        if (state.selectedTests.isNotEmpty) ...[
+          _buildTestDiscountList(state, areChargesEnabled),
+          const SizedBox(height: 12),
+        ],
 
         // ── Discount Section with Mode Toggle ──
         Container(
@@ -318,7 +332,8 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
         // ── Detailed Summary Card ──
         Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -326,7 +341,8 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.receipt_long, size: 18, color: Colors.blue.shade700),
+                    Icon(Icons.receipt_long,
+                        size: 18, color: Colors.blue.shade700),
                     const SizedBox(width: 6),
                     Text(
                       'Bill Breakdown',
@@ -340,18 +356,33 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                 ),
                 const SizedBox(height: 10),
 
-                // Test amount
+                // Test amount (sum of original prices before individual discounts)
                 _breakdownRow(
                   'Test Amount',
-                  '₹${state.billAmount.toStringAsFixed(0)}',
+                  '₹${_originalTestTotal(state).toStringAsFixed(0)}',
                 ),
 
-                // Discount
+                // Individual test discounts
+                if (_totalTestDiscount(state) > 0)
+                  _breakdownRow(
+                    'Test Discounts',
+                    '- ₹${_totalTestDiscount(state).toStringAsFixed(0)}',
+                    valueColor: Colors.purple.shade600,
+                  ),
+
+                // Subtotal after test discounts (= billAmount)
+                if (_totalTestDiscount(state) > 0)
+                  _breakdownRow(
+                    'Subtotal',
+                    '₹${state.billAmount.toStringAsFixed(0)}',
+                  ),
+
+                // Overall discount
                 if (state.discount > 0) ...[
                   _breakdownRow(
                     state.isDiscountFlat
-                        ? 'Discount (₹${state.discount.toStringAsFixed(0)} off)'
-                        : 'Discount (${state.discount.toStringAsFixed(0)}% off)',
+                        ? 'Overall Discount (₹${state.discount.toStringAsFixed(0)} off)'
+                        : 'Overall Discount (${state.discount.toStringAsFixed(0)}% off)',
                     '- ₹${(state.billAmount - state.amountAfterDiscount).toStringAsFixed(0)}',
                     valueColor: Colors.red.shade600,
                   ),
@@ -475,5 +506,380 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
         ],
       ),
     );
+  }
+
+  // ── Individual Test Discount Helpers ──
+
+  /// Build the expandable test list with per-test discount controls
+  Widget _buildTestDiscountList(HCProcessState state, bool enabled) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.science_outlined,
+                  size: 16, color: Colors.purple.shade600),
+              const SizedBox(width: 6),
+              Text(
+                'Test-wise Discount',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.purple.shade700,
+                ),
+              ),
+              const Spacer(),
+              if (_totalTestDiscount(state) > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.purple.shade200),
+                  ),
+                  child: Text(
+                    '-₹${_totalTestDiscount(state).toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.purple.shade700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...state.selectedTests.asMap().entries.map((entry) {
+            final index = entry.key;
+            final test = entry.value;
+            final isExpanded = _expandedTestIndex == index;
+
+            // Prices
+            final baseCost =
+                double.tryParse(test['base_cost']?.toString() ?? '0') ?? 0;
+            final cghsCost =
+                double.tryParse(test['cghs_price']?.toString() ?? '0') ?? 0;
+            final activePrice =
+                (state.cghsPrice && cghsCost > 0) ? cghsCost : baseCost;
+
+            // Discount info
+            final discountedPrice =
+                double.tryParse(test['discounted_price']?.toString() ?? '');
+            final discountValue =
+                double.tryParse(test['discount_value']?.toString() ?? '');
+            final discountType = test['discount_type']?.toString();
+            final hasDiscount =
+                discountedPrice != null && discountValue != null;
+
+            return Column(
+              children: [
+                InkWell(
+                  onTap: enabled
+                      ? () {
+                          setState(() {
+                            if (isExpanded) {
+                              _expandedTestIndex = null;
+                            } else {
+                              _expandedTestIndex = index;
+                              _testDiscountIsFlat = discountType == 'flat';
+                              _testDiscountController.text =
+                                  discountValue?.toStringAsFixed(0) ?? '';
+                            }
+                          });
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          size: 18,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            test['invest_name'] ?? 'Unknown',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (hasDiscount) ...[
+                          // Discount badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              discountType == 'flat'
+                                  ? '-₹${discountValue.toStringAsFixed(0)}'
+                                  : '-${discountValue.toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.purple.shade700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          // Strikethrough original
+                          Text(
+                            '₹${activePrice.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          // Discounted price
+                          Text(
+                            '₹${discountedPrice.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.purple.shade700,
+                            ),
+                          ),
+                        ] else
+                          Text(
+                            '₹${activePrice.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Expanded discount input
+                if (isExpanded)
+                  _buildTestDiscountInput(index, activePrice, enabled),
+                if (index < state.selectedTests.length - 1)
+                  Divider(height: 1, color: Colors.grey.shade200),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// Inline discount input for an expanded test
+  Widget _buildTestDiscountInput(int index, double activePrice, bool enabled) {
+    final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
+    final controller =
+        ref.read(hcProcessControllerProvider(widget.workOrderId));
+
+    return Container(
+      margin: const EdgeInsets.only(left: 24, right: 4, bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.purple.shade100),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Mode toggle
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildModeButton(
+                      label: '%',
+                      tooltip: 'Percentage',
+                      isSelected: !_testDiscountIsFlat,
+                      enabled: enabled,
+                      onTap: () {
+                        setState(() {
+                          _testDiscountIsFlat = false;
+                          _testDiscountController.clear();
+                        });
+                      },
+                    ),
+                    _buildModeButton(
+                      label: '₹',
+                      tooltip: 'Flat Amount',
+                      isSelected: _testDiscountIsFlat,
+                      enabled: enabled,
+                      onTap: () {
+                        setState(() {
+                          _testDiscountIsFlat = true;
+                          _testDiscountController.clear();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Input field
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    controller: _testDiscountController,
+                    enabled: enabled,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      hintText: _testDiscountIsFlat ? 'eg. 100' : 'eg. 10',
+                      suffixText: _testDiscountIsFlat ? '₹' : '%',
+                      suffixStyle: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Colors.purple.shade600,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      isDense: true,
+                    ),
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Apply button
+              SizedBox(
+                height: 36,
+                child: ElevatedButton(
+                  onPressed: enabled
+                      ? () {
+                          final val =
+                              double.tryParse(_testDiscountController.text) ??
+                                  0;
+                          if (val <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Enter a positive discount value'),
+                                backgroundColor: Colors.red.shade800,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // Validate
+                          if (_testDiscountIsFlat && val > activePrice) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Discount cannot exceed ₹${activePrice.toStringAsFixed(0)}'),
+                                backgroundColor: Colors.red.shade800,
+                              ),
+                            );
+                            return;
+                          }
+                          if (!_testDiscountIsFlat && val > 100) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Percentage cannot exceed 100%'),
+                                backgroundColor: Colors.red.shade800,
+                              ),
+                            );
+                            return;
+                          }
+
+                          notifier.applyTestDiscount(
+                              index, val, _testDiscountIsFlat);
+                          controller.calculateDiscount();
+                          setState(() => _expandedTestIndex = null);
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: const Text('Apply', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Text(
+                _testDiscountIsFlat
+                    ? 'Max: ₹${activePrice.toStringAsFixed(0)}'
+                    : 'Max: 100%',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+              const Spacer(),
+              // Clear button (if discount exists)
+              TextButton(
+                onPressed: enabled
+                    ? () {
+                        notifier.clearTestDiscount(index);
+                        controller.calculateDiscount();
+                        setState(() {
+                          _expandedTestIndex = null;
+                          _testDiscountController.clear();
+                        });
+                      }
+                    : null,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Clear',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: enabled ? Colors.red.shade400 : Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sum of original prices (ignoring individual discounts)
+  double _originalTestTotal(HCProcessState state) {
+    double total = 0;
+    for (final test in state.selectedTests) {
+      final baseCost =
+          double.tryParse(test['base_cost']?.toString() ?? '0') ?? 0;
+      final cghsCost =
+          double.tryParse(test['cghs_price']?.toString() ?? '0') ?? 0;
+      total += (state.cghsPrice && cghsCost > 0) ? cghsCost : baseCost;
+    }
+    return total;
+  }
+
+  /// Sum of all individual test discount amounts
+  double _totalTestDiscount(HCProcessState state) {
+    return _originalTestTotal(state) - state.billAmount;
   }
 }

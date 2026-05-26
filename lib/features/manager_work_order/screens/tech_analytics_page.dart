@@ -132,17 +132,29 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
 
   Widget _buildBody(TechAnalyticsState state, bool isMobile) {
     if (state.isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      if (isMobile) {
+        return ListView(
+          physics: const NeverScrollableScrollPhysics(), // Disable scrolling during load
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(height: 12),
-            Text('Loading analytics...',
-                style: TextStyle(color: AppColors.textSecondary)),
+            const AnalyticsAggregateCardSkeleton(),
+            const SizedBox(height: 12),
+            ...List.generate(5, (index) => const TechAnalyticsCardSkeleton()),
           ],
-        ),
-      );
+        );
+      } else {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: Column(
+            children: const [
+              AnalyticsAggregateCardSkeleton(),
+              SizedBox(height: 12),
+              Expanded(
+                child: TechAnalyticsDesktopTableSkeleton(),
+              ),
+            ],
+          ),
+        );
+      }
     }
 
     if (state.errorMessage != null) {

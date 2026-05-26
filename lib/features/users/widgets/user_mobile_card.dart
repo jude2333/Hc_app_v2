@@ -393,3 +393,177 @@ class _UserMobileCardState extends ConsumerState<UserMobileCard>
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Mobile Card Skeleton Loader (natively animated)
+// ---------------------------------------------------------------------------
+
+class UserMobileCardSkeleton extends StatefulWidget {
+  const UserMobileCardSkeleton({super.key});
+
+  @override
+  State<UserMobileCardSkeleton> createState() => _UserMobileCardSkeletonState();
+}
+
+class _UserMobileCardSkeletonState extends State<UserMobileCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.35, end: 0.8).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final opacity = _animation.value;
+
+        Widget skeletonBox({required double width, required double height, bool isCircle = false, BorderRadius? borderRadius}) {
+          return Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0).withOpacity(opacity), // Slate 200 pulsing
+              shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+              borderRadius: isCircle ? null : (borderRadius ?? AppRadius.smAll),
+            ),
+          );
+        }
+
+        return Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.lgAll,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header Shimmer
+              Container(
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC).withOpacity(0.5), // Slate 50 light color
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Row(
+                  children: [
+                    // Avatar skeleton
+                    skeletonBox(width: 48, height: 48, borderRadius: AppRadius.mdAll),
+                    SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          skeletonBox(width: 140, height: 16),
+                          SizedBox(height: AppSpacing.sm),
+                          skeletonBox(width: 80, height: 12),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Info Section Shimmer
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Column(
+                  children: [
+                    // Mobile Row
+                    Row(
+                      children: [
+                        skeletonBox(width: 32, height: 32, borderRadius: AppRadius.smAll),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              skeletonBox(width: 50, height: 10),
+                              SizedBox(height: 4),
+                              skeletonBox(width: 100, height: 14),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    // Department Row
+                    Row(
+                      children: [
+                        skeletonBox(width: 32, height: 32, borderRadius: AppRadius.smAll),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              skeletonBox(width: 60, height: 10),
+                              SizedBox(height: 4),
+                              skeletonBox(width: 120, height: 14),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Actions Row Shimmer
+              Container(
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.divider, width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: skeletonBox(width: double.infinity, height: 32, borderRadius: AppRadius.mdAll),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: skeletonBox(width: double.infinity, height: 32, borderRadius: AppRadius.mdAll),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: skeletonBox(width: double.infinity, height: 32, borderRadius: AppRadius.mdAll),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

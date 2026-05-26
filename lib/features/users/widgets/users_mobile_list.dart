@@ -67,15 +67,13 @@ class UsersMobileList extends ConsumerWidget {
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(color: AppColors.primary),
-          SizedBox(height: AppSpacing.md),
-          Text('Loading users...', style: AppTextStyles.caption),
-        ],
-      ),
+    return ListView.builder(
+      padding: EdgeInsets.only(top: AppSpacing.sm),
+      physics: const NeverScrollableScrollPhysics(), // Disable scrolling during loading
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return const UserMobileCardSkeleton();
+      },
     );
   }
 
