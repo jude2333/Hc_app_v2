@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../providers/shell_providers.dart';
-
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 
 class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  final bool isDark;
   final bool isInitializing;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final String currentPath;
 
   const MainAppBar({
     super.key,
-    required this.isDark,
     required this.isInitializing,
     required this.scaffoldKey,
     required this.currentPath,
@@ -24,16 +20,20 @@ class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return AppBar(
       elevation: 2,
-      backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
-      surfaceTintColor: isDark ? Colors.grey.shade900 : Colors.white,
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: colorScheme.surface,
       scrolledUnderElevation: 4,
-      shadowColor: Colors.black.withOpacity(0.15),
+      shadowColor: AppColors.shadowMedium,
       leading: IconButton(
         icon: Icon(
           Icons.menu_rounded,
-          color: isDark ? Colors.white70 : Colors.grey.shade700,
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
         ),
         onPressed: isInitializing
             ? null
@@ -45,12 +45,12 @@ class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.primaryLight,
+              borderRadius: AppRadius.mdAll,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.dashboard_rounded,
-              color: Colors.orange.shade600,
+              color: AppColors.gradientStart,
               size: 18,
             ),
           ),
@@ -59,7 +59,7 @@ class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: Text(
               _getPageTitle(currentPath),
               style: TextStyle(
-                color: isDark ? Colors.white : Colors.grey.shade800,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
               ),
@@ -73,49 +73,54 @@ class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
         IconButton(
           icon: Icon(
             isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-            color: isDark ? Colors.white70 : Colors.grey.shade600,
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
           ),
           onPressed: isInitializing
               ? null
-              : () => ref.read(themeProvider.notifier).state = !isDark,
+              : () => ref.read(themeModeProvider.notifier).toggle(),
         ),
-        const SizedBox(width: 8), // Space before bell
+        const SizedBox(width: 8),
         // Notification bell
-        _buildNotificationBell(context, ref),
-        const SizedBox(width: 16), // More space before logo
-        // Logo - simple approach like original
+        _buildNotificationBell(context, ref, colorScheme, isDark),
+        const SizedBox(width: 16),
+        // Logo
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: Image.network(
             'https://hc.andrsn.in/img/anderson-logo.png',
             height: 28,
             errorBuilder: (c, e, s) =>
-                const Icon(Icons.local_hospital, color: Colors.orange),
+                const Icon(Icons.local_hospital, color: AppColors.primary),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildNotificationBell(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(unreadCountProvider); // Direct access
+  Widget _buildNotificationBell(
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    final count = ref.watch(unreadCountProvider);
 
     return Stack(
       alignment: Alignment.center,
       children: [
         Material(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: AppRadius.xlAll,
           child: InkWell(
             onTap: isInitializing
                 ? null
                 : () => scaffoldKey.currentState?.openEndDrawer(),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.xlAll,
             child: Container(
               padding: const EdgeInsets.all(10),
               child: Icon(
                 Icons.notifications_outlined,
-                color: isDark ? Colors.white70 : Colors.grey.shade700,
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
                 size: 22,
               ),
             ),
@@ -128,10 +133,10 @@ class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: AppColors.error,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isDark ? Colors.grey.shade900 : Colors.white,
+                  color: colorScheme.surface,
                   width: 2,
                 ),
               ),
@@ -158,8 +163,6 @@ class MainAppBar extends ConsumerWidget implements PreferredSizeWidget {
     if (path.contains('my_work_orders')) return 'My Tasks';
     if (path.contains('type_orders')) return 'Type Orders';
     if (path.contains('users')) return 'User Management';
-    // Access router state or use path analysis
-    // The previous implementation used path string checking, so we keep it.
     return 'Anderson CRM';
   }
 }

@@ -110,6 +110,12 @@
       "languageVersion": "3.8"
     },
     {
+      "name": "cli_util",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/cli_util-0.4.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "clock",
       "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/clock-1.1.2",
       "packageUri": "lib/",
@@ -330,6 +336,12 @@
       "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_background_service_platform_interface-5.1.2",
       "packageUri": "lib/",
       "languageVersion": "2.17"
+    },
+    {
+      "name": "flutter_launcher_icons",
+      "rootUri": "file:///C:/Users/anderson/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_launcher_icons-0.14.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "flutter_lints",

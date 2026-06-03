@@ -3,7 +3,7 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-// import 'package:anderson_crm_flutter/components/add_work_order.dart';
+
 import 'package:anderson_crm_flutter/components/canceled_work_order_page.dart';
 import 'package:anderson_crm_flutter/features/price_list/screens/manager_price_view_page.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/screens/tech_engagement_page.dart';
@@ -39,7 +39,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
         notifier.initialize();
       }
       final selectedDate = ref.read(managerSelectedDatePod);
-      // Check if we are already watching this date to avoid killing the stream
+      
       if (woState.currentDate != selectedDate || woState.workOrders.isEmpty) {
         debugPrint(
             'ManagerWorkOrderPage: initializing stream for $selectedDate');
@@ -59,7 +59,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Granular watches — only rebuild what changed
+    
     final isConnected = ref.watch(managerSyncStatusProvider).whenOrNull(
               data: (status) => status.connected,
             ) ??
@@ -242,12 +242,12 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
     final isInitialSyncPending =
         ref.watch(managerSyncStatusProvider).whenOrNull(
               data: (status) {
-                // We only block the UI with a skeleton if we haven't completed
-                // our very first initial sync pass with the server.
+                
+                
                 return status.hasSynced == false;
               },
             ) ??
-            false; // Don't show skeleton just because provider is initializing
+            false; 
 
     final isInitializing = ref.watch(
       managerWONotifierProvider.select((s) => s.isInitializing),
@@ -395,8 +395,8 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           fullscreenDialog: true),
     )
         .then((value) {
-      // No loadWorkOrdersByDate needed — db.watch() auto-detects
-      // the INSERT/UPDATE and re-emits the updated list.
+      
+      
       if (value == 'refresh' && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

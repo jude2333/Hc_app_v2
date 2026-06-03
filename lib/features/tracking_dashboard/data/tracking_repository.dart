@@ -184,10 +184,6 @@ class TrackingRepository {
     }
   }
 
-  /// Reverse geocode lat/lng → address string via our backend proxy.
-  /// Returns null on failure (caller should handle gracefully).
-  /// Includes a circuit breaker: after [_maxGeocodeFails] consecutive failures,
-  /// the method short-circuits for the rest of the session to avoid log spam.
   static int _geocodeConsecutiveFails = 0;
   static const int _maxGeocodeFails = 3;
 

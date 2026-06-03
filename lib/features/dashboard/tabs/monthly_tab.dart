@@ -41,7 +41,9 @@ class _MonthlyTabState extends ConsumerState<MonthlyTab>
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Colors.orange),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Colors.orange,
+            ),
           ),
           child: child!,
         );
@@ -61,7 +63,7 @@ class _MonthlyTabState extends ConsumerState<MonthlyTab>
     final notifier = ref.read(monthlyReportProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           _buildHeader(notifier.selectedMonth),

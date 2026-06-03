@@ -5,11 +5,10 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../data/tracking_repository.dart';
 import '../providers/tracking_ui_providers.dart';
 
-/// Daily analytics tab showing technician performance stats.
 class AnalyticsTab extends ConsumerStatefulWidget {
   final String token;
   final int? tenantId;
-  final DateTime? selectedDate; // Legacy prop, can be removed if strictly using Riverpod
+  final DateTime? selectedDate;
 
   const AnalyticsTab({
     super.key,
@@ -42,7 +41,7 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
         tenantId: widget.tenantId,
         date: dateStr,
       );
-      
+
       if (mounted) {
         setState(() {
           _lastDate = dateStr;
@@ -66,7 +65,6 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
     final selectedDate = ref.watch(selectedDateProvider);
     final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
 
-    // Trigger data load when date changes (safe — only in build)
     if (dateStr != _lastDate && !_loading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _loadAnalytics(dateStr);
@@ -75,9 +73,9 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
 
     return Column(
       children: [
-        // Header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.surfaceAlt,
             border: Border(bottom: BorderSide(color: AppColors.border)),
@@ -94,19 +92,19 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
               InkWell(
                 onTap: () {
                   _lastDate = null;
-                  _loadAnalytics(DateFormat('yyyy-MM-dd').format(ref.read(selectedDateProvider)));
+                  _loadAnalytics(DateFormat('yyyy-MM-dd')
+                      .format(ref.read(selectedDateProvider)));
                 },
                 borderRadius: BorderRadius.circular(AppRadius.round),
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xs),
-                  child: Icon(Icons.refresh, size: 20, color: AppColors.textSecondary),
+                  child: Icon(Icons.refresh,
+                      size: 20, color: AppColors.textSecondary),
                 ),
               ),
             ],
           ),
         ),
-
-        // Content
         Expanded(
           child: _buildContent(selectedDate),
         ),
@@ -120,9 +118,12 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+            const CircularProgressIndicator(
+                strokeWidth: 3, color: AppColors.primary),
             const SizedBox(height: AppSpacing.md),
-            Text('Crunching numbers...', style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+            Text('Crunching numbers...',
+                style: AppTextStyles.body
+                    .copyWith(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -135,13 +136,16 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: AppSpacing.md),
-            Text('Error loading analytics', style: AppTextStyles.h3.copyWith(color: AppColors.textSecondary)),
+            Text('Error loading analytics',
+                style:
+                    AppTextStyles.h3.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.sm),
             ElevatedButton.icon(
               onPressed: () {
                 _lastDate = null;
-                _loadAnalytics(DateFormat('yyyy-MM-dd').format(ref.read(selectedDateProvider)));
-              }, 
+                _loadAnalytics(DateFormat('yyyy-MM-dd')
+                    .format(ref.read(selectedDateProvider)));
+              },
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),
@@ -155,7 +159,8 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.analytics_outlined, size: 64, color: AppColors.textHint.withValues(alpha: 0.5)),
+            Icon(Icons.analytics_outlined,
+                size: 64, color: AppColors.textHint.withValues(alpha: 0.5)),
             const SizedBox(height: AppSpacing.md),
             Text(
               'No data for ${DateFormat('MMMM d').format(selectedDate)}',
@@ -171,14 +176,15 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
       );
     }
 
-    // Summary row
-    final totalDistance = _analytics.fold<double>(0, (sum, a) => sum + ((a['total_distance'] as num?)?.toDouble() ?? 0));
-    final totalPings = _analytics.fold<int>(0, (sum, a) => sum + ((a['total_pings'] as num?)?.toInt() ?? 0));
-    final totalVisits = _analytics.fold<int>(0, (sum, a) => sum + ((a['visits_count'] as num?)?.toInt() ?? 0));
+    final totalDistance = _analytics.fold<double>(
+        0, (sum, a) => sum + ((a['total_distance'] as num?)?.toDouble() ?? 0));
+    final totalPings = _analytics.fold<int>(
+        0, (sum, a) => sum + ((a['total_pings'] as num?)?.toInt() ?? 0));
+    final totalVisits = _analytics.fold<int>(
+        0, (sum, a) => sum + ((a['visits_count'] as num?)?.toInt() ?? 0));
 
     return Column(
       children: [
-        // Summary KPI Cards
         Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
@@ -213,10 +219,9 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
             ],
           ),
         ),
-
-        // Table header
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: AppColors.surface,
             border: Border(
@@ -226,17 +231,37 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
           ),
           child: Row(
             children: [
-              Expanded(flex: 3, child: Text('Technician', style: AppTextStyles.tableHeader)),
-              Expanded(flex: 2, child: Text('Distance', style: AppTextStyles.tableHeader, textAlign: TextAlign.center)),
-              Expanded(flex: 2, child: Text('Active', style: AppTextStyles.tableHeader, textAlign: TextAlign.center)),
-              Expanded(flex: 2, child: Text('Idle', style: AppTextStyles.tableHeader, textAlign: TextAlign.center)),
-              Expanded(flex: 1, child: Text('Visits', style: AppTextStyles.tableHeader, textAlign: TextAlign.center)),
-              Expanded(flex: 2, child: Text('First / Last Ping', style: AppTextStyles.tableHeader, textAlign: TextAlign.center)),
+              Expanded(
+                  flex: 3,
+                  child: Text('Technician', style: AppTextStyles.tableHeader)),
+              Expanded(
+                  flex: 2,
+                  child: Text('Distance',
+                      style: AppTextStyles.tableHeader,
+                      textAlign: TextAlign.center)),
+              Expanded(
+                  flex: 2,
+                  child: Text('Active',
+                      style: AppTextStyles.tableHeader,
+                      textAlign: TextAlign.center)),
+              Expanded(
+                  flex: 2,
+                  child: Text('Idle',
+                      style: AppTextStyles.tableHeader,
+                      textAlign: TextAlign.center)),
+              Expanded(
+                  flex: 1,
+                  child: Text('Visits',
+                      style: AppTextStyles.tableHeader,
+                      textAlign: TextAlign.center)),
+              Expanded(
+                  flex: 2,
+                  child: Text('First / Last Ping',
+                      style: AppTextStyles.tableHeader,
+                      textAlign: TextAlign.center)),
             ],
           ),
         ),
-
-        // Table rows
         Expanded(
           child: ListView.builder(
             itemCount: _analytics.length,
@@ -247,14 +272,22 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
               final activeH = ((a['active_hours'] as num?)?.toDouble() ?? 0);
               final idleH = ((a['idle_hours'] as num?)?.toDouble() ?? 0);
               final visits = (a['visits_count'] as num?)?.toInt() ?? 0;
-              final firstPing = a['first_ping_at'] != null ? DateTime.tryParse(a['first_ping_at'].toString()) : null;
-              final lastPing = a['last_ping_at'] != null ? DateTime.tryParse(a['last_ping_at'].toString()) : null;
-              final name = a['technician_name']?.toString() ?? 'Tech #${a['technician_id']}';
+              final firstPing = a['first_ping_at'] != null
+                  ? DateTime.tryParse(a['first_ping_at'].toString())
+                  : null;
+              final lastPing = a['last_ping_at'] != null
+                  ? DateTime.tryParse(a['last_ping_at'].toString())
+                  : null;
+              final name = a['technician_name']?.toString() ??
+                  'Tech #${a['technician_id']}';
 
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: index.isEven ? AppColors.tableRowEven : AppColors.tableRowOdd,
+                  color: index.isEven
+                      ? AppColors.tableRowEven
+                      : AppColors.tableRowOdd,
                   border: Border(bottom: BorderSide(color: AppColors.divider)),
                 ),
                 child: Row(
@@ -265,15 +298,22 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
                         children: [
                           CircleAvatar(
                             radius: 14,
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                            backgroundColor:
+                                AppColors.primary.withValues(alpha: 0.1),
                             child: Text(
                               name[0].toUpperCase(),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
-                            child: Text(name, style: AppTextStyles.tableCell.copyWith(fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+                            child: Text(name,
+                                style: AppTextStyles.tableCell
+                                    .copyWith(fontWeight: FontWeight.w500),
+                                overflow: TextOverflow.ellipsis),
                           ),
                         ],
                       ),
@@ -289,14 +329,17 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
                     Expanded(
                       flex: 2,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 6),
                         decoration: BoxDecoration(
                           color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '${activeH.toStringAsFixed(1)}h',
-                          style: AppTextStyles.tableCell.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
+                          style: AppTextStyles.tableCell.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -305,7 +348,9 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
                       flex: 2,
                       child: Text(
                         '${idleH.toStringAsFixed(1)}h',
-                        style: AppTextStyles.tableCell.copyWith(color: AppColors.trackIdle, fontWeight: FontWeight.w600),
+                        style: AppTextStyles.tableCell.copyWith(
+                            color: AppColors.trackIdle,
+                            fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -313,7 +358,8 @@ class _AnalyticsTabState extends ConsumerState<AnalyticsTab> {
                       flex: 1,
                       child: Text(
                         '$visits',
-                        style: AppTextStyles.tableCell.copyWith(fontWeight: FontWeight.w600),
+                        style: AppTextStyles.tableCell
+                            .copyWith(fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -360,7 +406,6 @@ class _KpiCard extends StatelessWidget {
         decoration: AppDecorations.brandedCard,
         child: Stack(
           children: [
-            // Faint watermark icon in background
             Positioned(
               right: -10,
               bottom: -10,
@@ -381,11 +426,14 @@ class _KpiCard extends StatelessWidget {
                       child: Icon(icon, size: 16, color: color),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    Text(label, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500)),
+                    Text(label,
+                        style: AppTextStyles.caption
+                            .copyWith(fontWeight: FontWeight.w500)),
                   ],
                 ),
                 const Spacer(),
-                Text(value, style: AppTextStyles.metricLarge.copyWith(color: color)),
+                Text(value,
+                    style: AppTextStyles.metricLarge.copyWith(color: color)),
               ],
             ),
           ],

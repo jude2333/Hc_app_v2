@@ -46,7 +46,6 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
 
   @override
   Widget build(BuildContext context) {
-    // Granular watches — only rebuild what changes
     final isInitializing = ref.watch(
       billingWorkOrderProvider.select((s) => s.isInitializing),
     );
@@ -65,12 +64,10 @@ class _BillingWorkOrderPageState extends ConsumerState<BillingWorkOrderPage>
     final isInitialSyncPending =
         ref.watch(billingSyncStatusProvider).whenOrNull(
               data: (status) {
-                // We only block the UI with a skeleton if we haven't completed
-                // our very first initial sync pass with the server.
                 return status.hasSynced == false;
               },
             ) ??
-            false; // Don't show skeleton just because provider is initializing
+            false;
 
     final isDesktop = MediaQuery.of(context).size.width > 800;
 

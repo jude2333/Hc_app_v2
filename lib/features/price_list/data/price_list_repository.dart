@@ -318,7 +318,6 @@ class PriceListRepository {
           List<dynamic> itemHistory;
 
           if (rawHistory is List) {
-            // Already parsed as a List (PowerSync may deserialize JSONB)
             itemHistory = rawHistory;
           } else if (rawHistory is String) {
             itemHistory = jsonDecode(rawHistory);
@@ -355,7 +354,7 @@ class PriceListRepository {
       allHistory.sort((a, b) {
         final aTime = _parseHistoryTimestamp(a['time_stamp']?.toString() ?? '');
         final bTime = _parseHistoryTimestamp(b['time_stamp']?.toString() ?? '');
-        return bTime.compareTo(aTime); // descending (newest first)
+        return bTime.compareTo(aTime);
       });
 
       final limited = allHistory.take(limit).toList();
@@ -372,10 +371,8 @@ class PriceListRepository {
     return match != null ? double.tryParse(match.group(0)!) ?? 0 : 0;
   }
 
-  /// Parses "DD-MM-YYYY h:mm:ss am/pm" into DateTime for sorting
   DateTime _parseHistoryTimestamp(String stamp) {
     try {
-      // "03-05-2026 2:45:56 pm"
       final parts = stamp.split(' ');
       if (parts.length < 3) return DateTime(2000);
 
@@ -397,7 +394,7 @@ class PriceListRepository {
 
       return DateTime(year, month, day, hour, minute, second);
     } catch (e) {
-      return DateTime(2000); // fallback for unparseable timestamps
+      return DateTime(2000);
     }
   }
 }

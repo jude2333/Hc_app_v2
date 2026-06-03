@@ -43,7 +43,9 @@ class _WeeklyTabState extends ConsumerState<WeeklyTab>
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Colors.orange),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Colors.orange,
+            ),
           ),
           child: child!,
         );
@@ -63,7 +65,7 @@ class _WeeklyTabState extends ConsumerState<WeeklyTab>
     final notifier = ref.read(weeklyReportProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           _buildHeader(notifier.startDate, notifier.endDate),

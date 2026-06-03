@@ -27,8 +27,6 @@ class BillingDesktopTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Use the derived cached provider — filter+sort computed once,
-    // recomputed only when orders, search, sortCol, or sortAsc change.
     final filtered = ref.watch(billingFilteredOrdersPod);
     final sortCol = ref.watch(billingSortColumnPod);
     final sortAsc = ref.watch(billingSortAscendingPod);
@@ -238,15 +236,15 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
     );
   }
 
-  Widget _buildCell(String text, {required int flex, bool isPhoneNumber = false}) {
+  Widget _buildCell(String text,
+      {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
       flex: flex,
       child: Container(
         padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
         child: CopyableText(text,
-            overflow: TextOverflow.ellipsis,
-            isPhoneNumber: isPhoneNumber),
+            overflow: TextOverflow.ellipsis, isPhoneNumber: isPhoneNumber),
       ),
     );
   }
@@ -299,7 +297,6 @@ class _ExpandedContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ref.read — storageRepositoryProvider is a global singleton that never changes
     final storage = ref.read(storageRepositoryProvider);
 
     return Container(

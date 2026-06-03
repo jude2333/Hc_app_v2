@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "anderson_crm_flutter",
-      "version": "1.2.0+2",
+      "version": "1.1.0+1",
       "dependencies": [
         "battery_plus",
         "cookie_jar",
@@ -52,10 +52,24 @@
       ],
       "devDependencies": [
         "build_runner",
+        "flutter_launcher_icons",
         "flutter_lints",
         "flutter_test",
         "json_annotation",
         "json_serializable"
+      ]
+    },
+    {
+      "name": "flutter_launcher_icons",
+      "version": "0.14.4",
+      "dependencies": [
+        "args",
+        "checked_yaml",
+        "cli_util",
+        "image",
+        "json_annotation",
+        "path",
+        "yaml"
       ]
     },
     {
@@ -593,6 +607,46 @@
       ]
     },
     {
+      "name": "yaml",
+      "version": "3.1.3",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner"
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.3.0",
+      "dependencies": [
+        "archive",
+        "meta",
+        "xml"
+      ]
+    },
+    {
+      "name": "cli_util",
+      "version": "0.4.2",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "checked_yaml",
+      "version": "2.0.4",
+      "dependencies": [
+        "json_annotation",
+        "source_span",
+        "yaml"
+      ]
+    },
+    {
+      "name": "args",
+      "version": "2.7.0",
+      "dependencies": []
+    },
+    {
       "name": "source_helper",
       "version": "1.3.8",
       "dependencies": [
@@ -698,15 +752,6 @@
         "source_span",
         "watcher",
         "yaml"
-      ]
-    },
-    {
-      "name": "yaml",
-      "version": "3.1.3",
-      "dependencies": [
-        "collection",
-        "source_span",
-        "string_scanner"
       ]
     },
     {
@@ -859,11 +904,6 @@
       ]
     },
     {
-      "name": "args",
-      "version": "2.7.0",
-      "dependencies": []
-    },
-    {
       "name": "lints",
       "version": "5.1.1",
       "dependencies": []
@@ -1013,15 +1053,6 @@
       "version": "6.2.1",
       "dependencies": [
         "intl"
-      ]
-    },
-    {
-      "name": "image",
-      "version": "4.3.0",
-      "dependencies": [
-        "archive",
-        "meta",
-        "xml"
       ]
     },
     {
@@ -1657,6 +1688,13 @@
       "dependencies": []
     },
     {
+      "name": "string_scanner",
+      "version": "1.4.1",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
       "name": "source_span",
       "version": "1.10.2",
       "dependencies": [
@@ -1666,26 +1704,10 @@
       ]
     },
     {
-      "name": "checked_yaml",
-      "version": "2.0.4",
-      "dependencies": [
-        "json_annotation",
-        "source_span",
-        "yaml"
-      ]
-    },
-    {
       "name": "_fe_analyzer_shared",
       "version": "88.0.0",
       "dependencies": [
         "meta"
-      ]
-    },
-    {
-      "name": "string_scanner",
-      "version": "1.4.1",
-      "dependencies": [
-        "source_span"
       ]
     },
     {

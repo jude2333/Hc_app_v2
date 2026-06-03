@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../models/dashboard_report.dart';
 import '../providers/dashboard_providers.dart';
 import '../providers/dashboard_state.dart';
@@ -36,7 +37,7 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
     final notifier = ref.read(yearlyReportProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           _buildHeader(notifier),
@@ -57,13 +58,14 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
   }
 
   Widget _buildHeader(YearlyReportNotifier notifier) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -79,7 +81,7 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
                 notifier.monthwise ? "Monthly View" : "Yearly View",
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -87,10 +89,10 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
                 notifier.monthwise
                     ? notifier.selectedYear.toString()
                     : "All Years",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -101,12 +103,13 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButton<int>(
                     value: notifier.selectedYear,
                     underline: const SizedBox(),
+                    dropdownColor: colorScheme.surface,
                     items: notifier.availableYears.map((year) {
                       return DropdownMenuItem<int>(
                         value: year,
@@ -123,9 +126,9 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade100),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -134,7 +137,7 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
                       'Monthly',
                       style: TextStyle(
                         fontSize: 12,
-                        color: notifier.monthwise ? Colors.orange : Colors.grey,
+                        color: notifier.monthwise ? AppColors.primary : AppColors.textSecondary,
                         fontWeight: notifier.monthwise
                             ? FontWeight.bold
                             : FontWeight.normal,
@@ -143,8 +146,8 @@ class _YearlyTabState extends ConsumerState<YearlyTab>
                     Switch(
                       value: notifier.monthwise,
                       onChanged: notifier.toggleMonthwise,
-                      activeTrackColor: Colors.orange.shade200,
-                      thumbColor: WidgetStateProperty.all(Colors.orange),
+                      activeTrackColor: AppColors.primary.withValues(alpha: 0.3),
+                      thumbColor: WidgetStateProperty.all(AppColors.primary),
                     ),
                   ],
                 ),

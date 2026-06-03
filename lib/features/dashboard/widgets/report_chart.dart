@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/dashboard_report.dart';
 import 'package:anderson_crm_flutter/features/core/util.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class AnimatedChartWrapper extends StatefulWidget {
   final Widget child;
@@ -105,6 +106,7 @@ class _LegendItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -121,7 +123,7 @@ class _LegendItemWidget extends StatelessWidget {
           item.label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade700,
+            color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade700,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -138,6 +140,9 @@ class DailyCasesChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final allValues = [
       ...data.assigned,
@@ -159,9 +164,12 @@ class DailyCasesChart extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 8)],
+          border: isDark ? Border.all(color: AppColors.darkBorder) : null,
+          boxShadow: isDark
+              ? null
+              : [BoxShadow(color: Colors.grey.shade100, blurRadius: 8)],
         ),
         child: Column(
           children: [
@@ -207,8 +215,11 @@ class DailyCasesChart extends StatelessWidget {
                         getTitlesWidget: (v, _) => v == 0
                             ? const SizedBox.shrink()
                             : Text(v.toInt().toString(),
-                                style: const TextStyle(
-                                    fontSize: 9, color: Colors.black54)),
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : Colors.black54)),
                       ),
                     ),
                     rightTitles: const AxisTitles(),
@@ -222,9 +233,11 @@ class DailyCasesChart extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(labels[v.toInt()],
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.black54,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : Colors.black54,
                                     fontWeight: FontWeight.w600)),
                           );
                         },
@@ -235,8 +248,12 @@ class DailyCasesChart extends StatelessWidget {
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: interval,
-                    getDrawingHorizontalLine: (_) =>
-                        FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : Colors.grey.shade100,
+                      strokeWidth: 1,
+                    ),
                   ),
                   borderData: FlBorderData(show: false),
                   barGroups: [
@@ -282,6 +299,9 @@ class DailyFinancialChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     final allValues = [
       ...data.collection,
       ...data.received,
@@ -303,9 +323,12 @@ class DailyFinancialChart extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 8)],
+          border: isDark ? Border.all(color: AppColors.darkBorder) : null,
+          boxShadow: isDark
+              ? null
+              : [BoxShadow(color: Colors.grey.shade100, blurRadius: 8)],
         ),
         child: Column(
           children: [
@@ -352,17 +375,20 @@ class DailyFinancialChart extends StatelessWidget {
                         interval: interval,
                         getTitlesWidget: (v, _) {
                           if (v == 0) return const SizedBox.shrink();
-                          if (v >= 100000)
+                          final style = TextStyle(
+                              fontSize: 9,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : Colors.black54);
+                          if (v >= 100000) {
                             return Text('${(v / 100000).toStringAsFixed(1)}L',
-                                style: const TextStyle(
-                                    fontSize: 9, color: Colors.black54));
-                          if (v >= 1000)
+                                style: style);
+                          }
+                          if (v >= 1000) {
                             return Text('${(v / 1000).toStringAsFixed(0)}K',
-                                style: const TextStyle(
-                                    fontSize: 9, color: Colors.black54));
-                          return Text(v.toInt().toString(),
-                              style: const TextStyle(
-                                  fontSize: 9, color: Colors.black54));
+                                style: style);
+                          }
+                          return Text(v.toInt().toString(), style: style);
                         },
                       ),
                     ),
@@ -377,9 +403,11 @@ class DailyFinancialChart extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(labels[v.toInt()],
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 9,
-                                    color: Colors.black54,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : Colors.black54,
                                     fontWeight: FontWeight.w600)),
                           );
                         },
@@ -390,8 +418,12 @@ class DailyFinancialChart extends StatelessWidget {
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: interval,
-                    getDrawingHorizontalLine: (_) =>
-                        FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : Colors.grey.shade100,
+                      strokeWidth: 1,
+                    ),
                   ),
                   borderData: FlBorderData(show: false),
                   barGroups: [
@@ -443,6 +475,9 @@ class ReportCasesChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     final maxY = _calculateMaxY();
     final interval = _calculateInterval(maxY);
 
@@ -451,15 +486,18 @@ class ReportCasesChart extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade200,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: isDark ? Border.all(color: AppColors.darkBorder) : null,
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Column(
           children: [
@@ -474,13 +512,13 @@ class ReportCasesChart extends StatelessWidget {
                   alignment: BarChartAlignment.spaceAround,
                   maxY: maxY,
                   barTouchData: _buildBarTouchData(),
-                  titlesData: _buildTitlesData(interval),
+                  titlesData: _buildTitlesData(context, interval),
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: interval,
                     getDrawingHorizontalLine: (v) => FlLine(
-                      color: Colors.grey.shade100,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade100,
                       strokeWidth: 1,
                     ),
                   ),
@@ -544,7 +582,16 @@ class ReportCasesChart extends StatelessWidget {
     );
   }
 
-  FlTitlesData _buildTitlesData(double interval) {
+  FlTitlesData _buildTitlesData(BuildContext context, double interval) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textStyle = TextStyle(
+      color: isDark ? AppColors.darkTextPrimary : Colors.black87,
+      fontSize: 10,
+    );
+    final secondaryTextStyle = TextStyle(
+      color: isDark ? AppColors.darkTextSecondary : Colors.black54,
+      fontSize: 10,
+    );
     return FlTitlesData(
       leftTitles: AxisTitles(
         sideTitles: SideTitles(
@@ -555,7 +602,7 @@ class ReportCasesChart extends StatelessWidget {
               ? const SizedBox.shrink()
               : Text(
                   _formatNumber(v.toInt()),
-                  style: const TextStyle(color: Colors.black87, fontSize: 10),
+                  style: textStyle,
                 ),
         ),
       ),
@@ -570,7 +617,7 @@ class ReportCasesChart extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 data.labels[v.toInt()],
-                style: const TextStyle(fontSize: 10, color: Colors.black54),
+                style: secondaryTextStyle,
               ),
             );
           },
@@ -612,6 +659,9 @@ class ReportFinancialChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.isEmpty) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     final maxY = _calculateMaxY();
     final interval = _calculateInterval(maxY);
 
@@ -620,15 +670,18 @@ class ReportFinancialChart extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade200,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: isDark ? Border.all(color: AppColors.darkBorder) : null,
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Column(
           children: [
@@ -642,13 +695,13 @@ class ReportFinancialChart extends StatelessWidget {
                   alignment: BarChartAlignment.spaceAround,
                   maxY: maxY,
                   barTouchData: _buildBarTouchData(),
-                  titlesData: _buildTitlesData(interval),
+                  titlesData: _buildTitlesData(context, interval),
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: interval,
                     getDrawingHorizontalLine: (v) => FlLine(
-                      color: Colors.grey.shade100,
+                      color: isDark ? AppColors.darkBorder : Colors.grey.shade100,
                       strokeWidth: 1,
                     ),
                   ),
@@ -700,7 +753,16 @@ class ReportFinancialChart extends StatelessWidget {
     );
   }
 
-  FlTitlesData _buildTitlesData(double interval) {
+  FlTitlesData _buildTitlesData(BuildContext context, double interval) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textStyle = TextStyle(
+      color: isDark ? AppColors.darkTextPrimary : Colors.black87,
+      fontSize: 10,
+    );
+    final secondaryTextStyle = TextStyle(
+      color: isDark ? AppColors.darkTextSecondary : Colors.black54,
+      fontSize: 10,
+    );
     return FlTitlesData(
       leftTitles: AxisTitles(
         sideTitles: SideTitles(
@@ -711,7 +773,7 @@ class ReportFinancialChart extends StatelessWidget {
               ? const SizedBox.shrink()
               : Text(
                   _formatMoney(v.toInt()),
-                  style: const TextStyle(color: Colors.black87, fontSize: 10),
+                  style: textStyle,
                 ),
         ),
       ),
@@ -726,7 +788,7 @@ class ReportFinancialChart extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 data.labels[v.toInt()],
-                style: const TextStyle(fontSize: 10, color: Colors.black54),
+                style: secondaryTextStyle,
               ),
             );
           },

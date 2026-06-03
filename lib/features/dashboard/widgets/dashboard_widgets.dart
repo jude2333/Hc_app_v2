@@ -15,13 +15,14 @@ class DashboardDateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -37,16 +38,16 @@ class DashboardDateHeader extends StatelessWidget {
                 DateFormat('EEEE').format(selectedDate),
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 DateFormat('dd MMMM yyyy').format(selectedDate),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -74,13 +75,14 @@ class DashboardDateRangeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -96,16 +98,16 @@ class DashboardDateRangeHeader extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -146,61 +148,61 @@ class DashboardSkeletonLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildShimmerBox(width: 120, height: 20),
+          _buildShimmerBox(width: 120, height: 20, colorScheme: colorScheme),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildMetricCardSkeleton()),
+              Expanded(child: _buildMetricCardSkeleton(colorScheme)),
               const SizedBox(width: 12),
-              Expanded(child: _buildMetricCardSkeleton()),
+              Expanded(child: _buildMetricCardSkeleton(colorScheme)),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildMetricCardSkeleton()),
+              Expanded(child: _buildMetricCardSkeleton(colorScheme)),
               const SizedBox(width: 12),
-              Expanded(child: _buildMetricCardSkeleton()),
+              Expanded(child: _buildMetricCardSkeleton(colorScheme)),
             ],
           ),
           const SizedBox(height: 24),
-          _buildTableSkeleton(),
+          _buildTableSkeleton(colorScheme),
           const SizedBox(height: 24),
-          _buildChartSkeleton(),
+          _buildChartSkeleton(colorScheme),
         ],
       ),
     );
   }
 
-  Widget _buildMetricCardSkeleton() {
+  Widget _buildMetricCardSkeleton(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        // Removed border and shadow for performance
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildShimmerBox(width: 60, height: 10),
+          _buildShimmerBox(width: 60, height: 10, colorScheme: colorScheme),
           const SizedBox(height: 8),
-          _buildShimmerBox(width: 80, height: 24),
+          _buildShimmerBox(width: 80, height: 24, colorScheme: colorScheme),
         ],
       ),
     );
   }
 
-  Widget _buildTableSkeleton() {
+  Widget _buildTableSkeleton(ColorScheme colorScheme) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -219,7 +221,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           height: 14,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -233,7 +235,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                         vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
                       border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade100)),
+                          bottom: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.3))),
                     ),
                     child: Row(
                       children: List.generate(
@@ -244,7 +246,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   height: 12,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[100],
+                                    color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -256,13 +258,12 @@ class DashboardSkeletonLoading extends StatelessWidget {
     );
   }
 
-  Widget _buildChartSkeleton() {
+  Widget _buildChartSkeleton(ColorScheme colorScheme) {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        // Removed shadow
       ),
       child: Center(
         child: Row(
@@ -273,7 +274,7 @@ class DashboardSkeletonLoading extends StatelessWidget {
                     width: 24,
                     height: 80 + (index * 15).toDouble(),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(4)),
                     ),
@@ -284,12 +285,12 @@ class DashboardSkeletonLoading extends StatelessWidget {
   }
 }
 
-Widget _buildShimmerBox({required double width, required double height}) {
+Widget _buildShimmerBox({required double width, required double height, ColorScheme? colorScheme}) {
   return Container(
     width: width,
     height: height,
     decoration: BoxDecoration(
-      color: Colors.grey[300],
+      color: colorScheme?.outlineVariant.withValues(alpha: 0.4) ?? Colors.grey[300],
       borderRadius: BorderRadius.circular(4),
     ),
   );
@@ -337,7 +338,7 @@ class DashboardDataCell extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 13,
           fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
         ),
@@ -404,9 +405,11 @@ class DashboardDetailedTable extends StatelessWidget {
                         row['month'] == 'Total';
                     return Container(
                       decoration: BoxDecoration(
-                        color: isTotal ? Colors.grey.shade50 : Colors.white,
+                        color: isTotal
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : Theme.of(context).colorScheme.surface,
                         border: Border(
-                            bottom: BorderSide(color: Colors.grey.shade200)),
+                            bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
                       ),
                       padding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 8),
@@ -529,16 +532,17 @@ class DashboardMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: colorScheme.outlineVariant),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade100,
+              color: colorScheme.shadow.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -559,7 +563,7 @@ class DashboardMetricCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -571,10 +575,10 @@ class DashboardMetricCard extends StatelessWidget {
               isMoney
                   ? Util.formatMoney((value as num).toDouble())
                   : value.toString(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
           ],
@@ -663,10 +667,10 @@ class DashboardSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Colors.black87,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -684,13 +688,16 @@ class DashboardEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.analytics_outlined, size: 64, color: Colors.grey.shade400),
+          Icon(Icons.analytics_outlined, size: 64,
+              color: colorScheme.onSurface.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          Text(message, style: TextStyle(color: Colors.grey.shade600)),
+          Text(message, style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.5))),
           if (onRetry != null) ...[
             const SizedBox(height: 8),
             TextButton(

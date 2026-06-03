@@ -10,11 +10,6 @@ import '../providers/tracking_ui_providers.dart';
 import '../data/tracking_models.dart';
 import '../data/tracking_repository.dart';
 
-/// Live map view with:
-/// - Technician markers (color-coded by status)
-/// - Route polyline overlay (toggle-able)
-/// - Geo-fence circle/polygon overlays
-/// - Smooth animated centering
 class LiveMapView extends ConsumerStatefulWidget {
   final String token;
   final List<Map<String, dynamic>> fences;
@@ -62,10 +57,13 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
     final selectedTech = ref.watch(selectedTechProvider);
     final selectedDate = ref.watch(selectedDateProvider);
     final statusFilter = ref.watch(statusFilterProvider);
-    
+
     // Auto-center when a tech is selected (listening via ref.listen)
     ref.listen<TechnicianStatus?>(selectedTechProvider, (previous, current) {
-      if (current != null && current.technicianId != previous?.technicianId && current.hasLocation && _mapReady) {
+      if (current != null &&
+          current.technicianId != previous?.technicianId &&
+          current.hasLocation &&
+          _mapReady) {
         _animatedMove(
           LatLng(current.lastLatitude!, current.lastLongitude!),
           _selectedZoom,
@@ -81,7 +79,8 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
       }
     });
 
-    final filteredTechs = _filterTechnicians(wsState.technicianList, statusFilter);
+    final filteredTechs =
+        _filterTechnicians(wsState.technicianList, statusFilter);
 
     return Stack(
       children: [
@@ -168,7 +167,9 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
                 ],
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                  child: SizedBox(width: 24, child: Divider(height: 1, color: AppColors.border)),
+                  child: SizedBox(
+                      width: 24,
+                      child: Divider(height: 1, color: AppColors.border)),
                 ),
                 _MapButton(
                   icon: Icons.route,
@@ -200,7 +201,8 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
           bottom: AppSpacing.xl,
           left: AppSpacing.md,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             decoration: AppDecorations.glassPanel,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,16 +226,21 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                 decoration: AppDecorations.glassPanel,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    _LegendBar(color: AppColors.activityDriving, label: 'Driving'),
+                    _LegendBar(
+                        color: AppColors.activityDriving, label: 'Driving'),
                     SizedBox(width: AppSpacing.lg),
-                    _LegendBar(color: AppColors.activityWalking, label: 'Walking'),
+                    _LegendBar(
+                        color: AppColors.activityWalking, label: 'Walking'),
                     SizedBox(width: AppSpacing.lg),
-                    _LegendBar(color: AppColors.activityStationary, label: 'Stationary'),
+                    _LegendBar(
+                        color: AppColors.activityStationary,
+                        label: 'Stationary'),
                   ],
                 ),
               ),
@@ -250,7 +257,10 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
               decoration: AppDecorations.glassPanel,
               child: const Row(
                 children: [
-                  SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                  SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
                   SizedBox(width: 12),
                   Text('Loading route...', style: AppTextStyles.buttonText),
                 ],
@@ -261,7 +271,8 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
     );
   }
 
-  List<TechnicianStatus> _filterTechnicians(List<TechnicianStatus> techs, String? statusFilter) {
+  List<TechnicianStatus> _filterTechnicians(
+      List<TechnicianStatus> techs, String? statusFilter) {
     if (statusFilter == null) return techs;
     return techs.where((t) {
       switch (statusFilter) {
@@ -323,7 +334,9 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
 
   Future<void> _loadRoute(int techId, DateTime date) async {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
-    if (techId == _routeTechId && dateStr == _routeDate && _routePoints.isNotEmpty) return;
+    if (techId == _routeTechId &&
+        dateStr == _routeDate &&
+        _routePoints.isNotEmpty) return;
 
     setState(() => _loadingRoute = true);
 
@@ -409,12 +422,15 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
     if (_routePoints.length < 2) return [];
 
     final polylines = <Polyline>[];
-    var segmentPoints = <LatLng>[LatLng(_routePoints[0].latitude, _routePoints[0].longitude)];
+    var segmentPoints = <LatLng>[
+      LatLng(_routePoints[0].latitude, _routePoints[0].longitude)
+    ];
     var currentActivity = _routePoints[0].activityType ?? 'driving';
 
     for (int i = 1; i < _routePoints.length; i++) {
       final point = _routePoints[i];
-      final activity = point.activityType ?? (point.isMoving ? 'driving' : 'stationary');
+      final activity =
+          point.activityType ?? (point.isMoving ? 'driving' : 'stationary');
 
       segmentPoints.add(LatLng(point.latitude, point.longitude));
 
@@ -439,10 +455,14 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
 
   Color _activityColor(String activity) {
     switch (activity) {
-      case 'driving': return AppColors.activityDriving;
-      case 'walking': return AppColors.activityWalking;
-      case 'stationary': return AppColors.activityStationary;
-      default: return AppColors.activityDriving;
+      case 'driving':
+        return AppColors.activityDriving;
+      case 'walking':
+        return AppColors.activityWalking;
+      case 'stationary':
+        return AppColors.activityStationary;
+      default:
+        return AppColors.activityDriving;
     }
   }
 
@@ -461,14 +481,21 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
         decoration: BoxDecoration(
           color: AppColors.success,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: AppColors.success.withValues(alpha: 0.3), blurRadius: 4)],
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.success.withValues(alpha: 0.3), blurRadius: 4)
+          ],
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.play_arrow, size: 12, color: Colors.white),
             SizedBox(width: 2),
-            Text('Start', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600)),
+            Text('Start',
+                style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -485,14 +512,21 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
         decoration: BoxDecoration(
           color: AppColors.error,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: AppColors.error.withValues(alpha: 0.3), blurRadius: 4)],
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.error.withValues(alpha: 0.3), blurRadius: 4)
+          ],
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.stop, size: 12, color: Colors.white),
             SizedBox(width: 2),
-            Text('End', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600)),
+            Text('End',
+                style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -514,7 +548,11 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
               color: AppColors.activityStationary,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [BoxShadow(color: AppColors.activityStationary.withValues(alpha: 0.3), blurRadius: 3)],
+              boxShadow: [
+                BoxShadow(
+                    color: AppColors.activityStationary.withValues(alpha: 0.3),
+                    blurRadius: 3)
+              ],
             ),
             child: const Icon(Icons.pause, size: 10, color: Colors.white),
           ),
@@ -555,7 +593,8 @@ class _LiveMapViewState extends ConsumerState<LiveMapView>
 
   // ─── Tech Markers ──────────────────────────────────────────
 
-  List<Marker> _buildMarkers(List<TechnicianStatus> filteredTechs, TechnicianStatus? selectedTech) {
+  List<Marker> _buildMarkers(
+      List<TechnicianStatus> filteredTechs, TechnicianStatus? selectedTech) {
     // When route is active, only show the selected technician's marker
     final techsToShow = (_showRoute && _routePoints.isNotEmpty)
         ? filteredTechs.where((t) =>
@@ -685,7 +724,9 @@ class _TechMarker extends StatelessWidget {
                     size: 10,
                     color: isSelected
                         ? Colors.white70
-                        : (tech.lastBattery! < 20 ? AppColors.error : AppColors.success),
+                        : (tech.lastBattery! < 20
+                            ? AppColors.error
+                            : AppColors.success),
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -742,10 +783,15 @@ class _MapButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 if (!isActive)
-                  BoxShadow(color: AppColors.shadowLight, blurRadius: 4, offset: const Offset(0, 2))
+                  BoxShadow(
+                      color: AppColors.shadowLight,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2))
               ],
             ),
-            child: Icon(icon, size: 20, color: isActive ? Colors.white : AppColors.textPrimary),
+            child: Icon(icon,
+                size: 20,
+                color: isActive ? Colors.white : AppColors.textPrimary),
           ),
         ),
       ),
@@ -774,13 +820,16 @@ class _LegendDot extends StatelessWidget {
             color: color,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 1),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 3)],
+            boxShadow: [
+              BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 3)
+            ],
           ),
         ),
         const SizedBox(width: 6),
         Text(
           label,
-          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
       ],
     );
@@ -805,13 +854,16 @@ class _LegendBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(2),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 2)],
+            boxShadow: [
+              BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 2)
+            ],
           ),
         ),
         const SizedBox(width: 6),
         Text(
           label,
-          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
       ],
     );

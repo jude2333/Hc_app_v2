@@ -1,7 +1,6 @@
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-/// Web implementation — triggers browser file download
 Future<void> saveExcelFile(List<int> bytes, String filename) async {
   final blob = html.Blob(
     [Uint8List.fromList(bytes)],

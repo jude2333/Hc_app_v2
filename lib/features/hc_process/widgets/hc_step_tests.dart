@@ -46,19 +46,16 @@ class HCStepTests extends ConsumerWidget {
                     notifier.setProformaInvLoc(
                         result['proformalocation'].toString());
                   }
-                  // Do NOT auto-advance to step 3 here.
-                  // The technician must review the test list and press
-                  // "Save & Continue" themselves (Issue #2 fix).
                 }
               },
               icon: const Icon(Icons.add),
               label: const Text('Add Tests'),
             ),
             const SizedBox(width: 8),
-            // CGHS toggle — technician can also set this per Anderson's request
             if (!state.trialClient) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: state.cghsPrice
                       ? Colors.orange.shade50
@@ -110,7 +107,8 @@ class HCStepTests extends ConsumerWidget {
               if (state.cghsPrice) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(6),
@@ -132,8 +130,6 @@ class HCStepTests extends ConsumerWidget {
           ...state.selectedTests.asMap().entries.map((entry) {
             final test = entry.value;
 
-            // Issue #1: Show the correct price based on CGHS toggle.
-            // When CGHS is on, prefer cghs_price; fall back to base_cost.
             final baseCost =
                 double.tryParse(test['base_cost']?.toString() ?? '0') ?? 0;
             final cghsCost =

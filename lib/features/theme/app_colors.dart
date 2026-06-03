@@ -9,6 +9,7 @@ class AppColors {
   static const Color gradientEnd = Color(0xFFFFB74D);
 
   static const Color secondary = Colors.blue;
+  static const Color andersonBlue = Color(0xFF1B4F8A);
   static const Color success = Color(0xFF10B981);
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Colors.amber;
@@ -65,4 +66,24 @@ class AppColors {
   static const Color excelGreen = Color(0xFF217346);
   static const Color chartBlue = Color(0xFF3B82F6);
   static const Color chartPurple = Color(0xFF8B5CF6);
+
+  // Info / Release notes panels
+  static const Color infoBackground = Color(0xFFE3F2FD); // blue.shade50
+  static const Color infoBorder = Color(0xFFBBDEFB); // blue.shade100
+  static const Color infoText = Color(0xFF1565C0); // blue.shade800
+
+  // ----------------------------------------------------
+  // Dark Mode Palette
+  // ----------------------------------------------------
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkSurfaceAlt = Color(0xFF2C2C2C);
+  static const Color darkTextPrimary = Color(0xFFE1E1E1);
+  static const Color darkTextSecondary = Color(0xFF9E9E9E);
+  static const Color darkBorder = Color(0xFF3A3A3A);
+  static const Color darkDivider = Color(0xFF2E2E2E);
+
+  static const Color darkInfoBackground = Color(0xFF1A2332);
+  static const Color darkInfoBorder = Color(0xFF2A3A4E);
+  static const Color darkInfoText = Color(0xFF90CAF9);
 }

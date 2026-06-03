@@ -155,8 +155,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
     );
   }
 
-  /// Detailed bill breakdown so technicians can clearly see why the total
-  /// differs from the test amount. Shows every line item individually.
   Widget _buildDetailedSummaryCard(HCProcessState state) {
     final hasDiscount = state.discount > 0;
     final discountLabel = state.isDiscountFlat
@@ -171,7 +169,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Icon(Icons.receipt_long, size: 20, color: Colors.blue.shade700),
@@ -187,8 +184,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Patient & Tests
             _summaryRow(
               'Patient',
               state.workOrder?.patientName ?? 'N/A',
@@ -202,8 +197,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
             const SizedBox(height: 8),
             const Divider(height: 1),
             const SizedBox(height: 8),
-
-            // Billing breakdown
             _summaryRow(
               'Test Amount',
               '₹${state.billAmount.toStringAsFixed(0)}',
@@ -234,8 +227,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
             const SizedBox(height: 8),
             const Divider(height: 1, thickness: 1.5),
             const SizedBox(height: 8),
-
-            // Net total
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -264,8 +255,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
                 ),
               ],
             ),
-
-            // Photos uploaded
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 8),
@@ -280,7 +269,6 @@ class _HCStepPaymentState extends ConsumerState<HCStepPayment> {
     );
   }
 
-  /// Reusable row for summary items
   Widget _summaryRow(String label, String value,
       {bool isLabel = false, Color? valueColor}) {
     return Padding(

@@ -19,16 +19,11 @@ class BillingWorkOrderRepository {
 
   BillingWorkOrderRepository(this._db, this._couchClient, this._storage);
 
-  /// Stream of sync status changes — consumed by billingSyncStatusProvider
-  /// so UI indicators can rebuild independently.
   Stream<SyncStatus> watchSyncStatus() {
     return _powerSync.watchStatus();
   }
 
   DateTime _getBaseDate() {
-    // if (Settings.development) {
-    //   return DateTime(2022, 12, 14);
-    // }
     return DateTime.now();
   }
 
@@ -85,7 +80,6 @@ class BillingWorkOrderRepository {
     return results.map((row) => WorkOrder.fromRow(row)).toList();
   }
 
-  /// Reactive stream: emits updated unbilled orders whenever underlying data changes
   Stream<List<WorkOrder>> watchUnbilledOrders() {
     final baseDate = _getBaseDate();
     final sevenDaysAgo = baseDate.subtract(const Duration(days: 7));
@@ -106,7 +100,6 @@ class BillingWorkOrderRepository {
     });
   }
 
-  /// Reactive stream: emits updated billed orders whenever underlying data changes
   Stream<List<WorkOrder>> watchBilledOrders() {
     final baseDate = _getBaseDate();
     final sevenDaysAgo = baseDate.subtract(const Duration(days: 7));

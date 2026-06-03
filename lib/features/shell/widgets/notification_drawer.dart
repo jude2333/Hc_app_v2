@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class NotificationDrawer extends ConsumerStatefulWidget {
-  final bool isDark;
-  const NotificationDrawer({super.key, required this.isDark});
+  const NotificationDrawer({super.key});
 
   @override
   ConsumerState<NotificationDrawer> createState() => _NotificationDrawerState();
@@ -34,24 +34,26 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Drawer(
       width: 320,
-      backgroundColor: widget.isDark ? Colors.grey[900] : Colors.white,
+      backgroundColor: colorScheme.surface,
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
-            color: widget.isDark ? Colors.grey[800] : Colors.orange.shade50,
+            color: colorScheme.surfaceContainerHighest,
             child: Row(
               children: [
                 const Icon(Icons.notifications_active_rounded,
-                    color: Colors.orange),
+                    color: AppColors.primary),
                 const SizedBox(width: 12),
                 Text('Notifications',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDark ? Colors.white : Colors.black87)),
+                        color: colorScheme.onSurface)),
               ],
             ),
           ),
@@ -72,10 +74,13 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.notifications_off_outlined,
-                            size: 48, color: Colors.grey[400]),
+                            size: 48,
+                            color: colorScheme.onSurface.withValues(alpha: 0.3)),
                         const SizedBox(height: 16),
                         Text('No new notifications',
-                            style: TextStyle(color: Colors.grey[500])),
+                            style: TextStyle(
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.5))),
                       ],
                     ),
                   );
@@ -84,7 +89,7 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
                   itemCount: notifications.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) =>
-                      _buildNotificationTile(notifications[index]),
+                      _buildNotificationTile(notifications[index], colorScheme),
                 );
               },
             ),
@@ -94,7 +99,8 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
     );
   }
 
-  Widget _buildNotificationTile(Map<String, dynamic> notification) {
+  Widget _buildNotificationTile(
+      Map<String, dynamic> notification, ColorScheme colorScheme) {
     final status = notification['status'];
     final isNew = status == 'New';
     final docId = notification['_id']?.toString() ?? '';
@@ -106,14 +112,14 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           leading: CircleAvatar(
-            backgroundColor: Colors.blue.shade50,
+            backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
             child: Text(
                 (notification['from_name'] != null &&
                         notification['from_name'].toString().isNotEmpty
                     ? notification['from_name'].toString()[0]
                     : 'S'),
                 style: const TextStyle(
-                    color: Colors.blue, fontWeight: FontWeight.bold)),
+                    color: AppColors.secondary, fontWeight: FontWeight.bold)),
           ),
           title: Text(notification['from_name'] ?? 'System',
               style:
@@ -122,7 +128,9 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(notification['msg_header'] ?? '',
-                  style: const TextStyle(color: Colors.black87, fontSize: 13)),
+                  style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                      fontSize: 13)),
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -133,14 +141,14 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
-                          border: Border.all(color: Colors.blue),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.secondary.withValues(alpha: 0.1),
+                          border: Border.all(color: AppColors.secondary),
+                          borderRadius: AppRadius.xlAll,
                         ),
                         child: const Text(
                           'New',
                           style: TextStyle(
-                            color: Colors.blue,
+                            color: AppColors.secondary,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -151,7 +159,10 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
                   Flexible(
                     child: Text(
                       notification['updated'] ?? '',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: 11,
+                          color:
+                              colorScheme.onSurface.withValues(alpha: 0.4)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -162,7 +173,7 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
           trailing: IconButton(
             icon: Icon(
               isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.grey,
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             onPressed: () => _toggleDrawerExpanded(docId),
           ),
@@ -170,17 +181,17 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
         if (isExpanded)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.grey.shade50,
+            color: colorScheme.surfaceContainerHighest,
             width: double.infinity,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Message Detail',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -197,7 +208,7 @@ class _NotificationDrawerState extends ConsumerState<NotificationDrawer> {
                       icon: const Icon(Icons.check_circle_outline, size: 16),
                       label: const Text('Mark as Seen'),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.green,
+                        foregroundColor: AppColors.success,
                         textStyle: const TextStyle(fontSize: 12),
                       ),
                     ),

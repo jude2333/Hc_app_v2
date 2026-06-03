@@ -4,8 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:battery_plus/battery_plus.dart';
 
-/// Wraps the Geolocator plugin for GPS position streaming.
-/// Handles permission requests and provides a position stream.
 class LocationService {
   static final LocationService _instance = LocationService._();
   factory LocationService() => _instance;
@@ -15,10 +13,6 @@ class LocationService {
   bool _isTracking = false;
   final Battery _battery = Battery();
 
-  // Lazily created StreamController — recreated if previously closed.
-  // This is critical because LocationService is a singleton: dispose() closes
-  // the controller, but the singleton lives forever, and callers may restart
-  // tracking later.
   StreamController<LocationData>? _positionController;
 
   StreamController<LocationData> get _controller {
@@ -28,14 +22,10 @@ class LocationService {
     return _positionController!;
   }
 
-  /// Stream of location updates
   Stream<LocationData> get positionStream => _controller.stream;
   bool get isTracking => _isTracking;
 
-  /// Request location permissions
-  /// Returns true if all required permissions are granted.
   Future<bool> requestPermissions() async {
-    // On web, the browser handles permissions via Geolocation API prompt
     if (kIsWeb) {
       try {
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -66,34 +56,28 @@ class LocationService {
       }
     }
 
-    // Native Android/iOS flow
-    // 1. Check if location services are enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint('[Location] Location services are disabled');
       return false;
     }
 
-    // 2. Request foreground location permission
     var status = await Permission.location.request();
     if (!status.isGranted) {
       debugPrint('[Location] Foreground location permission denied');
       return false;
     }
 
-    // 3. Request "always" (background) location permission
     var bgStatus = await Permission.locationAlways.request();
     if (!bgStatus.isGranted) {
-      debugPrint('[Location] Background location permission denied (non-blocking)');
+      debugPrint(
+          '[Location] Background location permission denied (non-blocking)');
     }
 
     debugPrint('[Location] Permissions granted');
     return true;
   }
 
-  /// Start streaming GPS positions
-  /// [intervalMs] - minimum time between updates (default 3s for real-time tracking)
-  /// [distanceFilter] - minimum distance change in meters (default 2m)
   Future<void> startTracking({
     int intervalMs = 3000,
     double distanceFilter = 2.0,
@@ -106,11 +90,9 @@ class LocationService {
       return;
     }
 
-    // Use platform-appropriate settings
     late LocationSettings locationSettings;
 
     if (kIsWeb) {
-      // Web: use basic settings (no AndroidSettings/foreground service on web)
       locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: distanceFilter.toInt(),
@@ -118,7 +100,6 @@ class LocationService {
       );
       debugPrint('[Location] Using Web location settings');
     } else {
-      // Android/iOS: use AndroidSettings with foreground service
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: distanceFilter.toInt(),
@@ -136,13 +117,10 @@ class LocationService {
       locationSettings: locationSettings,
     ).listen(
       (Position position) async {
-        // Get battery level alongside position (non-blocking)
         int? battery;
         try {
           battery = await _battery.batteryLevel;
-        } catch (_) {
-          // Battery read can fail on web or some devices — non-fatal
-        }
+        } catch (_) {}
 
         final locationData = LocationData(
           latitude: position.latitude,
@@ -156,9 +134,6 @@ class LocationService {
           batteryLevel: battery,
         );
 
-        // Guard: geolocator_web can fire one last callback after cancel()
-        // due to the browser's watchPosition race. If controller was closed
-        // between cancel and this callback, silently drop the event.
         if (!_controller.isClosed) {
           _controller.add(locationData);
         }
@@ -178,10 +153,10 @@ class LocationService {
     );
 
     _isTracking = true;
-    debugPrint('[Location] Tracking started (interval: ${intervalMs}ms, filter: ${distanceFilter}m)');
+    debugPrint(
+        '[Location] Tracking started (interval: ${intervalMs}ms, filter: ${distanceFilter}m)');
   }
 
-  /// Stop GPS streaming
   Future<void> stopTracking() async {
     await _positionSubscription?.cancel();
     _positionSubscription = null;
@@ -189,7 +164,6 @@ class LocationService {
     debugPrint('[Location] Tracking stopped');
   }
 
-  /// Get current position once (for initial location)
   Future<LocationData?> getCurrentPosition() async {
     try {
       final position = await Geolocator.getCurrentPosition(
@@ -214,7 +188,6 @@ class LocationService {
     }
   }
 
-  /// Get battery level (0-100)
   Future<int?> getBatteryLevel() async {
     try {
       return await _battery.batteryLevel;
@@ -228,17 +201,16 @@ class LocationService {
     await stopTracking();
     _positionController?.close();
     _positionController = null;
-    _isTracking = false; // Ensure flag is reset — singleton survives across sessions
+    _isTracking = false;
   }
 }
 
-/// Data class for a GPS location reading
 class LocationData {
   final double latitude;
   final double longitude;
   final double accuracy;
-  final double speed; // m/s
-  final double heading; // degrees 0-360
+  final double speed;
+  final double heading;
   final double altitude;
   final bool isMock;
   final DateTime? timestamp;
@@ -256,30 +228,27 @@ class LocationData {
     this.batteryLevel,
   });
 
-  /// Whether the device is moving (speed > 0.5 m/s ≈ 1.8 km/h)
   bool get isMoving => speed > 0.5;
 
-  /// Speed in km/h
   double get speedKmh => speed * 3.6;
 
-  /// Activity type based on speed
   String get activityType {
     if (speed < 0.5) return 'stationary';
-    if (speed < 2.0) return 'walking'; // < 7.2 km/h
+    if (speed < 2.0) return 'walking';
     return 'driving';
   }
 
   Map<String, dynamic> toJson() => {
-    'lat': latitude,
-    'lng': longitude,
-    'accuracy': accuracy,
-    'speed': speed,
-    'heading': heading,
-    'altitude': altitude,
-    'is_mock': isMock,
-    'is_moving': isMoving,
-    'activity_type': activityType,
-    'battery_level': batteryLevel,
-    'recorded_at': (timestamp ?? DateTime.now()).toUtc().toIso8601String(),
-  };
+        'lat': latitude,
+        'lng': longitude,
+        'accuracy': accuracy,
+        'speed': speed,
+        'heading': heading,
+        'altitude': altitude,
+        'is_mock': isMock,
+        'is_moving': isMoving,
+        'activity_type': activityType,
+        'battery_level': batteryLevel,
+        'recorded_at': (timestamp ?? DateTime.now()).toUtc().toIso8601String(),
+      };
 }

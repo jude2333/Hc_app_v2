@@ -138,7 +138,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for skip messages (one-shot SnackBars)
     ref.listen<String?>(
       hcProcessProvider(widget.workOrderId).select((s) => s.skipMessage),
       (previous, next) {
@@ -635,7 +634,7 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
 
   Widget _buildStepperControls(BuildContext context, ControlsDetails details) {
     final state = ref.watch(hcProcessProvider(widget.workOrderId));
-    // Back is allowed on step 2 (Tests → Arrival) and step 3 (Billing → Tests)
+
     final showBack = details.stepIndex == 1 || details.stepIndex == 2;
 
     return Container(
@@ -687,7 +686,6 @@ class _HCProcessPageState extends ConsumerState<HCProcessPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            // Step 2 (index 1): label as save action so it's clear
                             details.stepIndex == 1
                                 ? 'Save & Continue'
                                 : 'Continue',

@@ -47,13 +47,10 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
 
     final parsed = double.tryParse(value) ?? 0;
 
-    // Validation: clamp to safe range
     double safeVal;
     if (state.isDiscountFlat) {
-      // Flat mode: can't exceed bill amount
       safeVal = parsed.clamp(0, state.billAmount);
     } else {
-      // Percentage mode: 0-50%
       safeVal = parsed.clamp(0, 50);
     }
 
@@ -99,7 +96,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Test Amount Header ──
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -141,8 +137,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           ),
         ),
         const SizedBox(height: 8),
-
-        // ── Credit Client Toggle ──
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
@@ -202,14 +196,10 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // ── Individual Test Discount Section ──
         if (state.selectedTests.isNotEmpty) ...[
           _buildTestDiscountList(state, areChargesEnabled),
           const SizedBox(height: 12),
         ],
-
-        // ── Discount Section with Mode Toggle ──
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -230,7 +220,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                     ),
                   ),
                   const Spacer(),
-                  // Segmented toggle: % or ₹
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -292,8 +281,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
           ),
         ),
         const SizedBox(height: 12),
-
-        // ── HC Charges Dropdown ──
         DropdownButtonFormField<String>(
           value: _hcChargesController.text,
           onChanged: areChargesEnabled ? _onHcChargesChanged : null,
@@ -310,8 +297,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
               .toList(),
         ),
         const SizedBox(height: 12),
-
-        // ── Disposable Charges Dropdown ──
         DropdownButtonFormField<String>(
           value: _dispChargesController.text,
           onChanged: areChargesEnabled ? _onDispChargesChanged : null,
@@ -328,8 +313,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
               .toList(),
         ),
         const SizedBox(height: 16),
-
-        // ── Detailed Summary Card ──
         Card(
           elevation: 2,
           shape:
@@ -355,29 +338,21 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                   ],
                 ),
                 const SizedBox(height: 10),
-
-                // Test amount (sum of original prices before individual discounts)
                 _breakdownRow(
                   'Test Amount',
                   '₹${_originalTestTotal(state).toStringAsFixed(0)}',
                 ),
-
-                // Individual test discounts
                 if (_totalTestDiscount(state) > 0)
                   _breakdownRow(
                     'Test Discounts',
                     '- ₹${_totalTestDiscount(state).toStringAsFixed(0)}',
                     valueColor: Colors.purple.shade600,
                   ),
-
-                // Subtotal after test discounts (= billAmount)
                 if (_totalTestDiscount(state) > 0)
                   _breakdownRow(
                     'Subtotal',
                     '₹${state.billAmount.toStringAsFixed(0)}',
                   ),
-
-                // Overall discount
                 if (state.discount > 0) ...[
                   _breakdownRow(
                     state.isDiscountFlat
@@ -391,8 +366,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                     '₹${state.amountAfterDiscount.toStringAsFixed(0)}',
                   ),
                 ],
-
-                // Extra charges
                 if (state.hcCharges > 0)
                   _breakdownRow(
                     'Home Collection Charges',
@@ -405,12 +378,9 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                     '+ ₹${state.disposableCharges.toStringAsFixed(0)}',
                     valueColor: Colors.orange.shade700,
                   ),
-
                 const SizedBox(height: 8),
                 const Divider(height: 1, thickness: 1.5),
                 const SizedBox(height: 8),
-
-                // Total
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -482,7 +452,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     );
   }
 
-  /// Reusable row for bill breakdown items
   Widget _breakdownRow(String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -508,9 +477,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     );
   }
 
-  // ── Individual Test Discount Helpers ──
-
-  /// Build the expandable test list with per-test discount controls
   Widget _buildTestDiscountList(HCProcessState state, bool enabled) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -562,7 +528,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
             final test = entry.value;
             final isExpanded = _expandedTestIndex == index;
 
-            // Prices
             final baseCost =
                 double.tryParse(test['base_cost']?.toString() ?? '0') ?? 0;
             final cghsCost =
@@ -570,7 +535,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
             final activePrice =
                 (state.cghsPrice && cghsCost > 0) ? cghsCost : baseCost;
 
-            // Discount info
             final discountedPrice =
                 double.tryParse(test['discounted_price']?.toString() ?? '');
             final discountValue =
@@ -617,7 +581,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                         ),
                         const SizedBox(width: 8),
                         if (hasDiscount) ...[
-                          // Discount badge
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
@@ -637,7 +600,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          // Strikethrough original
                           Text(
                             '₹${activePrice.toStringAsFixed(0)}',
                             style: TextStyle(
@@ -647,7 +609,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          // Discounted price
                           Text(
                             '₹${discountedPrice.toStringAsFixed(0)}',
                             style: TextStyle(
@@ -668,7 +629,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                     ),
                   ),
                 ),
-                // Expanded discount input
                 if (isExpanded)
                   _buildTestDiscountInput(index, activePrice, enabled),
                 if (index < state.selectedTests.length - 1)
@@ -681,7 +641,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     );
   }
 
-  /// Inline discount input for an expanded test
   Widget _buildTestDiscountInput(int index, double activePrice, bool enabled) {
     final notifier = ref.read(hcProcessProvider(widget.workOrderId).notifier);
     final controller =
@@ -699,7 +658,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
         children: [
           Row(
             children: [
-              // Mode toggle
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -737,7 +695,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Input field
               Expanded(
                 child: SizedBox(
                   height: 36,
@@ -765,7 +722,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                 ),
               ),
               const SizedBox(width: 6),
-              // Apply button
               SizedBox(
                 height: 36,
                 child: ElevatedButton(
@@ -777,18 +733,19 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                           if (val <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Enter a positive discount value'),
+                                content: const Text(
+                                    'Enter a positive discount value'),
                                 backgroundColor: Colors.red.shade800,
                               ),
                             );
                             return;
                           }
 
-                          // Validate
                           if (_testDiscountIsFlat && val > activePrice) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Discount cannot exceed ₹${activePrice.toStringAsFixed(0)}'),
+                                content: Text(
+                                    'Discount cannot exceed ₹${activePrice.toStringAsFixed(0)}'),
                                 backgroundColor: Colors.red.shade800,
                               ),
                             );
@@ -797,7 +754,8 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                           if (!_testDiscountIsFlat && val > 100) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Percentage cannot exceed 100%'),
+                                content:
+                                    const Text('Percentage cannot exceed 100%'),
                                 backgroundColor: Colors.red.shade800,
                               ),
                             );
@@ -833,7 +791,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               ),
               const Spacer(),
-              // Clear button (if discount exists)
               TextButton(
                 onPressed: enabled
                     ? () {
@@ -865,7 +822,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     );
   }
 
-  /// Sum of original prices (ignoring individual discounts)
   double _originalTestTotal(HCProcessState state) {
     double total = 0;
     for (final test in state.selectedTests) {
@@ -878,7 +834,6 @@ class _HCStepBillingState extends ConsumerState<HCStepBilling> {
     return total;
   }
 
-  /// Sum of all individual test discount amounts
   double _totalTestDiscount(HCProcessState state) {
     return _originalTestTotal(state) - state.billAmount;
   }

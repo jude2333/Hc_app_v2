@@ -13,7 +13,7 @@ import '../widgets/otp_dialog.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/tracking/services/location_service.dart';
 import 'package:anderson_crm_flutter/services/app_update_service.dart';
-import 'package:anderson_crm_flutter/widgets/update_dialog.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/update_dialog.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -28,25 +28,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _mobileController = TextEditingController();
   final _mobileFocusNode = FocusNode();
 
-  // ── Liquid glass design tokens ──
   static const _kAndersonBlue = Color(0xFF1B4F8A);
   static const _kCardBlur = 5.0;
   static const _kCardBorderRadius = 20.0;
   static const _kCardPadding = 32.0;
   static const _kDesktopCardWidth = 420.0;
 
-  // Card glass colors — keep opacity LOW to let background show through
   static final _kCardFillColor = Colors.white.withOpacity(0.08);
   static final _kCardBorderColor = Colors.white.withOpacity(0.55);
   static final _kFieldFillColor = Colors.white.withOpacity(0.15);
   static final _kFieldBorderColor = Colors.white.withOpacity(0.50);
 
-  // Text colors on glass (dark text for light translucent bg)
   static const _kHeadingColor = Color(0xFF222222);
   static const _kSubheadingColor = Color(0xFF555555);
   static const _kLabelColor = Color(0xFF333333);
-  // static const _kHintColor = Color(0xFF999999);
-  // static const _kFooterColor = Color(0xFF444444);
 
   late final AnimationController _shimmerController;
 
@@ -63,14 +58,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         _mobileController.text = authState.mobile;
         _mobileFocusNode.requestFocus();
 
-        // Check for app updates (Android only — blocks login if update required)
         _checkForAppUpdate();
       }
     });
   }
 
-  /// Check if a newer APK is available on the server.
-  /// Shows a blocking dialog if an update is found.
   Future<void> _checkForAppUpdate() async {
     final updateInfo = await AppUpdateService.checkForUpdate();
     if (updateInfo != null && mounted) {
@@ -125,7 +117,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // ── Layer 1: Full‑bleed background image ──
             Image.asset(
               'assets/images/login_bgg.webp',
               fit: BoxFit.cover,
@@ -133,13 +124,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               height: size.height,
               filterQuality: FilterQuality.high,
             ),
-
-            // ── Layer 2: Subtle overlay to improve card contrast ──
             Container(
               color: Colors.white.withOpacity(0.05),
             ),
-
-            // ── Layer 3: Login card (centred) ──
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -182,10 +169,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             return Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(_kCardBorderRadius),
-                // Glass fill: translucent white
                 color: _kCardFillColor,
                 border: Border.all(color: _kCardBorderColor, width: 1.2),
-                // Subtle glass shadow
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.08),
@@ -206,7 +191,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           },
           child: Stack(
             children: [
-              // ── Top highlight shimmer (glass edge reflection) ──
               Positioned(
                 top: 0,
                 left: 0,
@@ -236,7 +220,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   },
                 ),
               ),
-
               Padding(
                 padding: EdgeInsets.all(isDesktop ? _kCardPadding : 24),
                 child: Column(
@@ -369,10 +352,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
-  /// Check location permission for TECHNICIAN role.
-  /// Handles: GPS off, permission not granted, permanently denied.
   Future<bool> _checkLocationPermission() async {
-    // ── Web flow ──
     if (kIsWeb) {
       final locationService = LocationService();
       final granted = await locationService.requestPermissions();
@@ -382,38 +362,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return false;
     }
 
-    // ── Android flow ──
-    // Step 1: Check if GPS / Location Services are enabled on the device
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) await _showGpsOffDialog();
       return false;
     }
 
-    // Step 2: Check current permission status
     LocationPermission permission = await Geolocator.checkPermission();
 
-    // Never asked yet → request it (system dialog will show)
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // User tapped "Deny" on the system dialog
         if (mounted) await _showPermissionDeniedDialog(false);
         return false;
       }
     }
 
-    // Permanently denied ("Don't ask again" was checked)
     if (permission == LocationPermission.deniedForever) {
       if (mounted) await _showPermissionDeniedDialog(true);
       return false;
     }
 
-    // Permission granted (whileInUse or always)
     return true;
   }
 
-  /// Dialog: Device GPS is turned OFF
   Future<void> _showGpsOffDialog() async {
     await showDialog(
       context: context,
@@ -454,7 +426,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  /// Dialog: Android permission denied or permanently denied
   Future<void> _showPermissionDeniedDialog(bool isPermanent) async {
     await showDialog(
       context: context,
@@ -510,7 +481,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  /// Dialog: Web browser location blocked
   Future<void> _showWebLocationDialog() async {
     await showDialog(
       context: context,
@@ -592,8 +562,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         ),
         const SizedBox(height: 12),
-
-        // ── Role tiles ──
         ...authState.roles.map((role) {
           final isSelected = authState.selectedRoleId == role.id;
 
@@ -610,7 +578,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     splashColor: Colors.white.withOpacity(0.15),
                     highlightColor: Colors.white.withOpacity(0.08),
                     onTap: () async {
-                      // TECHNICIAN must grant location permission before login
                       if (role.name == 'TECHNICIAN') {
                         final locationOk = await _checkLocationPermission();
                         if (!locationOk) return;
@@ -649,7 +616,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                       child: Row(
                         children: [
-                          // Role icon
                           Container(
                             width: 36,
                             height: 36,
@@ -673,8 +639,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ),
                           const SizedBox(width: 14),
-
-                          // Role name
                           Expanded(
                             child: Text(
                               role.name,
@@ -690,8 +654,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                             ),
                           ),
-
-                          // Arrow / check
                           Icon(
                             isSelected
                                 ? Icons.check_circle_rounded
@@ -710,15 +672,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           );
         }),
-
         const SizedBox(height: 10),
       ],
     );
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  REMEMBER CHECKBOX
-  // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildRememberCheckbox(AuthState authState, AuthNotifier notifier) {
     return Row(
@@ -748,10 +705,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ],
     );
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  SIGN IN BUTTON  —  Liquid glass pill
-  // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildSignInButton(AuthState authState, AuthNotifier notifier) {
     return SizedBox(
@@ -812,10 +765,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  OTP BUTTON  —  Glass outlined pill
-  // ═══════════════════════════════════════════════════════════════════════════
-
   Widget _buildOtpButton(AuthState authState, AuthNotifier notifier) {
     return SizedBox(
       width: double.infinity,
@@ -866,10 +815,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  FOOTER
-  // ═══════════════════════════════════════════════════════════════════════════
-
   Widget _buildFooter() {
     return Column(
       children: [
@@ -891,10 +836,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ],
     );
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  //  OTP DIALOG
-  // ═══════════════════════════════════════════════════════════════════════════
 
   void _showOtpDialog(String mobile) {
     showOtpDialog(

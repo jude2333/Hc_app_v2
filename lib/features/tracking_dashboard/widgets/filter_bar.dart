@@ -4,8 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../providers/tracking_ui_providers.dart';
 
-/// Filter bar for the tracking dashboard.
-/// Uses Riverpod to directly read and mutate dashboard state safely.
 class FilterBar extends ConsumerWidget {
   const FilterBar({super.key});
 
@@ -22,7 +20,6 @@ class FilterBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // Elegant Date picker chip
           InkWell(
             onTap: () async {
               final date = await showDatePicker(
@@ -46,26 +43,26 @@ class FilterBar extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.calendar_today, size: 14, color: AppColors.primary),
+                  const Icon(Icons.calendar_today,
+                      size: 14, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Text(
                     _isToday(selectedDate)
                         ? 'Today, ${DateFormat('MMM d').format(selectedDate)}'
                         : DateFormat('MMM d, yyyy').format(selectedDate),
-                    style: AppTextStyles.buttonText.copyWith(color: AppColors.textPrimary),
+                    style: AppTextStyles.buttonText
+                        .copyWith(color: AppColors.textPrimary),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+                  const Icon(Icons.keyboard_arrow_down,
+                      size: 16, color: AppColors.textSecondary),
                 ],
               ),
             ),
           ),
-          
           const SizedBox(width: 16),
           Container(width: 1, height: 24, color: AppColors.divider),
           const SizedBox(width: 16),
-
-          // Status filter chips (horizontally scrollable if tight space)
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -74,27 +71,31 @@ class FilterBar extends ConsumerWidget {
                   _FilterChip(
                     label: 'All',
                     isSelected: statusFilter == null,
-                    onTap: () => ref.read(statusFilterProvider.notifier).state = null,
+                    onTap: () =>
+                        ref.read(statusFilterProvider.notifier).state = null,
                   ),
                   const SizedBox(width: 8),
                   _FilterChip(
                     label: 'Online',
                     isSelected: statusFilter == 'online',
-                    onTap: () => ref.read(statusFilterProvider.notifier).state = 'online',
+                    onTap: () => ref.read(statusFilterProvider.notifier).state =
+                        'online',
                     activeColor: AppColors.trackOnline,
                   ),
                   const SizedBox(width: 8),
                   _FilterChip(
                     label: 'Idle',
                     isSelected: statusFilter == 'idle',
-                    onTap: () => ref.read(statusFilterProvider.notifier).state = 'idle',
+                    onTap: () =>
+                        ref.read(statusFilterProvider.notifier).state = 'idle',
                     activeColor: AppColors.trackIdle,
                   ),
                   const SizedBox(width: 8),
                   _FilterChip(
                     label: 'Offline',
                     isSelected: statusFilter == 'offline',
-                    onTap: () => ref.read(statusFilterProvider.notifier).state = 'offline',
+                    onTap: () => ref.read(statusFilterProvider.notifier).state =
+                        'offline',
                     activeColor: AppColors.trackOffline,
                   ),
                 ],
@@ -108,7 +109,9 @@ class FilterBar extends ConsumerWidget {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 }
 

@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-/// Range options for the analytics selector
+
 enum AnalyticsRange { thisWeek, lastWeek, thisMonth, lastMonth, custom }
 
-/// Per-test aggregation across a technician's orders
+
 @immutable
 class TestAggregation {
   final String investName;
@@ -28,19 +28,19 @@ class TestAggregation {
   }
 }
 
-/// Per-technician analytics summary
+
 @immutable
 class TechAnalytics {
   final String techId;
   final String techName;
 
-  // Order counts
+  
   final int totalOrders;
   final int finished;
   final int cancelled;
   final int pending;
 
-  // Financial
+  
   final double totalBilled;
   final double totalReceived;
   final double totalDiscount;
@@ -49,14 +49,14 @@ class TechAnalytics {
   final double cashCollected;
   final double gpayCollected;
 
-  // Tests
+  
   final int totalTests;
   final List<TestAggregation> testBreakdown;
 
-  // B2B
+  
   final Map<String, int> b2bBreakdown;
 
-  // Raw orders for detail sheet export
+  
   final List<Map<String, dynamic>> rawOrders;
 
   const TechAnalytics({
@@ -80,7 +80,7 @@ class TechAnalytics {
   });
 }
 
-/// Full analytics report
+
 @immutable
 class AnalyticsReport {
   final List<TechAnalytics> technicians;
@@ -98,7 +98,7 @@ class AnalyticsReport {
   });
 }
 
-/// State wrapper for the provider
+
 @immutable
 class TechAnalyticsState {
   final bool isLoading;

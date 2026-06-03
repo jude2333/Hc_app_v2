@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
 import './routes/app_router.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 // import 'database/db_handler.dart';
 // import 'util.dart';
@@ -38,10 +39,15 @@ void main() async {
 class AndersonCRMApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: 'Anderson CRM',
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeMode,
       routerConfig: appRouter,
     );
   }
 }
+

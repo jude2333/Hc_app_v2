@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/services/app_update_service.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../tabs/daily_tab.dart';
 import '../tabs/weekly_tab.dart';
 import '../tabs/monthly_tab.dart';
@@ -20,12 +24,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   String? _tenantId;
   bool _isLoading = true;
 
+  // Web-only: APK download info
+  ApkDownloadInfo? _apkDownloadInfo;
+  bool _showDownloadBanner = true;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserData();
+      if (kIsWeb) _fetchApkDownloadInfo();
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -37,6 +48,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         _tenantId = storage.getFromSession("logged_in_tenant_id");
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchApkDownloadInfo() async {
+    final info = await AppUpdateService.getApkDownloadInfo();
+    if (info != null && mounted) {
+      setState(() => _apkDownloadInfo = info);
     }
   }
 
@@ -67,10 +85,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   Widget _buildManagerDashboard() {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           _buildHeader(),
+          if (kIsWeb && _apkDownloadInfo != null && _showDownloadBanner)
+            _buildDownloadBanner(),
           _buildTabBar(),
           Expanded(
             child: TabBarView(
@@ -92,19 +112,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget _buildHeader() {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
-        left: 20,
-        right: 20,
-        bottom: 16,
+        top: MediaQuery.of(context).padding.top + AppSpacing.md,
+        left: AppSpacing.xl,
+        right: AppSpacing.xl,
+        bottom: AppSpacing.lg,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.orange.shade400,
-            Colors.deepOrange.shade500,
-          ],
+          colors: [AppColors.gradientStart, AppColors.primaryDark],
         ),
       ),
       child: Row(
@@ -112,16 +129,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+              borderRadius: AppRadius.xlAll,
             ),
             child: const Icon(
               Icons.dashboard_rounded,
-              color: Colors.white,
+              color: AppColors.textOnPrimary,
               size: 28,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppSpacing.lg),
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +146,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               const Text(
                 'Dashboard',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -138,7 +155,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               Text(
                 'Analytics & Insights',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.9),
                   fontSize: 13,
                 ),
               ),
@@ -146,15 +163,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
           const Spacer(),
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+              borderRadius: AppRadius.lgAll,
             ),
             child: const Icon(
               Icons.refresh_rounded,
-              color: Colors.white,
-              size: 20,
+              color: AppColors.textOnPrimary,
+              size: AppSizes.iconSm,
             ),
           ),
         ],
@@ -163,12 +180,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   Widget _buildTabBar() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.shadowLight,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -176,8 +194,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       ),
       child: TabBar(
         controller: _tabController,
-        labelColor: Colors.orange.shade700,
-        unselectedLabelColor: Colors.grey.shade500,
+        labelColor: AppColors.gradientStart,
+        unselectedLabelColor: AppColors.textSecondary,
         labelStyle: const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
@@ -187,17 +205,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           fontSize: 14,
         ),
         indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(
-            color: Colors.orange.shade600,
+          borderSide: const BorderSide(
+            color: AppColors.gradientStart,
             width: 3,
           ),
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: AppRadius.xxsAll,
         ),
         indicatorSize: TabBarIndicatorSize.label,
         dividerColor: Colors.transparent,
         splashFactory: InkRipple.splashFactory,
         overlayColor: WidgetStateProperty.all(
-          Colors.orange.withOpacity(0.1),
+          AppColors.primary.withValues(alpha: 0.1),
         ),
         tabs: const [
           _TabItem(icon: Icons.today_rounded, label: 'Daily'),
@@ -210,45 +228,273 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   Widget _buildComingSoonScreen(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: AppSpacing.xxxl + AppSpacing.lg),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.construction_rounded,
+                  size: 48,
+                  color: AppColors.gradientStart,
+                ),
               ),
-              child: Icon(
-                Icons.construction_rounded,
-                size: 48,
-                color: Colors.orange.shade400,
+              const SizedBox(height: AppSpacing.xxl),
+              Text(
+                message,
+                style: AppTextStyles.h3.copyWith(
+                  color: colorScheme.onSurface,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              message,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'We\'re working on something great!',
+                style: AppTextStyles.caption.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'We\'re working on something great!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
-            ),
-          ],
+              if (kIsWeb && _apkDownloadInfo != null) ...[
+                const SizedBox(height: AppSpacing.xxxl + AppSpacing.sm),
+                _buildDownloadCard(),
+              ],
+              const SizedBox(height: AppSpacing.xxxl + AppSpacing.lg),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  // ── Web-only: Download banner for manager/admin dashboard ──
+  Widget _buildDownloadBanner() {
+    final info = _apkDownloadInfo!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.andersonBlue.withValues(alpha: 0.08),
+            AppColors.andersonBlue.withValues(alpha: 0.04),
+          ],
+        ),
+        borderRadius: AppRadius.xlAll,
+        border: Border.all(
+          color: AppColors.andersonBlue.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.andersonBlue.withValues(alpha: 0.1),
+              borderRadius: AppRadius.mdAll,
+            ),
+            child: const Icon(
+              Icons.phone_android_rounded,
+              color: AppColors.andersonBlue,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Download Anderson CRM for Android',
+                  style: AppTextStyles.body.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'Get the latest mobile experience • v${info.version}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          SizedBox(
+            height: 34,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.download_rounded, size: AppSizes.iconXs),
+              label: Text(
+                'Download',
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.andersonBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.mdAll,
+                ),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              ),
+              onPressed: () => _launchApkDownload(info.apkUrl),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          InkWell(
+            borderRadius: AppRadius.roundAll,
+            onTap: () => setState(() => _showDownloadBanner = false),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Web-only: Download card for coming-soon screens ──
+  Widget _buildDownloadCard() {
+    final info = _apkDownloadInfo!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 380),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.andersonBlue.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.phone_android_rounded,
+              size: AppSizes.iconLg,
+              color: AppColors.andersonBlue,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Download Mobile App',
+            style: AppTextStyles.h3.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.ssm),
+          Text(
+            'Get the latest Android app (v${info.version})',
+            style: AppTextStyles.caption.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          if (info.releaseNotes.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: AppPadding.md,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkInfoBackground : AppColors.infoBackground,
+                borderRadius: AppRadius.lgAll,
+                border: Border.all(
+                  color: isDark ? AppColors.darkInfoBorder : AppColors.infoBorder,
+                ),
+              ),
+              child: Text(
+                info.releaseNotes,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.darkInfoText : AppColors.infoText,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: Text(
+                'Download Anderson CRM APK',
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.andersonBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.lgAll,
+                ),
+                elevation: 0,
+              ),
+              onPressed: () => _launchApkDownload(info.apkUrl),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchApkDownload(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                const Text('Could not open download link. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -316,7 +562,7 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           _buildSkeletonHeader(),
@@ -340,8 +586,12 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
       width: double.infinity,
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(bottom: BorderSide(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkBorder
+              : AppColors.border,
+        )),
       ),
       child: FadeTransition(
         opacity: _animation,
@@ -367,12 +617,16 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
   }
 
   Widget _buildSkeletonTabBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 0),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey, width: 0.2)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(bottom: BorderSide(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
+          width: 0.2,
+        )),
       ),
       child: FadeTransition(
         opacity: _animation,
@@ -446,7 +700,9 @@ class _SkeletonBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.darkBorder
+            : AppColors.border,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
     );

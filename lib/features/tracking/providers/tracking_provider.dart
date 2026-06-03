@@ -8,7 +8,6 @@ import '../services/location_service.dart';
 import '../services/tracking_ws_service.dart';
 import '../services/location_cache_service.dart';
 
-/// Tracking state
 class TrackingState {
   final bool isTracking;
   final bool isConnected;
@@ -41,7 +40,6 @@ class TrackingState {
   }
 }
 
-/// Main tracking provider — orchestrates GPS + WebSocket + caching
 class TrackingNotifier extends StateNotifier<TrackingState> {
   final LocationService _locationService;
   final TrackingWsService _wsService;
@@ -52,7 +50,6 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
   String? _jwtToken;
   String? _currentWorkOrderDocId;
 
-  // H4 Performance Optimization: Batching offline writes
   final _inMemoryCache = <Map<String, dynamic>>[];
   Timer? _flushTimer;
   int _persistedCacheSize = 0;
@@ -62,12 +59,9 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
         _wsService = TrackingWsService(),
         super(const TrackingState());
 
-  /// Initialize tracking — called after login
-  /// Auto-starts tracking if the user is a technician
   Future<void> initialize() async {
     final storage = _ref.read(storageServiceProvider);
 
-    // Get auth info from session — use the correct keys
     final empId = storage.getFromSession('logged_in_emp_id');
     final roleName = storage.getFromSession('role_name');
     _jwtToken = storage.getFromSession('pg_admin');
@@ -77,34 +71,30 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
       return;
     }
 
-    // Only auto-start for technicians
     if (roleName.toUpperCase() != 'TECHNICIAN') {
-      debugPrint('[Tracking] User is $roleName — not starting technician tracking');
+      debugPrint(
+          '[Tracking] User is $roleName — not starting technician tracking');
       return;
     }
 
     debugPrint('[Tracking] Initializing tracking for technician $empId');
 
-    // Load initial cached pings count
     _persistedCacheSize = await LocationCacheService.getCacheSize();
     state = state.copyWith(cachedPings: _persistedCacheSize);
 
-    // Listen for WebSocket messages
     _wsSub = _wsService.messageStream.listen(_handleWsMessage);
 
-    // Start flush timer for in-memory offline pings
     _startFlushTimer();
 
-    // Connect WebSocket
     await _connectWebSocket();
 
-    // Start GPS tracking
     await startTracking();
   }
 
   void _startFlushTimer() {
     _flushTimer?.cancel();
-    _flushTimer = Timer.periodic(const Duration(seconds: 60), (_) => _flushInMemoryCache());
+    _flushTimer = Timer.periodic(
+        const Duration(seconds: 60), (_) => _flushInMemoryCache());
   }
 
   void _stopFlushTimer() {
@@ -119,12 +109,11 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     _inMemoryCache.clear();
 
     await LocationCacheService.cachePings(pingsToCache);
-    
+
     _persistedCacheSize = await LocationCacheService.getCacheSize();
     state = state.copyWith(cachedPings: _persistedCacheSize);
   }
 
-  /// Connect to the tracking WebSocket server
   Future<void> _connectWebSocket() async {
     if (_jwtToken == null || _jwtToken!.isEmpty) return;
 
@@ -132,10 +121,8 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
       await _wsService.connect(token: _jwtToken!, role: 'technician');
       state = state.copyWith(isConnected: true);
 
-      // Flush any pending in-memory cache to disk before syncing
       await _flushInMemoryCache();
 
-      // Sync any cached pings
       await _syncCachedPings();
     } catch (e) {
       debugPrint('[Tracking] WebSocket connect error: $e');
@@ -143,13 +130,12 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     }
   }
 
-  /// Start GPS position streaming
   Future<void> startTracking() async {
     if (state.isTracking) return;
 
     await _locationService.startTracking(
-      intervalMs: 10000,   // 10 seconds — live tracking
-      distanceFilter: 5,   // 5 meters
+      intervalMs: 10000,
+      distanceFilter: 5,
     );
 
     _locationSub = _locationService.positionStream.listen(_onLocationUpdate);
@@ -157,7 +143,6 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     debugPrint('[Tracking] GPS tracking started');
   }
 
-  /// Stop GPS tracking
   Future<void> stopTracking() async {
     await _locationService.stopTracking();
     await _locationSub?.cancel();
@@ -168,7 +153,6 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     debugPrint('[Tracking] GPS tracking stopped');
   }
 
-  /// Toggle tracking on/off
   Future<void> toggleTracking() async {
     if (state.isTracking) {
       await stopTracking();
@@ -177,40 +161,34 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     }
   }
 
-  /// Set the current work order being serviced
   void setCurrentWorkOrder(String? docId) {
     _currentWorkOrderDocId = docId;
   }
 
-  /// Handle GPS location update
   void _onLocationUpdate(LocationData location) {
     state = state.copyWith(lastLocation: location);
 
     if (_wsService.isConnected) {
-      // Send via WebSocket (with battery)
       _wsService.sendLocation(
         location,
         battery: location.batteryLevel,
         currentWorkOrder: _currentWorkOrderDocId,
       );
     } else {
-      // Cache in-memory first to avoid main-thread serialization bottlenecks on every 10s ping
       _inMemoryCache.add({
         ...location.toJson(),
         'current_work_order': _currentWorkOrderDocId,
       });
 
-      // Update UI state synchronously (persisted count is known + current in-memory count)
-      state = state.copyWith(cachedPings: _persistedCacheSize + _inMemoryCache.length);
+      state = state.copyWith(
+          cachedPings: _persistedCacheSize + _inMemoryCache.length);
 
-      // Flush if we hit bulk size of 5
       if (_inMemoryCache.length >= 5) {
         _flushInMemoryCache();
       }
     }
   }
 
-  /// Handle WebSocket messages
   void _handleWsMessage(Map<String, dynamic> message) {
     final type = message['type'] as String?;
 
@@ -220,15 +198,12 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
         state = state.copyWith(isConnected: true, error: null);
         break;
       case 'ack':
-        // Location ping acknowledged — nothing to do
         break;
       case '_reconnect_needed':
-        // Internal signal to reconnect
         debugPrint('[Tracking] Reconnecting WebSocket...');
         _connectWebSocket();
         break;
       case '_reconnect_exhausted':
-        // All reconnect attempts failed — likely expired JWT
         debugPrint('[Tracking] Reconnect exhausted — connection lost');
         state = state.copyWith(
           isConnected: false,
@@ -240,8 +215,6 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     }
   }
 
-  /// Sync cached pings to server via REST bulk endpoint.
-  /// Uses peek-then-clear to avoid losing pings if the upload fails.
   Future<void> _syncCachedPings() async {
     final pings = await LocationCacheService.peekCache();
     if (pings.isEmpty) return;
@@ -257,18 +230,16 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
           headers: {'Authorization': 'Bearer $_jwtToken'},
         ),
       );
-      // Only clear cache after successful upload
+
       await LocationCacheService.clearCache();
       _persistedCacheSize = 0;
       state = state.copyWith(cachedPings: 0);
       debugPrint('[Tracking] Cached pings synced successfully');
     } catch (e) {
       debugPrint('[Tracking] Bulk sync failed (cache preserved): $e');
-      // Cache is NOT cleared — pings remain for next retry
     }
   }
 
-  /// Full cleanup — called on logout
   Future<void> shutdown() async {
     _stopFlushTimer();
     await stopTracking();
@@ -276,14 +247,12 @@ class TrackingNotifier extends StateNotifier<TrackingState> {
     await _wsSub?.cancel();
     await _locationService.dispose();
 
-    // Flush any remaining in-memory pings to disk before shutdown/logout
     await _flushInMemoryCache();
 
     _wsService.dispose();
   }
 }
 
-/// Riverpod provider
 final trackingProvider =
     StateNotifierProvider<TrackingNotifier, TrackingState>((ref) {
   return TrackingNotifier(ref);

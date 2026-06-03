@@ -58,14 +58,14 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
           ),
         ),
         actions: [
-          // Refresh
+          
           IconButton(
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh, color: AppColors.textSecondary),
             onPressed: () =>
                 ref.read(techAnalyticsProvider.notifier).loadData(),
           ),
-          // Export
+          
           if (state.report != null && !state.isLoading)
             IconButton(
               tooltip: 'Export to Excel',
@@ -79,7 +79,7 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
       body: Column(
         children: [
           const SizedBox(height: 12),
-          // Range selector
+          
           AnalyticsRangeSelector(
             selected: selectedRange,
             onChanged: (range) {
@@ -91,7 +91,7 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
 
           const SizedBox(height: 12),
 
-          // Date range label
+          
           if (state.report != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -123,7 +123,7 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
 
           const SizedBox(height: 8),
 
-          // Body
+          
           Expanded(child: _buildBody(state, isMobile)),
         ],
       ),
@@ -134,7 +134,7 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
     if (state.isLoading) {
       if (isMobile) {
         return ListView(
-          physics: const NeverScrollableScrollPhysics(), // Disable scrolling during load
+          physics: const NeverScrollableScrollPhysics(), 
           children: [
             const AnalyticsAggregateCardSkeleton(),
             const SizedBox(height: 12),
@@ -206,13 +206,13 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
   Widget _buildMobileView(AnalyticsReport report) {
     return ListView(
       children: [
-        // Aggregates card
+        
         AnalyticsAggregateCard(
           overall: report.overallTotals,
           rangeLabel: report.rangeLabel,
         ),
         const SizedBox(height: 8),
-        // Technician cards
+        
         ...report.technicians.asMap().entries.map((entry) {
           final index = entry.key;
           final tech = entry.value;
@@ -241,13 +241,13 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       child: Column(
         children: [
-          // Aggregates card
+          
           AnalyticsAggregateCard(
             overall: report.overallTotals,
             rangeLabel: report.rangeLabel,
           ),
           const SizedBox(height: 12),
-          // Desktop table
+          
           Expanded(
             child: TechAnalyticsDesktopTable(
               technicians: report.technicians,

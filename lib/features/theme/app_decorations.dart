@@ -81,4 +81,29 @@ class AppDecorations {
       ],
     );
   }
+
+  /// Download card for APK download prompts
+  static BoxDecoration get downloadCard {
+    return BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.border),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.shadowLight,
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
+  /// Info/release notes container
+  static BoxDecoration get infoPanel {
+    return BoxDecoration(
+      color: AppColors.infoBackground,
+      borderRadius: AppRadius.lgAll,
+      border: Border.all(color: AppColors.infoBorder),
+    );
+  }
 }

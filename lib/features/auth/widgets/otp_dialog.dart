@@ -25,7 +25,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
   final _otpController = TextEditingController();
   final _focusNode = FocusNode();
 
-  // ── Glass design tokens (matching login_screen) ──
   static const _kHeadingColor = Color(0xFF222222);
   static const _kSubheadingColor = Color(0xFF555555);
   static const _kHintColor = Color(0xFF999999);
@@ -88,7 +87,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Header ──
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -150,13 +148,10 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                     ],
                   ),
                 ),
-
-                // ── Body ──
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      // Phone number display
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
@@ -187,8 +182,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // OTP input
                       Container(
                         decoration: BoxDecoration(
                           color: _kFieldFillColor,
@@ -232,8 +225,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                           onFieldSubmitted: (_) => _submit(),
                         ),
                       ),
-
-                      // Error message
                       if (authState.hasError) ...[
                         const SizedBox(height: 12),
                         Row(
@@ -256,8 +247,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                         ),
                       ],
                       const SizedBox(height: 24),
-
-                      // Verify button (glass style)
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -311,8 +300,6 @@ class _OtpDialogState extends ConsumerState<OtpDialog> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Resend link
                       TextButton(
                         onPressed: () {},
                         child: Text(

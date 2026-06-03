@@ -20,7 +20,7 @@ class HCProcessState {
 
   final double billAmount;
   final double discount;
-  final bool isDiscountFlat; // false = percentage, true = flat ₹ amount
+  final bool isDiscountFlat;
   final double amountAfterDiscount;
   final double amountReceived;
   final double hcCharges;

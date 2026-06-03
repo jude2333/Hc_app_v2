@@ -343,45 +343,45 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
       }
     }
 
-    final result =
-        await ref.read(addWorkOrderControllerProvider.notifier).saveWorkOrder(
-              isEditMode: isEditMode,
-              isCopyMode: isCopyMode,
-              existingWorkOrder: widget.existingWorkOrder,
-              copyFrom: widget.copyFrom,
-              collectionDate: _collectionDate,
-              collectionTime: _collectionTime,
-              salutation: _salutation,
-              name: _toTitleCase(_nameController.text.trim()),
-              mobile: _mobileController.text.trim(),
-              address: _toTitleCase(_addressController.text.trim()),
-              pincode: _pincodeController.text.trim(),
-              doctor: _toTitleCase(_doctorController.text.trim()),
-              age: _ageController.text.trim(),
-              gender: _gender,
-              email: _emailController.text.trim().toLowerCase(),
-              freeText: _freeTextController.text.trim(),
-              isVip: _isVip,
-              isUrgent: _isUrgent,
-              isCghs: _isCghs,
-              credit: _credit,
-              b2bClientId: _selectedB2BClientId,
-              b2bClientName: _selectedB2BClientName,
-              marketingPersonName:
-                  _toTitleCase(_marketingPersonNameController.text.trim()),
-              marketingPersonNumber:
-                  _marketingPersonNumberController.text.trim(),
-              alternateMobile: _alternateMobileController.text.trim(),
-              clientCode: _clientCodeController.text.trim(),
-              doctorCode: _doctorCodeController.text.trim(),
-              sendSms: _sendSms,
-              sendWhatsapp: _sendWhatsapp,
-              sendEmail: _sendEmail,
-              prescriptionPaths: prescriptionPaths,
-              prescriptionImages: newImages,
-              isCancelled: _isCancelled,
-              cancelReason: _cancellationReasonController.text.trim(),
-            );
+    final result = await ref
+        .read(addWorkOrderControllerProvider.notifier)
+        .saveWorkOrder(
+          isEditMode: isEditMode,
+          isCopyMode: isCopyMode,
+          existingWorkOrder: widget.existingWorkOrder,
+          copyFrom: widget.copyFrom,
+          collectionDate: _collectionDate,
+          collectionTime: _collectionTime,
+          salutation: _salutation,
+          name: _toTitleCase(_nameController.text.trim()),
+          mobile: _mobileController.text.trim(),
+          address: _toTitleCase(_addressController.text.trim()),
+          pincode: _pincodeController.text.trim(),
+          doctor: _toTitleCase(_doctorController.text.trim()),
+          age: _ageController.text.trim(),
+          gender: _gender,
+          email: _emailController.text.trim().toLowerCase(),
+          freeText: _freeTextController.text.trim(),
+          isVip: _isVip,
+          isUrgent: _isUrgent,
+          isCghs: _isCghs,
+          credit: _credit,
+          b2bClientId: _selectedB2BClientId,
+          b2bClientName: _selectedB2BClientName,
+          marketingPersonName:
+              _toTitleCase(_marketingPersonNameController.text.trim()),
+          marketingPersonNumber: _marketingPersonNumberController.text.trim(),
+          alternateMobile: _alternateMobileController.text.trim(),
+          clientCode: _clientCodeController.text.trim(),
+          doctorCode: _doctorCodeController.text.trim(),
+          sendSms: _sendSms,
+          sendWhatsapp: _sendWhatsapp,
+          sendEmail: _sendEmail,
+          prescriptionPaths: prescriptionPaths,
+          prescriptionImages: newImages,
+          isCancelled: _isCancelled,
+          cancelReason: _cancellationReasonController.text.trim(),
+        );
 
     if (result['success'] == true) {
       if (!mounted) return;
@@ -1071,7 +1071,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
           controller: _freeTextController,
           decoration: WorkOrderFormStyles.inputDecoration('Remarks / Notes',
               icon: Icons.notes),
-          maxLines: 2,
+          minLines: 6,
+          maxLines: null,
         ),
       ],
     );

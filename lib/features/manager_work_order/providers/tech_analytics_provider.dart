@@ -5,9 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 import '../models/tech_analytics_models.dart';
 
-// ---------------------------------------------------------------------------
-// Providers
-// ---------------------------------------------------------------------------
+
+
+
 
 final analyticsRangeProvider =
     StateProvider<AnalyticsRange>((ref) => AnalyticsRange.thisWeek);
@@ -20,16 +20,16 @@ final techAnalyticsProvider =
   return TechAnalyticsNotifier(ref);
 });
 
-// ---------------------------------------------------------------------------
-// Notifier
-// ---------------------------------------------------------------------------
+
+
+
 
 class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
   final Ref ref;
 
   TechAnalyticsNotifier(this.ref) : super(const TechAnalyticsState());
 
-  /// Load analytics for the currently selected range
+  
   Future<void> loadData() async {
     state = state.copyWith(isLoading: true, clearError: true);
 
@@ -45,7 +45,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
 
       final postgres = ref.read(postgresServiceProvider);
 
-      // Reuse exact pattern from TechEngagementNotifier.loadData()
+      
       final results = await Future.wait([
         postgres.getTechnicians(),
         postgres.getAllWorkOrdersForDateRange(startStr, endStr),
@@ -73,15 +73,15 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
     }
   }
 
-  /// Parse date range from enum selection
+  
   (DateTime, DateTime, String) _getDateRange(AnalyticsRange range) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     switch (range) {
       case AnalyticsRange.thisWeek:
-        // Monday-based week
-        final weekday = today.weekday; // 1 = Mon, 7 = Sun
+        
+        final weekday = today.weekday; 
         final monday = today.subtract(Duration(days: weekday - 1));
         final sunday = monday.add(const Duration(days: 6));
         return (monday, sunday, 'This Week');
@@ -124,7 +124,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
     }
   }
 
-  /// Core processing logic — extends TechEngagement._processData() pattern
+  
   AnalyticsReport _processData(
     List<dynamic> rawTechs,
     List<Map<String, dynamic>> allOrders, {
@@ -138,7 +138,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
 
     final List<TechAnalytics> analytics = [];
 
-    // Overall accumulators
+    
     int gOrders = 0, gFinished = 0, gCancelled = 0, gPending = 0;
     double gBilled = 0,
         gReceived = 0,
@@ -186,7 +186,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
 
         final doc = _parseDoc(order['doc']);
 
-        // Financial — same pattern as TechEngagement
+        
         final amountReceived =
             double.tryParse(order['received_amount']?.toString() ?? '0') ?? 0;
         final hcCharge =
@@ -212,7 +212,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
           if (paymentMethod == 'gpay') gpay += amountReceived;
         }
 
-        // NEW: Test items breakdown
+        
         final testItems = doc['test_items'] as List? ?? [];
         for (final item in testItems) {
           testCount++;
@@ -234,7 +234,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
           }
         }
 
-        // B2B tracking
+        
         final b2bName = doc['b2b_client_name']?.toString() ??
             order['b2b_client_name']?.toString() ??
             '';
@@ -243,7 +243,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
         }
       }
 
-      // Accumulate globals
+      
       gOrders += assigned;
       gFinished += finished;
       gCancelled += cancelled;
@@ -257,9 +257,9 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
       gGpay += gpay;
       gTests += testCount;
 
-      // Only include techs with orders, or if total tech count is small
+      
       if (assigned > 0 || technicians.length < 50) {
-        // Sort test breakdown by count descending
+        
         final sortedTests = testMap.values.toList()
           ..sort((a, b) => b.count.compareTo(a.count));
 
@@ -285,7 +285,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
       }
     }
 
-    // Sort by total orders descending
+    
     analytics.sort((a, b) => b.totalOrders.compareTo(a.totalOrders));
 
     final overall = TechAnalytics(
@@ -314,7 +314,7 @@ class TechAnalyticsNotifier extends StateNotifier<TechAnalyticsState> {
     );
   }
 
-  /// Reused from TechEngagementNotifier._parseDoc()
+  
   Map<String, dynamic> _parseDoc(dynamic doc) {
     try {
       if (doc == null) return {};

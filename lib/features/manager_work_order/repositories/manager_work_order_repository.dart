@@ -34,7 +34,7 @@ class _FilterParams {
 class ManagerWorkOrderRepository {
   final PowerSyncService _powerSync = PowerSyncService.instance;
   final StorageService storage;
-  final PostgresService postgresService; // Added dependency
+  final PostgresService postgresService; 
 
   StreamSubscription<SyncStatus>? _statusSubscription;
   SyncStatus? _syncStatus;
@@ -44,7 +44,7 @@ class ManagerWorkOrderRepository {
 
   ManagerWorkOrderRepository({
     required this.storage,
-    required this.postgresService, // Added parameter
+    required this.postgresService, 
   }) {
     debugPrint(' ManagerWorkOrderRepository CONSTRUCTOR called');
   }
@@ -53,8 +53,8 @@ class ManagerWorkOrderRepository {
   bool get isConnected => _syncStatus?.connected ?? false;
   bool get isSyncing {
     if (_syncStatus == null) return false;
-    // Only show syncing indicator during initial sync or active downloads
-    // Don't show for uploads after initial sync (causes perpetual spinner)
+    
+    
     final hasSynced = _syncStatus?.hasSynced ?? false;
     if (hasSynced) {
       return _syncStatus?.downloading ?? false;
@@ -66,8 +66,8 @@ class ManagerWorkOrderRepository {
   bool get hasPendingUploads => _syncStatus?.uploading ?? false;
   SyncStatus? get syncStatus => _syncStatus;
 
-  /// Stream of sync status changes — consumed by managerSyncStatusProvider
-  /// so AppBar indicators rebuild independently from the work order list.
+  
+  
   Stream<SyncStatus> watchSyncStatus() {
     return _powerSync.watchStatus();
   }
@@ -107,7 +107,7 @@ class ManagerWorkOrderRepository {
       debugPrint(' ManagerWorkOrderRepository.initialize() COMPLETE');
     } catch (e) {
       debugPrint(' ManagerWorkOrderRepository.initialize() FAILED: $e');
-      // Allow retry: reset state so initialize() can be called again
+      
       _isInitializing = true;
       _initCompleter?.completeError(e);
       _initCompleter = null;
@@ -120,16 +120,16 @@ class ManagerWorkOrderRepository {
     }
   }
 
-  /// Wait for the CRUD upload queue to fully drain.
-  /// This ensures checkpoints can apply and db.watch() resumes for remote changes.
+  
+  
   Future<void> waitForSync(
       {Duration timeout = const Duration(seconds: 10)}) async {
     await ensureInitialized();
     await _powerSync.waitForSync(timeout: timeout);
   }
 
-  /// Actively wait for the checkpoint to apply after CRUD drain.
-  /// If it doesn't advance within timeout, force a reconnect.
+  
+  
   Future<void> waitForCheckpointOrReconnect(
       {Duration timeout = const Duration(seconds: 3)}) async {
     await _powerSync.waitForCheckpointOrReconnect(timeout: timeout);
@@ -146,9 +146,9 @@ class ManagerWorkOrderRepository {
     });
   }
 
-  /// One-shot query — fetches current data WITHOUT creating a stream.
-  /// Used by refreshWorkOrders to update the UI immediately while keeping
-  /// the existing db.watch() stream alive.
+  
+  
+  
   Future<List<WorkOrder>> getWorkOrdersByDate(DateTime date) async {
     await ensureInitialized();
     try {

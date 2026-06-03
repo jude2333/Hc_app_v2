@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/core/util.dart';
 import '../models/dashboard_report.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
+
 
 class ReportDataTable extends StatelessWidget {
   final List<ReportRow> rows;
@@ -36,8 +38,8 @@ class ReportDataTable extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
-                  ...rows.map((row) => _buildDataRow(row)),
+                  _buildHeader(context),
+                  ...rows.map((row) => _buildDataRow(context, row)),
                 ],
               ),
             ),
@@ -47,9 +49,9 @@ class ReportDataTable extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
-      color: Colors.blue,
+      color: AppColors.andersonBlue,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       child: Row(
         children: [
@@ -68,13 +70,20 @@ class ReportDataTable extends StatelessWidget {
     );
   }
 
-  Widget _buildDataRow(ReportRow row) {
+  Widget _buildDataRow(BuildContext context, ReportRow row) {
     final m = row.metrics;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: row.isTotal ? Colors.grey.shade50 : Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        color: row.isTotal
+            ? (isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100)
+            : Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.darkBorder : Colors.grey.shade200,
+          ),
+        ),
       ),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       child: Row(
@@ -133,7 +142,7 @@ class _DataCell extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.black87,
+          color: Theme.of(context).colorScheme.onSurface,
           fontSize: 13,
           fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
         ),
@@ -207,20 +216,26 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade100,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : Colors.grey.shade200,
+          ),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.grey.shade100,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +252,7 @@ class _MetricCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade600,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -247,10 +262,10 @@ class _MetricCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
           ],

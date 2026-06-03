@@ -6,11 +6,9 @@ import '../data/tracking_models.dart';
 import '../data/tracking_repository.dart';
 import '../providers/tracking_ui_providers.dart';
 
-/// Activity timeline showing segments of a technician's day.
-/// Each segment represents a continuous period of one activity type.
 class TimelinePanel extends ConsumerStatefulWidget {
-  final TechnicianStatus? technician; // Legacy prop
-  final DateTime? selectedDate; // Legacy prop
+  final TechnicianStatus? technician;
+  final DateTime? selectedDate;
   final String token;
 
   const TimelinePanel({
@@ -32,7 +30,6 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
   String? _lastLoadedDate;
 
   Future<void> _loadTimeline(int techId, String dateStr) async {
-    // Don't reload if same tech+date
     if (techId == _lastLoadedTechId && dateStr == _lastLoadedDate) return;
 
     setState(() {
@@ -43,7 +40,7 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
     try {
       final repo = TrackingRepository(token: widget.token);
       final segments = await repo.getTimeline(techId, dateStr);
-      
+
       if (mounted) {
         setState(() {
           _lastLoadedTechId = techId;
@@ -70,9 +67,9 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
     final selectedDate = ref.watch(selectedDateProvider);
     final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
 
-    // Trigger data load when tech or date changes (safe — only in build)
     if (selectedTech != null &&
-        (selectedTech.technicianId != _lastLoadedTechId || dateStr != _lastLoadedDate) &&
+        (selectedTech.technicianId != _lastLoadedTechId ||
+            dateStr != _lastLoadedDate) &&
         !_loading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _loadTimeline(selectedTech.technicianId, dateStr);
@@ -100,9 +97,12 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+            const CircularProgressIndicator(
+                strokeWidth: 2, color: AppColors.primary),
             const SizedBox(height: AppSpacing.sm),
-            Text('Loading timeline...', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+            Text('Loading timeline...',
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -115,16 +115,19 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
           children: [
             const Icon(Icons.error_outline, size: 36, color: AppColors.error),
             const SizedBox(height: AppSpacing.sm),
-            Text('Error loading timeline', style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+            Text('Error loading timeline',
+                style: AppTextStyles.body
+                    .copyWith(color: AppColors.textSecondary)),
             TextButton(
               onPressed: () {
                 _lastLoadedTechId = null;
                 final tech = ref.read(selectedTechProvider);
                 final date = ref.read(selectedDateProvider);
                 if (tech != null) {
-                  _loadTimeline(tech.technicianId, DateFormat('yyyy-MM-dd').format(date));
+                  _loadTimeline(
+                      tech.technicianId, DateFormat('yyyy-MM-dd').format(date));
                 }
-              }, 
+              },
               child: const Text('Retry'),
             ),
           ],
@@ -148,8 +151,8 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
       );
     }
 
-    // Summary stats
-    final totalDuration = _segments.fold<int>(0, (sum, s) => sum + s.durationMin);
+    final totalDuration =
+        _segments.fold<int>(0, (sum, s) => sum + s.durationMin);
     final totalPings = _segments.fold<int>(0, (sum, s) => sum + s.pings);
     final movingMin = _segments
         .where((s) => s.activity == 'driving' || s.activity == 'walking')
@@ -160,9 +163,9 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
 
     return Column(
       children: [
-        // Summary bar
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: AppColors.surfaceAlt,
             border: Border(bottom: BorderSide(color: AppColors.border)),
@@ -198,20 +201,20 @@ class _TimelinePanelState extends ConsumerState<TimelinePanel> {
                   final tech = ref.read(selectedTechProvider);
                   final date = ref.read(selectedDateProvider);
                   if (tech != null) {
-                    _loadTimeline(tech.technicianId, DateFormat('yyyy-MM-dd').format(date));
+                    _loadTimeline(tech.technicianId,
+                        DateFormat('yyyy-MM-dd').format(date));
                   }
                 },
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
-                  child: Icon(Icons.refresh, size: 16, color: AppColors.textSecondary),
+                  child: Icon(Icons.refresh,
+                      size: 16, color: AppColors.textSecondary),
                 ),
               ),
             ],
           ),
         ),
-
-        // Timeline list
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -262,7 +265,9 @@ class _SummaryChip extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10, color: color, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -285,7 +290,6 @@ class _TimelineItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timeline track
           SizedBox(
             width: 44,
             child: Column(
@@ -296,7 +300,8 @@ class _TimelineItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+                    border: Border.all(
+                        color: color.withValues(alpha: 0.5), width: 1.5),
                   ),
                   child: Icon(icon, size: 16, color: color),
                 ),
@@ -306,7 +311,10 @@ class _TimelineItem extends StatelessWidget {
                       width: 2,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [color.withValues(alpha: 0.5), AppColors.divider],
+                          colors: [
+                            color.withValues(alpha: 0.5),
+                            AppColors.divider
+                          ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           stops: const [0.0, 0.5],
@@ -317,12 +325,12 @@ class _TimelineItem extends StatelessWidget {
               ],
             ),
           ),
-
-          // Content Card
           Expanded(
             child: Container(
-              margin: const EdgeInsets.only(bottom: AppSpacing.md, right: AppSpacing.md),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              margin: const EdgeInsets.only(
+                  bottom: AppSpacing.md, right: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
               decoration: AppDecorations.brandedCard,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,16 +339,19 @@ class _TimelineItem extends StatelessWidget {
                     children: [
                       Text(
                         label,
-                        style: AppTextStyles.timelineTimeTitle.copyWith(color: color),
+                        style: AppTextStyles.timelineTimeTitle
+                            .copyWith(color: color),
                       ),
                       const Spacer(),
                       if (segment.durationMin > 0)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: AppDecorations.pillBadge(color),
                           child: Text(
                             _formatMin(segment.durationMin),
-                            style: AppTextStyles.chipText.copyWith(color: color, fontSize: 10),
+                            style: AppTextStyles.chipText
+                                .copyWith(color: color, fontSize: 10),
                           ),
                         ),
                     ],
@@ -348,7 +359,8 @@ class _TimelineItem extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 12, color: AppColors.textSecondary),
+                      Icon(Icons.access_time,
+                          size: 12, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
                       Text(
                         '${DateFormat('hh:mm a').format(segment.startAt.toLocal())} — ${DateFormat('hh:mm a').format(segment.endAt.toLocal())}',
@@ -361,21 +373,28 @@ class _TimelineItem extends StatelessWidget {
                     children: [
                       if (segment.battery != null) ...[
                         Icon(
-                          segment.battery! < 20 ? Icons.battery_alert : Icons.battery_std,
+                          segment.battery! < 20
+                              ? Icons.battery_alert
+                              : Icons.battery_std,
                           size: 11,
-                          color: segment.battery! < 20 ? AppColors.error : AppColors.textSecondary,
+                          color: segment.battery! < 20
+                              ? AppColors.error
+                              : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 2),
                         Text(
                           '${segment.battery}%',
                           style: AppTextStyles.caption.copyWith(
                             fontSize: 10,
-                            color: segment.battery! < 20 ? AppColors.error : AppColors.textSecondary,
+                            color: segment.battery! < 20
+                                ? AppColors.error
+                                : AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                       ],
-                      Icon(Icons.cell_tower, size: 11, color: AppColors.textSecondary),
+                      Icon(Icons.cell_tower,
+                          size: 11, color: AppColors.textSecondary),
                       const SizedBox(width: 2),
                       Text(
                         '${segment.pings} pings',
@@ -394,31 +413,48 @@ class _TimelineItem extends StatelessWidget {
 
   Color _activityColor(String activity) {
     switch (activity) {
-      case 'driving': return AppColors.activityDriving;
-      case 'walking': return AppColors.activityWalking;
-      case 'stationary': return AppColors.activityStationary;
-      case 'moving': return AppColors.trackOnline;
-      default: return AppColors.textHint;
+      case 'driving':
+        return AppColors.activityDriving;
+      case 'walking':
+        return AppColors.activityWalking;
+      case 'stationary':
+        return AppColors.activityStationary;
+      case 'moving':
+        return AppColors.trackOnline;
+      default:
+        return AppColors.textHint;
     }
   }
 
   IconData _activityIcon(String activity) {
     switch (activity) {
-      case 'driving': return Icons.directions_car;
-      case 'walking': return Icons.directions_walk;
-      case 'stationary': return Icons.location_on;
-      case 'moving': return Icons.trending_up;
-      default: return Icons.help_outline;
+      case 'driving':
+        return Icons.directions_car;
+      case 'walking':
+        return Icons.directions_walk;
+      case 'stationary':
+        return Icons.location_on;
+      case 'moving':
+        return Icons.trending_up;
+      default:
+        return Icons.help_outline;
     }
   }
 
   String _activityLabel(String activity) {
     switch (activity) {
-      case 'driving': return 'Driving';
-      case 'walking': return 'Walking';
-      case 'stationary': return 'Stationary';
-      case 'moving': return 'Moving';
-      default: return activity.isNotEmpty ? activity[0].toUpperCase() + activity.substring(1) : 'Unknown';
+      case 'driving':
+        return 'Driving';
+      case 'walking':
+        return 'Walking';
+      case 'stationary':
+        return 'Stationary';
+      case 'moving':
+        return 'Moving';
+      default:
+        return activity.isNotEmpty
+            ? activity[0].toUpperCase() + activity.substring(1)
+            : 'Unknown';
     }
   }
 

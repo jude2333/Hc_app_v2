@@ -6,9 +6,9 @@ import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import '../repositories/manager_work_order_repository.dart';
 
-// ---------------------------------------------------------------------------
-// Immutable state class — enables select() for targeted rebuilds
-// ---------------------------------------------------------------------------
+
+
+
 @immutable
 class ManagerWOState {
   final List<WorkOrder> workOrders;
@@ -43,9 +43,9 @@ class ManagerWOState {
   }
 }
 
-// ---------------------------------------------------------------------------
-// AutoDispose Notifier — disposes stream on navigation away, restarts on return
-// ---------------------------------------------------------------------------
+
+
+
 class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
   late final ManagerWorkOrderRepository _repo;
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
@@ -69,24 +69,24 @@ class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
     state = state.copyWith(isLoading: false, isInitializing: false);
   }
 
-  /// After a local mutation, wait for the CRUD queue to drain,
-  /// then do an immediate one-shot query so the UI is up-to-date.
-  /// The recoverable watch streams in PowerSyncService will handle
-  /// catching any subsequent updates automatically.
+  
+  
+  
+  
   Future<void> syncAfterMutation() async {
     if (state.currentDate == null) return;
     debugPrint('[Manager] syncAfterMutation — waiting for CRUD drain...');
     try {
-      // Step 1: Wait for all pending writes to upload.
+      
       await _repo.waitForSync(timeout: const Duration(seconds: 10));
       debugPrint('[Manager] syncAfterMutation — CRUD queue drained ✅');
 
-      // Step 2: Actively wait for checkpoint to apply (or force reconnect).
-      // This ensures the server echo is applied before the one-shot query.
+      
+      
       await _repo.waitForCheckpointOrReconnect(
           timeout: const Duration(seconds: 3));
 
-      // Step 3: Immediate one-shot query so the UI is up-to-date NOW.
+      
       final latest = await _repo.getWorkOrdersByDate(state.currentDate!);
       state = state.copyWith(workOrders: latest, clearError: true);
     } catch (e) {
@@ -189,26 +189,26 @@ class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Providers
-// ---------------------------------------------------------------------------
 
-/// Main notifier — autoDispose so the stream is cleaned up on navigation away.
+
+
+
+
 final managerWONotifierProvider =
     AutoDisposeNotifierProvider<ManagerWONotifier, ManagerWOState>(
         ManagerWONotifier.new);
 
-/// Separate sync status stream — decoupled from work orders so AppBar
-/// rebuilds independently without triggering full list rebuilds.
+
+
 final managerSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
   final repo = ref.watch(managerWorkOrderRepositoryProvider);
   return repo.watchSyncStatus();
 });
 
 final managerTodayPod = StateProvider<DateTime>((_) {
-  // if (Settings.development) {
-  //   return DateTime(2022, 12, 14);
-  // }
+  
+  
+  
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);
 });
@@ -218,7 +218,7 @@ final managerSelectedDatePod =
 
 final managerSearchPod = StateProvider<String>((_) => '');
 
-/// Status filter for mobile view: 'all', 'new', 'in_progress', 'finished'
+
 final managerStatusFilterPod = StateProvider<String>((_) => 'all');
 
 final managerSortColumnPod = StateProvider<String>((_) => 'date');
@@ -234,7 +234,7 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
   final sortAsc = ref.watch(managerSortAscendingPod);
   final statusFilter = ref.watch(managerStatusFilterPod);
 
-  // 1. Search filter
+  
   List<WorkOrder> filtered = search.isEmpty
       ? List.from(woState)
       : woState.where((wo) {
@@ -242,7 +242,7 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
           return wo.searchableText.contains(term);
         }).toList();
 
-  // 2. Status filter (used by mobile view chips)
+  
   if (statusFilter != 'all') {
     filtered = filtered.where((wo) {
       final s = wo.status.toLowerCase().trim();
@@ -261,7 +261,7 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
     }).toList();
   }
 
-  // 3. Sort
+  
   filtered.sort((a, b) {
     int cmp = 0;
     switch (sortCol) {
@@ -275,7 +275,7 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
         cmp = a.serverStatus.compareTo(b.serverStatus);
         break;
       case 'assigned_to':
-        // Empty (Unassigned) always last when ascending
+        
         final aEmpty = a.assignedTo.isEmpty;
         final bEmpty = b.assignedTo.isEmpty;
         if (aEmpty && bEmpty) {

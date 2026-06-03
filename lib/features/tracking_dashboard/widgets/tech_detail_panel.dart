@@ -6,8 +6,6 @@ import '../providers/tracking_ws_provider.dart';
 import '../providers/tracking_ui_providers.dart';
 import '../data/tracking_repository.dart';
 
-/// Detail panel showing information about a selected technician.
-/// Includes reverse geocoding via our backend proxy to show area/landmark names.
 class TechDetailPanel extends ConsumerStatefulWidget {
   final String token;
 
@@ -21,27 +19,19 @@ class TechDetailPanel extends ConsumerStatefulWidget {
 }
 
 class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
-  // ─── Geocode state ─────────────────────────────────────────
-  // Static cache shared across panel rebuilds (survives tab switches)
   static final Map<String, String> _geocodeCache = {};
-  // Coords that failed geocoding — avoid retrying the exact same location
+
   static final Set<String> _geocodeFailedKeys = {};
 
   String? _currentAddress;
   bool _loadingAddress = false;
-  String? _activeGeocodeKey; // The cache key currently being fetched or displayed
+  String? _activeGeocodeKey;
 
-  /// Reverse geocode via our Node.js backend proxy (no CORS issues).
-  /// Uses aggressive rounding (3 decimal places ≈ 110m) to reduce API calls.
   Future<void> _reverseGeocode(double lat, double lng) async {
-    // Round to 3 decimal places for cache key (~110m precision)
-    // This prevents re-geocoding for minor GPS fluctuations
     final cacheKey = '${lat.toStringAsFixed(3)},${lng.toStringAsFixed(3)}';
 
-    // Already showing this location's address
     if (cacheKey == _activeGeocodeKey && _currentAddress != null) return;
 
-    // Already failed for this key — don't retry
     if (_geocodeFailedKeys.contains(cacheKey)) {
       if (mounted && _activeGeocodeKey != cacheKey) {
         setState(() {
@@ -53,7 +43,6 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
       return;
     }
 
-    // Check cache (instant)
     if (_geocodeCache.containsKey(cacheKey)) {
       if (mounted) {
         setState(() {
@@ -65,7 +54,6 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
       return;
     }
 
-    // Start loading
     if (mounted) {
       setState(() {
         _loadingAddress = true;
@@ -86,7 +74,6 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
           });
         }
       } else {
-        // API returned empty — mark as failed
         _geocodeFailedKeys.add(cacheKey);
         if (mounted) {
           setState(() {
@@ -109,24 +96,25 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
 
   @override
   Widget build(BuildContext context) {
-    // ─── Read live state from Riverpod ─────────────────────────
     final wsState = ref.watch(dashboardWsProvider);
     final selectedTechId = ref.watch(selectedTechProvider)?.technicianId;
-    final tech = selectedTechId != null ? wsState.technicians[selectedTechId] : null;
+    final tech =
+        selectedTechId != null ? wsState.technicians[selectedTechId] : null;
 
-    // ─── Trigger geocode when tech location changes ───────────
     if (tech != null && tech.hasLocation) {
-      final newKey = '${tech.lastLatitude!.toStringAsFixed(3)},${tech.lastLongitude!.toStringAsFixed(3)}';
-      if (newKey != _activeGeocodeKey || (_currentAddress == null && !_loadingAddress && !_geocodeFailedKeys.contains(newKey))) {
+      final newKey =
+          '${tech.lastLatitude!.toStringAsFixed(3)},${tech.lastLongitude!.toStringAsFixed(3)}';
+      if (newKey != _activeGeocodeKey ||
+          (_currentAddress == null &&
+              !_loadingAddress &&
+              !_geocodeFailedKeys.contains(newKey))) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _reverseGeocode(tech.lastLatitude!, tech.lastLongitude!);
         });
       }
     }
 
-    // ─── Reset address state when switching to a different tech ─
     if (tech == null || (selectedTechId != null && !tech.hasLocation)) {
-      // Tech selected but has no location, or no tech selected
       if (_currentAddress != null || _loadingAddress) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -140,7 +128,6 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
       }
     }
 
-    // ─── Empty state ──────────────────────────────────────────
     if (tech == null) {
       return Center(
         child: Column(
@@ -148,13 +135,13 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
           children: [
             Icon(Icons.person_outline, size: 40, color: AppColors.textHint),
             const SizedBox(height: AppSpacing.sm),
-            const Text('Select a technician to view details', style: AppTextStyles.caption),
+            const Text('Select a technician to view details',
+                style: AppTextStyles.caption),
           ],
         ),
       );
     }
 
-    // ─── Status color ─────────────────────────────────────────
     Color statusColor;
     if (!tech.isOnline) {
       statusColor = AppColors.trackOffline;
@@ -169,22 +156,29 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with name + status
           Row(
             children: [
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: statusColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(
+                        color: statusColor.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2)),
                   ],
                 ),
                 child: CircleAvatar(
                   backgroundColor: statusColor,
                   radius: 20,
                   child: Text(
-                    tech.technicianName.isNotEmpty ? tech.technicianName[0].toUpperCase() : '?',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                    tech.technicianName.isNotEmpty
+                        ? tech.technicianName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
                   ),
                 ),
               ),
@@ -194,17 +188,24 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tech.technicianName.isNotEmpty ? tech.technicianName : 'Tech #${tech.technicianId}',
+                      tech.technicianName.isNotEmpty
+                          ? tech.technicianName
+                          : 'Tech #${tech.technicianId}',
                       style: AppTextStyles.h3,
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Container(width: 8, height: 8, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
+                        Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                                color: statusColor, shape: BoxShape.circle)),
                         const SizedBox(width: 4),
                         Text(
                           tech.statusLabel,
-                          style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
+                          style: AppTextStyles.caption.copyWith(
+                              color: statusColor, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -216,8 +217,6 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
           const SizedBox(height: AppSpacing.lg),
           const Divider(height: 1, color: AppColors.divider),
           const SizedBox(height: AppSpacing.md),
-
-          // Stats grid
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
@@ -238,7 +237,9 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
                 icon: Icons.battery_std,
                 label: 'Battery',
                 value: tech.lastBattery != null ? '${tech.lastBattery}%' : '--',
-                color: (tech.lastBattery ?? 100) < 20 ? AppColors.error : AppColors.success,
+                color: (tech.lastBattery ?? 100) < 20
+                    ? AppColors.error
+                    : AppColors.success,
               ),
               _StatCard(
                 icon: Icons.pin_drop,
@@ -249,8 +250,6 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-
-          // Location info — with reverse geocoded address
           if (tech.hasLocation) ...[
             _buildAddressRow(),
             const SizedBox(height: AppSpacing.xs),
@@ -268,25 +267,31 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
               ),
             ),
             if (tech.lastAccuracy != null)
-              _InfoRow(Icons.radar, 'Accuracy', '±${tech.lastAccuracy!.toStringAsFixed(1)} meters'),
+              _InfoRow(Icons.radar, 'Accuracy',
+                  '±${tech.lastAccuracy!.toStringAsFixed(1)} meters'),
           ] else ...[
-            // No location data available
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Row(
                 children: [
-                  Icon(Icons.location_off, size: 16, color: AppColors.trackOffline),
+                  Icon(Icons.location_off,
+                      size: 16, color: AppColors.trackOffline),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     'No location data yet',
-                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.textSecondary),
                   ),
                 ],
               ),
             ),
           ],
           if (tech.lastSeenAt != null)
-            _InfoRow(Icons.access_time, 'Last seen', DateFormat('hh:mm a, MMM d').format(tech.lastSeenAt!.toLocal())),
+            _InfoRow(
+                Icons.access_time,
+                'Last seen',
+                DateFormat('hh:mm a, MMM d')
+                    .format(tech.lastSeenAt!.toLocal())),
           if (tech.currentWorkOrder != null)
             _InfoRow(Icons.work, 'Current WO', tech.currentWorkOrder!),
           if (tech.lastActivity != null)
@@ -311,10 +316,13 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
                       const SizedBox(
                         width: 12,
                         height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textHint),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 1.5, color: AppColors.textHint),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      Text('Finding location...', style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
+                      Text('Finding location...',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.textHint)),
                     ],
                   )
                 : Text(
@@ -322,7 +330,9 @@ class _TechDetailPanelState extends ConsumerState<TechDetailPanel> {
                     style: AppTextStyles.body.copyWith(
                       fontWeight: FontWeight.w500,
                       height: 1.3,
-                      color: _currentAddress != null ? AppColors.textPrimary : AppColors.textHint,
+                      color: _currentAddress != null
+                          ? AppColors.textPrimary
+                          : AppColors.textHint,
                     ),
                   ),
           ),
@@ -350,7 +360,8 @@ class _StatCard extends StatelessWidget {
     return Container(
       width: (MediaQuery.of(context).size.width / 2) - 30,
       constraints: const BoxConstraints(minWidth: 120, maxWidth: 160),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: AppRadius.mdAll,
@@ -361,7 +372,8 @@ class _StatCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: Icon(icon, size: 14, color: color),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -369,8 +381,10 @@ class _StatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(value, style: AppTextStyles.chipText.copyWith(color: color)),
-                Text(label, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                Text(value,
+                    style: AppTextStyles.chipText.copyWith(color: color)),
+                Text(label,
+                    style: AppTextStyles.caption.copyWith(fontSize: 10)),
               ],
             ),
           ),
@@ -397,7 +411,9 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text('$label: ', style: AppTextStyles.caption),
           Expanded(
-            child: Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+            child: Text(value,
+                style:
+                    AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
           ),
         ],
       ),

@@ -39,7 +39,9 @@ class _DailyTabState extends ConsumerState<DailyTab>
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Colors.orange),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Colors.orange,
+            ),
           ),
           child: child!,
         );
@@ -59,7 +61,7 @@ class _DailyTabState extends ConsumerState<DailyTab>
     final notifier = ref.read(dailyReportProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           _buildHeader(notifier.selectedDate),
@@ -153,16 +155,17 @@ class _DailyTabState extends ConsumerState<DailyTab>
   }
 
   Widget _buildMetricCard(String title, String value, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: colorScheme.outlineVariant),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade100,
+              color: colorScheme.shadow.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -183,7 +186,7 @@ class _DailyTabState extends ConsumerState<DailyTab>
                 Text(
                   title.toUpperCase(),
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -193,10 +196,10 @@ class _DailyTabState extends ConsumerState<DailyTab>
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
           ],

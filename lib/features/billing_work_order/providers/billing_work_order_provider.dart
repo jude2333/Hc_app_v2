@@ -8,9 +8,6 @@ import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import '../data/billing_work_order_repository.dart';
 
-// ---------------------------------------------------------------------------
-// Immutable state class — enables select() for targeted rebuilds
-// ---------------------------------------------------------------------------
 @immutable
 class BillingWorkOrderState {
   final bool isLoading;
@@ -45,9 +42,6 @@ class BillingWorkOrderState {
   }
 }
 
-// ---------------------------------------------------------------------------
-// AutoDispose Notifier — disposes stream on navigation away, restarts on return
-// ---------------------------------------------------------------------------
 class BillingWorkOrderNotifier
     extends AutoDisposeNotifier<BillingWorkOrderState> {
   BillingWorkOrderRepository? _repository;
@@ -125,7 +119,7 @@ class BillingWorkOrderNotifier
     if (repo == null) {
       try {
         await _initializePowerSync();
-        // Re-check after init — no recursive call
+
         final repoRetry = _getRepository();
         if (repoRetry == null) {
           state = state.copyWith(
@@ -204,7 +198,6 @@ class BillingWorkOrderNotifier
     );
   }
 
-  /// After a local mutation, wait for CRUD drain + checkpoint.
   Future<void> _syncAfterMutation() async {
     try {
       await PowerSyncService.instance
@@ -310,33 +303,19 @@ class BillingWorkOrderNotifier
   }
 }
 
-// ---------------------------------------------------------------------------
-// Providers
-// ---------------------------------------------------------------------------
-
-/// Main notifier — autoDispose so the stream is cleaned up on navigation away.
 final billingWorkOrderProvider = AutoDisposeNotifierProvider<
     BillingWorkOrderNotifier, BillingWorkOrderState>(
   BillingWorkOrderNotifier.new,
 );
 
-/// Separate sync status stream so the UI can show skeleton loading
-/// without re-triggering full list rebuilds.
 final billingSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
   return PowerSyncService.instance.watchStatus();
 });
 
-// ---------------------------------------------------------------------------
-// UI State Pods (autoDispose so they reset on navigation away)
-// ---------------------------------------------------------------------------
 final billingSearchPod = AutoDisposeStateProvider<String>((_) => '');
 final billingSortColumnPod = AutoDisposeStateProvider<String>((_) => 'date');
 final billingSortAscendingPod = AutoDisposeStateProvider<bool>((_) => false);
 
-// ---------------------------------------------------------------------------
-// Derived filtered + sorted list — cached by Riverpod, recomputes only
-// when inputs (orders, search, sort) change.
-// ---------------------------------------------------------------------------
 final billingFilteredOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
   final orders = ref.watch(
     billingWorkOrderProvider.select((s) => s.orders),

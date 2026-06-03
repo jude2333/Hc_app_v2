@@ -3,11 +3,9 @@ import 'package:intl/intl.dart';
 import '../../theme/theme.dart';
 import '../models/tech_analytics_models.dart';
 
-final _currFmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+final _currFmt =
+    NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
-// ---------------------------------------------------------------------------
-// Range Selector — Chip row for This Week / Last Week / This Month / etc.
-// ---------------------------------------------------------------------------
 class AnalyticsRangeSelector extends StatelessWidget {
   final AnalyticsRange selected;
   final ValueChanged<AnalyticsRange> onChanged;
@@ -77,9 +75,6 @@ class AnalyticsRangeSelector extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Aggregate Summary Card — Horizontal scrolling stat row
-// ---------------------------------------------------------------------------
 class AnalyticsAggregateCard extends StatelessWidget {
   final TechAnalytics overall;
   final String rangeLabel;
@@ -108,7 +103,6 @@ class AnalyticsAggregateCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -116,7 +110,8 @@ class AnalyticsAggregateCard extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [AppColors.gradientStart, AppColors.gradientEnd],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(7)),
             ),
             child: Row(
               children: [
@@ -133,21 +128,26 @@ class AnalyticsAggregateCard extends StatelessWidget {
               ],
             ),
           ),
-          // Stats
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             child: Row(
               children: [
-                _StatPill('Assigned', '${overall.totalOrders}', AppColors.secondary),
+                _StatPill(
+                    'Assigned', '${overall.totalOrders}', AppColors.secondary),
                 _StatPill('Finished', '${overall.finished}', AppColors.success),
                 _StatPill('Cancelled', '${overall.cancelled}', AppColors.error),
                 _StatPill('Pending', '${overall.pending}', AppColors.warning),
-                _StatPill('Cash', _currFmt.format(overall.cashCollected), Colors.teal),
-                _StatPill('GPay', _currFmt.format(overall.gpayCollected), Colors.indigo),
-                _StatPill('HC', _currFmt.format(overall.hcCharges), AppColors.primary),
-                _StatPill('Disposable', _currFmt.format(overall.disposableCharges), Colors.brown),
-                _StatPill('Received', _currFmt.format(overall.totalReceived), AppColors.secondary),
+                _StatPill('Cash', _currFmt.format(overall.cashCollected),
+                    Colors.teal),
+                _StatPill('GPay', _currFmt.format(overall.gpayCollected),
+                    Colors.indigo),
+                _StatPill('HC', _currFmt.format(overall.hcCharges),
+                    AppColors.primary),
+                _StatPill('Disposable',
+                    _currFmt.format(overall.disposableCharges), Colors.brown),
+                _StatPill('Received', _currFmt.format(overall.totalReceived),
+                    AppColors.secondary),
                 _StatPill('Tests', '${overall.totalTests}', Colors.purple),
               ],
             ),
@@ -201,9 +201,6 @@ class _StatPill extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Technician Analytics Card — Expandable card for mobile
-// ---------------------------------------------------------------------------
 class TechAnalyticsCard extends StatelessWidget {
   final TechAnalytics tech;
   final bool isExpanded;
@@ -240,7 +237,6 @@ class TechAnalyticsCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Summary row
           InkWell(
             onTap: onTap,
             borderRadius: AppRadius.mdAll,
@@ -248,7 +244,6 @@ class TechAnalyticsCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  // Avatar
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.15),
@@ -263,7 +258,6 @@ class TechAnalyticsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Name + orders
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +280,6 @@ class TechAnalyticsCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Revenue
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -319,8 +312,6 @@ class TechAnalyticsCard extends StatelessWidget {
               ),
             ),
           ),
-
-          // Expanded detail
           if (isExpanded) ...[
             const Divider(height: 1),
             Padding(
@@ -328,7 +319,6 @@ class TechAnalyticsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Financial row
                   Wrap(
                     spacing: 8,
                     runSpacing: 6,
@@ -343,13 +333,10 @@ class TechAnalyticsCard extends StatelessWidget {
                           'Disposable',
                           _currFmt.format(tech.disposableCharges),
                           Colors.brown),
-                      _MiniStat(
-                          'Discount',
-                          _currFmt.format(tech.totalDiscount),
+                      _MiniStat('Discount', _currFmt.format(tech.totalDiscount),
                           AppColors.error),
                     ],
                   ),
-
                   if (tech.testBreakdown.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     const Text(
@@ -363,8 +350,6 @@ class TechAnalyticsCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     TestBreakdownMiniTable(tests: tech.testBreakdown),
                   ],
-
-                  // Per-tech export button
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -426,9 +411,6 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Test Breakdown Table — compact table for expanded view
-// ---------------------------------------------------------------------------
 class TestBreakdownMiniTable extends StatelessWidget {
   final List<TestAggregation> tests;
   const TestBreakdownMiniTable({super.key, required this.tests});
@@ -442,12 +424,12 @@ class TestBreakdownMiniTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(5)),
             ),
             child: const Row(
               children: [
@@ -471,7 +453,6 @@ class TestBreakdownMiniTable extends StatelessWidget {
               ],
             ),
           ),
-          // Rows
           ...tests.take(15).map((t) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
@@ -513,8 +494,7 @@ class TestBreakdownMiniTable extends StatelessWidget {
               child: Text(
                 '+${tests.length - 15} more tests',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 10, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
               ),
             ),
         ],
@@ -523,13 +503,11 @@ class TestBreakdownMiniTable extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Desktop Table Row — for the desktop DataTable view
-// ---------------------------------------------------------------------------
 class TechAnalyticsDesktopTable extends StatefulWidget {
   final List<TechAnalytics> technicians;
   final void Function(TechAnalytics tech)? onExportTech;
-  const TechAnalyticsDesktopTable({super.key, required this.technicians, this.onExportTech});
+  const TechAnalyticsDesktopTable(
+      {super.key, required this.technicians, this.onExportTech});
 
   @override
   State<TechAnalyticsDesktopTable> createState() =>
@@ -547,7 +525,6 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
-          // Header row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
@@ -558,19 +535,34 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
             child: Row(
               children: const [
                 Expanded(flex: 3, child: _HeaderText('Technician')),
-                Expanded(flex: 1, child: _HeaderText('Orders', align: TextAlign.center)),
-                Expanded(flex: 1, child: _HeaderText('Done', align: TextAlign.center)),
-                Expanded(flex: 1, child: _HeaderText('Cancelled', align: TextAlign.center)),
-                Expanded(flex: 2, child: _HeaderText('Received', align: TextAlign.right)),
-                Expanded(flex: 2, child: _HeaderText('HC Chrg', align: TextAlign.right)),
-                Expanded(flex: 1, child: _HeaderText('Cash', align: TextAlign.right)),
-                Expanded(flex: 1, child: _HeaderText('GPay', align: TextAlign.right)),
-                Expanded(flex: 1, child: _HeaderText('Tests', align: TextAlign.center)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Orders', align: TextAlign.center)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Done', align: TextAlign.center)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Cancelled', align: TextAlign.center)),
+                Expanded(
+                    flex: 2,
+                    child: _HeaderText('Received', align: TextAlign.right)),
+                Expanded(
+                    flex: 2,
+                    child: _HeaderText('HC Chrg', align: TextAlign.right)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Cash', align: TextAlign.right)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('GPay', align: TextAlign.right)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Tests', align: TextAlign.center)),
                 SizedBox(width: 32),
               ],
             ),
           ),
-          // Data rows
           Expanded(
             child: ListView.builder(
               itemCount: widget.technicians.length,
@@ -606,8 +598,8 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                                 children: [
                                   CircleAvatar(
                                     radius: 14,
-                                    backgroundColor:
-                                        AppColors.primary.withValues(alpha: 0.15),
+                                    backgroundColor: AppColors.primary
+                                        .withValues(alpha: 0.15),
                                     child: Text(
                                       tech.techName.isNotEmpty
                                           ? tech.techName[0].toUpperCase()
@@ -660,8 +652,7 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                             ),
                             Expanded(
                               flex: 2,
-                              child: Text(
-                                  _currFmt.format(tech.totalReceived),
+                              child: Text(_currFmt.format(tech.totalReceived),
                                   textAlign: TextAlign.right,
                                   style: const TextStyle(
                                       fontSize: 13,
@@ -669,22 +660,19 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                             ),
                             Expanded(
                               flex: 2,
-                              child: Text(
-                                  _currFmt.format(tech.hcCharges),
+                              child: Text(_currFmt.format(tech.hcCharges),
                                   textAlign: TextAlign.right,
                                   style: const TextStyle(fontSize: 13)),
                             ),
                             Expanded(
                               flex: 1,
-                              child: Text(
-                                  _currFmt.format(tech.cashCollected),
+                              child: Text(_currFmt.format(tech.cashCollected),
                                   textAlign: TextAlign.right,
                                   style: const TextStyle(fontSize: 12)),
                             ),
                             Expanded(
                               flex: 1,
-                              child: Text(
-                                  _currFmt.format(tech.gpayCollected),
+                              child: Text(_currFmt.format(tech.gpayCollected),
                                   textAlign: TextAlign.right,
                                   style: const TextStyle(fontSize: 12)),
                             ),
@@ -708,7 +696,6 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                         ),
                       ),
                     ),
-                    // Expanded test breakdown
                     if (isExpanded && tech.testBreakdown.isNotEmpty)
                       Container(
                         color: AppColors.tableRowExpanded,
@@ -716,31 +703,38 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Financial summary row
                             Wrap(
                               spacing: 12,
                               runSpacing: 6,
                               children: [
-                                _MiniStat('Billed', _currFmt.format(tech.totalBilled), AppColors.secondary),
-                                _MiniStat('Discount', _currFmt.format(tech.totalDiscount), AppColors.error),
-                                _MiniStat('Disposable', _currFmt.format(tech.disposableCharges), Colors.brown),
-                                _MiniStat('Pending', '${tech.pending}', AppColors.warning),
+                                _MiniStat(
+                                    'Billed',
+                                    _currFmt.format(tech.totalBilled),
+                                    AppColors.secondary),
+                                _MiniStat(
+                                    'Discount',
+                                    _currFmt.format(tech.totalDiscount),
+                                    AppColors.error),
+                                _MiniStat(
+                                    'Disposable',
+                                    _currFmt.format(tech.disposableCharges),
+                                    Colors.brown),
+                                _MiniStat('Pending', '${tech.pending}',
+                                    AppColors.warning),
                               ],
                             ),
                             const SizedBox(height: 10),
                             const Text('Test Breakdown',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12)),
+                                    fontWeight: FontWeight.w600, fontSize: 12)),
                             const SizedBox(height: 6),
-                            TestBreakdownMiniTable(
-                                tests: tech.testBreakdown),
+                            TestBreakdownMiniTable(tests: tech.testBreakdown),
                             const SizedBox(height: 12),
-                            // Per-tech export button
                             Align(
                               alignment: Alignment.centerRight,
                               child: OutlinedButton.icon(
-                                onPressed: () => widget.onExportTech?.call(tech),
+                                onPressed: () =>
+                                    widget.onExportTech?.call(tech),
                                 icon: const Icon(Icons.file_download_outlined,
                                     size: 16, color: Color(0xFF217346)),
                                 label: Text(
@@ -752,7 +746,8 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF217346)),
+                                  side: const BorderSide(
+                                      color: Color(0xFF217346)),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -793,10 +788,6 @@ class _HeaderText extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Skeleton Loading Widgets (Natively built, no extra dependencies)
-// ---------------------------------------------------------------------------
 
 class SkeletonBox extends StatefulWidget {
   final double width;
@@ -849,7 +840,7 @@ class _SkeletonBoxState extends State<SkeletonBox>
           height: widget.height,
           margin: widget.margin,
           decoration: BoxDecoration(
-            color: const Color(0xFFE2E8F0).withOpacity(_animation.value), // Beautiful slate-200 color
+            color: const Color(0xFFE2E8F0).withOpacity(_animation.value),
             borderRadius: widget.borderRadius ?? BorderRadius.circular(6),
           ),
         );
@@ -873,7 +864,6 @@ class AnalyticsAggregateCardSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header shimmer
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -889,28 +879,31 @@ class AnalyticsAggregateCardSkeleton extends StatelessWidget {
               ],
             ),
           ),
-          // Stats Row Shimmer
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             child: Row(
-              children: List.generate(8, (index) => Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.border.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border.withOpacity(0.5)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    SkeletonBox(width: 50, height: 10),
-                    SizedBox(height: 4),
-                    SkeletonBox(width: 40, height: 14),
-                  ],
-                ),
-              )),
+              children: List.generate(
+                  8,
+                  (index) => Container(
+                        margin: const EdgeInsets.only(right: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.border.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: AppColors.border.withOpacity(0.5)),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            SkeletonBox(width: 50, height: 10),
+                            SizedBox(height: 4),
+                            SkeletonBox(width: 40, height: 14),
+                          ],
+                        ),
+                      )),
             ),
           ),
         ],
@@ -934,14 +927,12 @@ class TechAnalyticsCardSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
           const SkeletonBox(
             width: 36,
             height: 36,
             borderRadius: BorderRadius.all(Radius.circular(18)),
           ),
           const SizedBox(width: 12),
-          // Name + orders
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,7 +943,6 @@ class TechAnalyticsCardSkeleton extends StatelessWidget {
               ],
             ),
           ),
-          // Revenue
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: const [
@@ -980,69 +970,114 @@ class TechAnalyticsDesktopTableSkeleton extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
-          // Header row (matches original layout)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(8)),
             ),
             child: Row(
               children: const [
                 Expanded(flex: 3, child: _HeaderText('Technician')),
-                Expanded(flex: 1, child: _HeaderText('Orders', align: TextAlign.center)),
-                Expanded(flex: 1, child: _HeaderText('Done', align: TextAlign.center)),
-                Expanded(flex: 1, child: _HeaderText('Cancelled', align: TextAlign.center)),
-                Expanded(flex: 2, child: _HeaderText('Received', align: TextAlign.right)),
-                Expanded(flex: 2, child: _HeaderText('HC Chrg', align: TextAlign.right)),
-                Expanded(flex: 1, child: _HeaderText('Cash', align: TextAlign.right)),
-                Expanded(flex: 1, child: _HeaderText('GPay', align: TextAlign.right)),
-                Expanded(flex: 1, child: _HeaderText('Tests', align: TextAlign.center)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Orders', align: TextAlign.center)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Done', align: TextAlign.center)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Cancelled', align: TextAlign.center)),
+                Expanded(
+                    flex: 2,
+                    child: _HeaderText('Received', align: TextAlign.right)),
+                Expanded(
+                    flex: 2,
+                    child: _HeaderText('HC Chrg', align: TextAlign.right)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Cash', align: TextAlign.right)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('GPay', align: TextAlign.right)),
+                Expanded(
+                    flex: 1,
+                    child: _HeaderText('Tests', align: TextAlign.center)),
                 SizedBox(width: 32),
               ],
             ),
           ),
-          // Skeleton rows
           Expanded(
             child: ListView.builder(
               itemCount: 8,
               itemBuilder: (ctx, index) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: index % 2 == 0 ? AppColors.tableRowEven : AppColors.tableRowOdd,
-                    border: Border(bottom: BorderSide(color: AppColors.divider)),
+                    color: index % 2 == 0
+                        ? AppColors.tableRowEven
+                        : AppColors.tableRowOdd,
+                    border:
+                        Border(bottom: BorderSide(color: AppColors.divider)),
                   ),
                   child: Row(
                     children: [
-                      // Tech Info
                       Expanded(
                         flex: 3,
                         child: Row(
                           children: const [
-                            SkeletonBox(width: 24, height: 24, borderRadius: BorderRadius.all(Radius.circular(12))),
+                            SkeletonBox(
+                                width: 24,
+                                height: 24,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12))),
                             SizedBox(width: 8),
                             SkeletonBox(width: 100, height: 12),
                           ],
                         ),
                       ),
-                      // Orders
-                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 20, height: 12))),
-                      // Done
-                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 20, height: 12))),
-                      // Cancelled
-                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 16, height: 12))),
-                      // Received
-                      const Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 50, height: 12))),
-                      // HC Chrg
-                      const Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 45, height: 12))),
-                      // Cash
-                      const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 35, height: 12))),
-                      // GPay
-                      const Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 35, height: 12))),
-                      // Tests
-                      const Expanded(flex: 1, child: Center(child: SkeletonBox(width: 20, height: 12))),
-                      const SizedBox(width: 32, child: Center(child: SkeletonBox(width: 16, height: 16))),
+                      const Expanded(
+                          flex: 1,
+                          child: Center(
+                              child: SkeletonBox(width: 20, height: 12))),
+                      const Expanded(
+                          flex: 1,
+                          child: Center(
+                              child: SkeletonBox(width: 20, height: 12))),
+                      const Expanded(
+                          flex: 1,
+                          child: Center(
+                              child: SkeletonBox(width: 16, height: 12))),
+                      const Expanded(
+                          flex: 2,
+                          child: Align(
+                              alignment: Alignment.centerRight,
+                              child: SkeletonBox(width: 50, height: 12))),
+                      const Expanded(
+                          flex: 2,
+                          child: Align(
+                              alignment: Alignment.centerRight,
+                              child: SkeletonBox(width: 45, height: 12))),
+                      const Expanded(
+                          flex: 1,
+                          child: Align(
+                              alignment: Alignment.centerRight,
+                              child: SkeletonBox(width: 35, height: 12))),
+                      const Expanded(
+                          flex: 1,
+                          child: Align(
+                              alignment: Alignment.centerRight,
+                              child: SkeletonBox(width: 35, height: 12))),
+                      const Expanded(
+                          flex: 1,
+                          child: Center(
+                              child: SkeletonBox(width: 20, height: 12))),
+                      const SizedBox(
+                          width: 32,
+                          child: Center(
+                              child: SkeletonBox(width: 16, height: 16))),
                     ],
                   ),
                 );

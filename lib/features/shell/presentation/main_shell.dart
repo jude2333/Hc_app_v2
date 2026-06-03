@@ -6,12 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/util.dart';
 import '../../../providers/app_state.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import '../../../providers/db_handler_provider.dart';
 import '../../../services/dbHandler_service.dart';
 import '../../../services/cronJob_service.dart';
 import '../../../providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/gps_monitor_provider.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../providers/shell_providers.dart';
 import '../widgets/main_app_bar.dart';
 import '../widgets/app_drawer.dart';
@@ -143,13 +143,13 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final signedIn = ref.watch(signedInProvider);
-    final isDark = ref.watch(themeProvider);
     final snackbarMessage = ref.watch(snackbarMessageProvider);
     final isInitializing = ref.watch(initializingProvider);
+    final theme = Theme.of(context);
 
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Colors.orange)),
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
@@ -163,8 +163,6 @@ class _MainShellState extends ConsumerState<MainShell> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(snackbarMessage),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.black87,
               duration: const Duration(seconds: 2),
             ),
           );
@@ -181,13 +179,11 @@ class _MainShellState extends ConsumerState<MainShell> {
           try {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: Colors.black87,
                 duration: const Duration(seconds: 4),
                 content: Row(
                   children: [
                     const Icon(Icons.notifications_active,
-                        color: Colors.orange, size: 20),
+                        color: AppColors.primary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -197,13 +193,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                           Text(
                             next['from_name'] ?? 'New Notification',
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                                fontWeight: FontWeight.bold),
                           ),
                           Text(
                             next['msg_header'] ?? 'You have a new message',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.white70),
+                            style: const TextStyle(fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -214,7 +208,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 ),
                 action: SnackBarAction(
                   label: 'VIEW',
-                  textColor: Colors.orange,
+                  textColor: AppColors.primary,
                   onPressed: () {
                     context.go('/notifications');
                   },
@@ -233,16 +227,14 @@ class _MainShellState extends ConsumerState<MainShell> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: MainAppBar(
-        isDark: isDark,
         isInitializing: isInitializing,
         scaffoldKey: _scaffoldKey,
         currentPath: _currentPath,
       ),
       drawer: AppDrawer(
-        isDark: isDark,
         currentPath: _currentPath,
       ),
-      endDrawer: NotificationDrawer(isDark: isDark),
+      endDrawer: const NotificationDrawer(),
       body: Column(
         children: [
           _buildGpsBanner(),
@@ -251,9 +243,9 @@ class _MainShellState extends ConsumerState<MainShell> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(0),
-                  color: isDark ? Colors.black : Colors.grey.shade50,
+                  color: theme.scaffoldBackgroundColor,
                   child: RefreshIndicator(
-                    color: Colors.orange,
+                    color: AppColors.primary,
                     onRefresh: () async {
                       final dbHandler = ref.read(dbHandlerServiceProvider);
                       await dbHandler.init();
@@ -271,15 +263,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                     top: 16,
                     right: 16,
                     child: Card(
-                      color: Colors.orange,
+                      color: AppColors.primary,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20)),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             SizedBox(
                               width: 12,
                               height: 12,
@@ -302,7 +294,7 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ],
       ),
-      bottomNavigationBar: StatusFooter(isDark: isDark),
+      bottomNavigationBar: const StatusFooter(),
     );
   }
 
@@ -312,13 +304,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     final roleName =
         ref.read(storageServiceProvider).getFromSession('role_name');
 
-    // Only show for technicians when GPS is OFF
     if (isGpsOn || roleName != 'TECHNICIAN') {
       return const SizedBox.shrink();
     }
 
     return Material(
-      color: Colors.orange.shade700,
+      color: AppColors.gradientStart,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -348,7 +339,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                 ),
                 onPressed: () async {
                   await Geolocator.openLocationSettings();
-                  // Recheck after user returns from settings
                   await Future.delayed(const Duration(seconds: 2));
                   if (mounted) {
                     ref.read(gpsMonitorProvider.notifier).recheck();
@@ -357,7 +347,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                 child: Text(
                   'Enable GPS',
                   style: TextStyle(
-                    color: Colors.orange.shade700,
+                    color: AppColors.gradientStart,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),

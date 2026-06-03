@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/app_update_service.dart';
+import '../../../../services/app_update_service.dart';
 
 /// Shows a blocking update dialog on the login screen.
 /// If [isForced], the dialog cannot be dismissed — user MUST update.
@@ -143,10 +143,20 @@ Future<void> showUpdateDialog(BuildContext context, UpdateInfo info) async {
                     elevation: 0,
                   ),
                   onPressed: () async {
-                    final uri = Uri.parse(info.apkUrl);
-                    if (await canLaunchUrl(uri)) {
+                    try {
+                      final uri = Uri.parse(info.apkUrl);
                       await launchUrl(uri,
                           mode: LaunchMode.externalApplication);
+                    } catch (e) {
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Could not open download link. Please try again.'),
+                            backgroundColor: Colors.red.shade700,
+                          ),
+                        );
+                      }
                     }
                   },
                 ),

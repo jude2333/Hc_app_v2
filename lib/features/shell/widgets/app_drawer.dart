@@ -8,22 +8,23 @@ import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
 import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import '../providers/shell_providers.dart';
 
 class AppDrawer extends ConsumerWidget {
-  final bool isDark;
   final String currentPath;
 
   const AppDrawer({
     super.key,
-    required this.isDark,
     required this.currentPath,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Drawer(
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      backgroundColor: colorScheme.surface,
       child: Column(
         children: [
           _buildDrawerHeader(context, ref),
@@ -31,21 +32,21 @@ class AppDrawer extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
               children: [
-                _buildSectionTitle('General'),
+                _buildSectionTitle('General', colorScheme),
                 _buildNavTile(context, 'Dashboard', Icons.dashboard_rounded,
-                    '/dashboard', isDark),
+                    '/dashboard', colorScheme),
                 _buildNavTile(
-                    context, 'Search', Icons.search_rounded, '/search', isDark),
+                    context, 'Search', Icons.search_rounded, '/search', colorScheme),
                 _buildNavTile(context, 'Notifications',
-                    Icons.notifications_rounded, '/notifications', isDark),
+                    Icons.notifications_rounded, '/notifications', colorScheme),
                 const SizedBox(height: 16),
-                _buildSectionTitle('Workspace'),
-                _buildDynamicMenuItems(context, ref, isDark),
+                _buildSectionTitle('Workspace', colorScheme),
+                _buildDynamicMenuItems(context, ref, colorScheme),
               ],
             ),
           ),
           const Divider(),
-          _buildUserActions(context, ref, isDark),
+          _buildUserActions(context, ref, colorScheme),
         ],
       ),
     );
@@ -119,7 +120,7 @@ class AppDrawer extends ConsumerWidget {
   }
 
   Widget _buildDynamicMenuItems(
-      BuildContext context, WidgetRef ref, bool isDark) {
+      BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: Authorize.getMenus(ref),
       builder: (context, snapshot) {
@@ -132,7 +133,7 @@ class AppDrawer extends ConsumerWidget {
               (item['title'] ?? 'Menu Item') as String,
               _getIconFromString((item['icon'] ?? '') as String),
               '/${item['link']}',
-              isDark,
+              colorScheme,
             );
           }).toList(),
         );
@@ -141,17 +142,17 @@ class AppDrawer extends ConsumerWidget {
   }
 
   Widget _buildNavTile(BuildContext context, String title, IconData icon,
-      String path, bool isDark) {
+      String path, ColorScheme colorScheme) {
     final isSelected = currentPath.startsWith(path) && path != '/';
-    final activeColor = Colors.orange;
-    final inactiveColor = isDark ? Colors.grey[400] : Colors.grey[700];
+    const activeColor = AppColors.primary;
+    final inactiveColor = colorScheme.onSurface.withValues(alpha: 0.7);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.xlAll,
         color:
-            isSelected ? Colors.orange.withOpacity(0.15) : Colors.transparent,
+            isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
       ),
       child: ListTile(
         leading: Icon(icon, color: isSelected ? activeColor : inactiveColor),
@@ -163,7 +164,7 @@ class AppDrawer extends ConsumerWidget {
           ),
         ),
         dense: true,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
         onTap: () {
           Navigator.of(context).pop();
           context.go(path);
@@ -172,13 +173,13 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-            color: Colors.grey,
+        style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.4),
             fontSize: 11,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.2),
@@ -186,22 +187,22 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildUserActions(BuildContext context, WidgetRef ref, bool isDark) {
+  Widget _buildUserActions(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     return Column(
       children: [
         _buildNavTile(context, 'Change Password', Icons.lock_reset,
-            '/changepassword', isDark),
+            '/changepassword', colorScheme),
         ListTile(
-          leading: const Icon(Icons.logout_rounded, color: Colors.red),
+          leading: const Icon(Icons.logout_rounded, color: AppColors.error),
           title: const Text('Logout',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500)),
+              style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w500)),
           dense: true,
           onTap: () => _handleLogout(context, ref),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text('v1.0.0',
-              style: TextStyle(color: Colors.grey[500], fontSize: 10)),
+              style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 10)),
         ),
       ],
     );
@@ -273,7 +274,7 @@ class AppDrawer extends ConsumerWidget {
 
               context.go('/login');
             },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            child: const Text('Logout', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),

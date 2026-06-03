@@ -67,11 +67,24 @@ class NameWithBadges extends StatelessWidget {
     );
 
     if (layout == BadgeLayout.row) {
-      return Row(
-        children: [
-          Flexible(child: nameWidget),
-          ..._buildBadges(flags),
-        ],
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 4,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: constraints.maxWidth.isFinite
+                      ? constraints.maxWidth
+                      : double.infinity,
+                ),
+                child: nameWidget,
+              ),
+              ..._buildBadges(flags),
+            ],
+          );
+        },
       );
     }
 

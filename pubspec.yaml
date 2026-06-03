@@ -2,7 +2,7 @@ name: anderson_crm_flutter
 description: "flutter crm"
 publish_to: "none"
 
-version: 1.2.0+2
+version: 1.1.0+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -76,8 +76,16 @@ dev_dependencies:
   build_runner: ^2.4.7
   json_annotation: ^4.8.1
   json_serializable: ^6.7.1
+  flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.webp"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon.webp"

@@ -108,7 +108,6 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
   Widget _buildTableHeader(
       String sortCol, bool sortAsc, Function(String) handleSort) {
     return Container(
-      // padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),
       padding: AppPadding.customTable,
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
@@ -328,9 +327,6 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
     ScaffoldMessengerState messenger, {
     bool isReassignment = false,
   }) {
-    // Capture controller BEFORE showing dialog to avoid ref-after-dispose.
-    // The widget tree may rebuild (disposing this widget) while the dialog
-    // is open, making ref.read() inside the callback crash.
     final controller = ref.read(managerAssignmentControllerProvider);
 
     bool sendSms = true;

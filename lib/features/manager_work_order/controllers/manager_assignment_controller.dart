@@ -59,8 +59,8 @@ class ManagerAssignmentController {
 
       await _provider.updateWorkOrder(updatedOrder, customDoc: customDoc);
 
-      // Wait for CRUD queue to drain so checkpoints resume and
-      // db.watch() naturally picks up remote changes again.
+      
+      
       await _provider.syncAfterMutation();
 
       debugPrint(" About to send in-app notification...");
@@ -283,8 +283,8 @@ class ManagerAssignmentController {
     }
   }
 
-  /// Send cancellation notifications to the patient and assigned technician.
-  /// Mirrors Vue's `send_cancellation_sms()` in desktop_view.vue.
+  
+  
   Future<void> sendCancellationMessages({
     required WorkOrder workOrder,
     required bool sendSms,
@@ -294,7 +294,7 @@ class ManagerAssignmentController {
     try {
       final comCenter = _ref.read(comCenterProvider);
 
-      // 1. Send in-app notification to the assigned technician
+      
       if (workOrder.assignedTo.isNotEmpty) {
         final notificationCenter = _ref.read(notificationCenterServiceProvider);
 
@@ -327,7 +327,7 @@ class ManagerAssignmentController {
             : ' Failed to send cancellation notification: $result');
       }
 
-      // 2. Build base message for SMS/WhatsApp/Email
+      
       final rescheduleUrl = '${Settings.msgUrl}reshedule';
 
       final baseMessage = {
@@ -346,7 +346,7 @@ class ManagerAssignmentController {
         'updated_at': Util.getTimeStamp(),
       };
 
-      // 3. Send cancellation SMS
+      
       if (sendSms) {
         if (Settings.development) {
           debugPrint(' Skipping cancellation SMS in development mode');
@@ -365,7 +365,7 @@ class ManagerAssignmentController {
         }
       }
 
-      // 4. Send cancellation WhatsApp
+      
       if (sendWhatsApp) {
         final waMessage = Map<String, dynamic>.from(baseMessage);
         waMessage['_id'] =
@@ -380,7 +380,7 @@ class ManagerAssignmentController {
             : ' Cancellation WhatsApp failed: $result');
       }
 
-      // 5. Send cancellation Email
+      
       if (sendEmail) {
         final emailMessage = Map<String, dynamic>.from(baseMessage);
         emailMessage['_id'] =

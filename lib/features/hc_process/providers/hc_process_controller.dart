@@ -34,8 +34,6 @@ class HCProcessController {
   Future<void> loadWorkOrder() async {
     _notifier.setLoading(true);
 
-    // Clear stale test selection from previous work orders
-    // (SharedPreferences key is global, not scoped per work order)
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('selected_tests');
 
@@ -68,7 +66,6 @@ class HCProcessController {
         email: workOrder.sendEmail ? 1 : 0,
       );
 
-      // Auto-set CGHS price if work order is marked as CGHS client
       _notifier.setCghsPrice(workOrder.cghsClient);
 
       if (processDoc.process.firstStep?.isNotEmpty == true) {
@@ -94,8 +91,6 @@ class HCProcessController {
     final powerSync = _ref.read(powerSyncServiceProvider);
     final storage = _ref.read(storageServiceProvider);
 
-    // Use writeTransaction for atomic read-modify-write
-    // This prevents data races when multiple technicians update concurrently
     await powerSync.db.writeTransaction((tx) async {
       final currentMap = await tx.getOptional(
         'SELECT * FROM hc_patient_visit_detail WHERE doc_id = ? LIMIT 1',
@@ -108,12 +103,9 @@ class HCProcessController {
       final updatedDocMap = Map<String, dynamic>.from(currentOrder.parsedDoc);
       updatedDocMap.addAll(updatedProcessDoc.toJson());
 
-      // Sync technician toggle states back to the doc JSON
-      // This ensures badges (CGHS, Credit) reflect what the technician chose
       updatedDocMap['cghs_client'] = _state.cghsPrice ? 1 : 0;
-      updatedDocMap['credit'] = _state.creditClient
-          ? 1
-          : (_state.trialClient ? 2 : 0);
+      updatedDocMap['credit'] =
+          _state.creditClient ? 1 : (_state.trialClient ? 2 : 0);
 
       String docDbs = storage.getFromSession('doc_dbs') ?? '';
       if (docDbs.isNotEmpty) updatedDocMap['doc_dbs'] = docDbs;
@@ -164,7 +156,6 @@ class HCProcessController {
         ],
       );
 
-      // Update in-memory state
       final updatedOrder = currentOrder.copyWith(
         status: updatedProcessDoc.status ?? currentOrder.status,
         serverStatus:
@@ -191,7 +182,6 @@ class HCProcessController {
 
     final workOrder = _state.workOrder;
     if (workOrder != null) {
-      // Try visit_time column first, then fall back to doc.appointment_time
       String aptTime = workOrder.visitTime;
       if (aptTime.isEmpty) {
         aptTime = workOrder.parsedDocMap['appointment_time']?.toString() ?? '';
@@ -199,11 +189,8 @@ class HCProcessController {
 
       if (aptTime.isNotEmpty) {
         try {
-          // appointment_date in doc is "dd-MM-yyyy", visitDate is DateTime
-          final aptDate =
-              workOrder.visitDate.toIso8601String().split('T')[0]; // yyyy-MM-dd
+          final aptDate = workOrder.visitDate.toIso8601String().split('T')[0];
 
-          // Handle both "HH:mm" and "H:mm" formats
           final timeParts = aptTime.split(':');
           if (timeParts.length >= 2) {
             final hour = int.tryParse(timeParts[0]) ?? 0;
@@ -211,31 +198,26 @@ class HCProcessController {
 
             final dateParts = aptDate.split('-');
             final appointmentDateTime = DateTime(
-              int.parse(dateParts[0]), // year
-              int.parse(dateParts[1]), // month
-              int.parse(dateParts[2]), // day
+              int.parse(dateParts[0]),
+              int.parse(dateParts[1]),
+              int.parse(dateParts[2]),
               hour,
               minute,
             );
 
             final now = DateTime.now();
-            // difference = now - appointment
-            // Positive = technician is LATE, Negative = technician is EARLY
+
             final difference = now.difference(appointmentDateTime);
 
             debugPrint(
                 '[HCProcess] Appointment: $appointmentDateTime, Now: $now, Diff: ${difference.inMinutes} min');
 
-            // Vue uses (appointment - now) > -30 which means: skip if ≤30min late
-            // Flutter uses (now - appointment), so condition is: skip if <30min late
-            // This covers: early (negative diff), on-time (0), slightly late (<30)
             if (difference.inMinutes < 30) {
               _notifier.setDelayReason("On Time");
               Future.microtask(() => afterFirstStep());
               return;
             }
 
-            // Technician is 30+ minutes late — show delay reason
             final lateMins = difference.inMinutes;
             if (lateMins < 60) {
               _notifier.setDelayMins('$lateMins minutes');
@@ -443,10 +425,8 @@ class HCProcessController {
         ? 'Rs. ${_state.discount.toStringAsFixed(0)} flat discount'
         : '${_state.discount}% discount';
 
-    // Count tests with individual discounts
-    final testsWithDiscount = _state.selectedTests
-        .where((t) => t['discounted_price'] != null)
-        .length;
+    final testsWithDiscount =
+        _state.selectedTests.where((t) => t['discounted_price'] != null).length;
     String testDiscountNote = testsWithDiscount > 0
         ? ' Individual discount on $testsWithDiscount test(s).'
         : '';
@@ -484,10 +464,8 @@ class HCProcessController {
       double moneyAfterDiscount;
 
       if (_state.isDiscountFlat) {
-        // Flat ₹ discount: subtract directly, clamp to 0
         moneyAfterDiscount = (bill - discountVal).clamp(0, bill);
       } else {
-        // Percentage discount
         moneyAfterDiscount = bill;
         if (discountVal > 0) {
           moneyAfterDiscount = bill - (bill * discountVal / 100);
@@ -517,16 +495,12 @@ class HCProcessController {
     }
   }
 
-  /// Handles credit_client toggle change (matches Vue's credit_change()).
-  /// Resets billing amounts based on credit + CGHS combination.
   void onCreditChange() {
     if (_state.creditClient) {
       if (_state.cghsPrice) {
-        // CGHS + Credit: only collect HC + Disposable charges
         _notifier.setDiscount(0);
         calculateDiscount();
       } else {
-        // Credit only: collect nothing
         _notifier.setDiscount(0);
         _notifier.updateBillingState(
           amountAfterDiscount: 0,
@@ -534,7 +508,6 @@ class HCProcessController {
         );
       }
     } else {
-      // Turned off credit: recalculate normally
       calculateDiscount();
     }
   }
@@ -640,16 +613,6 @@ class HCProcessController {
         debugPrint(">>> WHATSAPP PAYLOAD: ${jsonEncode(whatsappMessage)}");
         await comCenterService.sendMessage(whatsappMessage);
       }
-
-      // if (_state.email == 1) {
-      //   final emailMessage = {
-      //     '_id': 'email_center:$idPart:${Util.uuidv4()}',
-      //     ...baseMessage,
-      //   };
-
-      //   debugPrint(">>> EMAIL PAYLOAD: ${jsonEncode(emailMessage)}");
-      //   await comCenterService.sendMessage(emailMessage);
-      // }
     } catch (e, stackTrace) {
       debugPrint('Error sending OTP: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -784,7 +747,7 @@ class HCProcessController {
       } catch (e) {
         if (e.toString().contains("LegacyJavaScriptObject")) {
           debugPrint('[HCProcess] Web interop error (may be benign): $e');
-          // Verify the write actually went through
+
           final powerSync = _ref.read(powerSyncServiceProvider);
           final verify = await powerSync.getWorkOrderById(workOrderId);
           if (verify == null || verify['status'] != processDoc.status) {
@@ -825,20 +788,6 @@ class HCProcessController {
       final notificationService = _ref.read(notificationCenterServiceProvider);
       final appointmentDate =
           DateFormat('dd-MM-yyyy').format(workOrder.visitDate);
-
-      // await notificationService.sendWorkOrderCompleted(
-      //   appointmentDate: appointmentDate,
-      //   appointmentTime: workOrder.visitTime,
-      //   patientName: workOrder.patientName,
-      //   age: workOrder.age,
-      //   gender: workOrder.gender,
-      //   address: workOrder.address,
-      //   mobile: workOrder.mobile,
-      //   pincode: workOrder.pincode,
-      //   freeText: workOrder.freeText,
-      //   managerId: workOrder.managerId?.toString() ?? '',
-      //   managerName: workOrder.managerName,
-      // );
     } catch (e) {
       debugPrint('Error sending notification: $e');
     }

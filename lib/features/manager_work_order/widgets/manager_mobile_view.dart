@@ -34,7 +34,6 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
 
     return Column(
       children: [
-        // Search bar
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: TextField(
@@ -58,8 +57,6 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
             },
           ),
         ),
-
-        // Status filter chips
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: SingleChildScrollView(
@@ -79,8 +76,6 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
             ),
           ),
         ),
-
-        // Count + sort row
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
@@ -98,8 +93,6 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
             ],
           ),
         ),
-
-        // List
         Expanded(
           child: filtered.isEmpty
               ? _buildEmptyState()

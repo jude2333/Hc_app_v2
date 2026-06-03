@@ -77,8 +77,6 @@ class ManagerActions extends ConsumerWidget {
     });
   }
 
-  /// Shows a dialog asking the manager whether to notify the patient about
-  /// the cancellation via SMS, WhatsApp, and/or Email.
   void _showCancellationNotificationDialog(
       BuildContext context, WidgetRef ref) {
     bool sendSms = true;
@@ -175,7 +173,6 @@ class ManagerActions extends ConsumerWidget {
                   .read(managerWONotifierProvider.notifier)
                   .softDeleteWorkOrder(workOrder.id, 'Manager');
               if (success) {
-                // No loadWorkOrdersByDate needed — db.watch() auto-detects the delete
                 messenger.showSnackBar(
                   SnackBar(
                     content: Text('Deleted'),
@@ -191,8 +188,6 @@ class ManagerActions extends ConsumerWidget {
     );
   }
 
-  /// Show success snackbar — no loadWorkOrdersByDate needed because
-  /// db.watch() automatically re-emits when the table changes.
   void _showSuccess(BuildContext context, String msg) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

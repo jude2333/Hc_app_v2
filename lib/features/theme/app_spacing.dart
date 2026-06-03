@@ -47,6 +47,7 @@ class AppPadding {
 }
 
 class AppRadius {
+  static const double xxs = 2.0;
   static const double xs = 4.0;
   static const double sm = 6.0;
   static const double md = 8.0;
@@ -54,6 +55,7 @@ class AppRadius {
   static const double xl = 12.0;
   static const double round = 20.0;
 
+  static BorderRadius get xxsAll => BorderRadius.circular(xxs);
   static BorderRadius get xsAll => BorderRadius.circular(xs);
   static BorderRadius get smAll => BorderRadius.circular(sm);
   static BorderRadius get mdAll => BorderRadius.circular(md);
