@@ -43,8 +43,7 @@ class _CancelWorkOrderDialogState extends ConsumerState<CancelWorkOrderDialog> {
       final storage = ref.read(storageServiceProvider);
       final provider = ref.read(workOrderProvider);
 
-      final currentUser =
-          storage.getFromSession('logged_in_emp_name') ?? 'Technician';
+      final currentUser = storage.getFromSession('logged_in_emp_name');
       final now = DateTime.now();
 
       final timeString = DateFormat('dd-MM-yyyy').format(now);

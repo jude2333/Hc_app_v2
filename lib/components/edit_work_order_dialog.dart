@@ -83,8 +83,7 @@ class _EditWorkOrderDialogState extends ConsumerState<EditWorkOrderDialog> {
     try {
       final storage = ref.read(storageServiceProvider);
       final provider = ref.read(workOrderProvider);
-      final currentUser =
-          storage.getFromSession('logged_in_emp_name') ?? 'Technician';
+      final currentUser = storage.getFromSession('logged_in_emp_name');
 
       final finalName =
           '$_salutation. ${Util.toTitleCase(_nameController.text.trim())}';

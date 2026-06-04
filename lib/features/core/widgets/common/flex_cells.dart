@@ -25,7 +25,7 @@ class FlexDataCell extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: color ?? Colors.black87,
+            color: color ?? Theme.of(context).colorScheme.onSurface,
             fontWeight: fontWeight ??
                 (color != null ? FontWeight.bold : FontWeight.normal),
           ),
@@ -58,7 +58,7 @@ class FlexHeaderCell extends StatelessWidget {
         text,
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: color ?? Colors.black87,
+          color: color ?? Theme.of(context).colorScheme.onSurface,
         ),
         overflow: TextOverflow.ellipsis,
       ),

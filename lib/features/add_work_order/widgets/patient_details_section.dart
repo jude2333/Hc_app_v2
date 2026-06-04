@@ -29,13 +29,16 @@ class PatientDetailsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width <= 800;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [
         if (isMobile) ...[
           DropdownButtonFormField<String>(
+            dropdownColor: colorScheme.surface,
+            style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
             value: salutation.isEmpty ? null : salutation,
-            decoration: WorkOrderFormStyles.inputDecoration('Title'),
+            decoration: WorkOrderFormStyles.inputDecoration(context, 'Title'),
             items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),
@@ -45,7 +48,8 @@ class PatientDetailsSection extends StatelessWidget {
           SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: nameController,
-            decoration: WorkOrderFormStyles.inputDecoration('Full Name',
+            style: TextStyle(color: colorScheme.onSurface),
+            decoration: WorkOrderFormStyles.inputDecoration(context, 'Full Name',
                 icon: Icons.person_outline),
             textCapitalization: TextCapitalization.words,
             validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
@@ -56,8 +60,10 @@ class PatientDetailsSection extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
+                  dropdownColor: colorScheme.surface,
+                  style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
                   value: salutation.isEmpty ? null : salutation,
-                  decoration: WorkOrderFormStyles.inputDecoration('Title'),
+                  decoration: WorkOrderFormStyles.inputDecoration(context, 'Title'),
                   items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
@@ -69,7 +75,8 @@ class PatientDetailsSection extends StatelessWidget {
                 flex: 5,
                 child: TextFormField(
                   controller: nameController,
-                  decoration: WorkOrderFormStyles.inputDecoration('Full Name',
+                  style: TextStyle(color: colorScheme.onSurface),
+                  decoration: WorkOrderFormStyles.inputDecoration(context, 'Full Name',
                       icon: Icons.person_outline),
                 ),
               ),
@@ -83,7 +90,8 @@ class PatientDetailsSection extends StatelessWidget {
               child: TextFormField(
                 controller: ageController,
                 keyboardType: TextInputType.number,
-                decoration: WorkOrderFormStyles.inputDecoration('Age',
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: WorkOrderFormStyles.inputDecoration(context, 'Age',
                     icon: Icons.cake_outlined),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
@@ -91,8 +99,10 @@ class PatientDetailsSection extends StatelessWidget {
             SizedBox(width: AppSpacing.md),
             Expanded(
               child: DropdownButtonFormField<String>(
+                dropdownColor: colorScheme.surface,
+                style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
                 value: gender,
-                decoration: WorkOrderFormStyles.inputDecoration('Gender',
+                decoration: WorkOrderFormStyles.inputDecoration(context, 'Gender',
                     icon: Icons.people_outline),
                 items: ['Male', 'Female', 'Other']
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -107,7 +117,8 @@ class PatientDetailsSection extends StatelessWidget {
           controller: mobileController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
-          decoration: WorkOrderFormStyles.inputDecoration('Mobile Number',
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Mobile Number',
                   icon: Icons.phone_android)
               .copyWith(counterText: ""),
           validator: (v) {
@@ -129,7 +140,8 @@ class PatientDetailsSection extends StatelessWidget {
           controller: alternateMobileController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
-          decoration: WorkOrderFormStyles.inputDecoration(
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context,
                   'Alternate Mobile (Optional)',
                   icon: Icons.phone_callback_outlined)
               .copyWith(counterText: ""),

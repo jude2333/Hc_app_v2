@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/providers/tech_engagement_provider.dart';
 import 'tech_shared_widgets.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class TechPatientList extends StatelessWidget {
   final List<Map<String, dynamic>> orders;
@@ -10,8 +11,10 @@ class TechPatientList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: Colors.grey.shade50,
+      color: isDark ? AppColors.darkBackground : Colors.grey.shade50,
       padding: const EdgeInsets.all(12),
       width: double.infinity,
       child: LayoutBuilder(
@@ -22,13 +25,13 @@ class TechPatientList extends StatelessWidget {
               child: SizedBox(
                 width: 900,
                 child: Column(
-                  children: _buildTableContent(orders),
+                  children: _buildTableContent(orders, context),
                 ),
               ),
             );
           } else {
             return Column(
-              children: _buildTableContent(orders),
+              children: _buildTableContent(orders, context),
             );
           }
         },
@@ -36,12 +39,14 @@ class TechPatientList extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildTableContent(List<Map<String, dynamic>> orders) {
+  List<Widget> _buildTableContent(List<Map<String, dynamic>> orders, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return [
       Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.orange.shade50,
+          color: isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
           borderRadius: BorderRadius.circular(4),
         ),
         child: const Row(
@@ -70,6 +75,9 @@ class TechPatientRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     final state = ref.watch(techEngagementProvider);
     final doc = _parseDoc(order['doc']);
     final accepted = doc['accept_remittance'] == true;
@@ -96,9 +104,9 @@ class TechPatientRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       margin: const EdgeInsets.only(top: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: isDark ? AppColors.darkBorder : Colors.grey.shade200),
       ),
       child: Row(
         children: [

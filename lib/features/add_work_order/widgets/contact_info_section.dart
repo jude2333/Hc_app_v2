@@ -18,6 +18,8 @@ class ContactInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -25,7 +27,8 @@ class ContactInfoSection extends StatelessWidget {
           controller: addressController,
           maxLines: 2,
           textCapitalization: TextCapitalization.words,
-          decoration: WorkOrderFormStyles.inputDecoration('Address',
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Address',
               icon: Icons.home_outlined),
           validator: (v) =>
               v == null || v.isEmpty ? 'Address is required' : null,
@@ -37,7 +40,8 @@ class ContactInfoSection extends StatelessWidget {
           child: IgnorePointer(
             child: TextFormField(
               controller: pincodeController,
-              decoration: WorkOrderFormStyles.inputDecoration('Pincode',
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: WorkOrderFormStyles.inputDecoration(context, 'Pincode',
                       icon: Icons.pin_drop_outlined)
                   .copyWith(
                       suffixIcon: Icon(Icons.search, color: AppColors.primary)),
@@ -49,7 +53,8 @@ class ContactInfoSection extends StatelessWidget {
         SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: freeTextController,
-          decoration: WorkOrderFormStyles.inputDecoration(
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context,
               'Landmark / Free Text',
               icon: Icons.note_alt_outlined),
         ),

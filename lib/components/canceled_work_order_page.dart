@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:anderson_crm_flutter/config/settings.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 
@@ -60,7 +59,7 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
     final isMobile = screenWidth < 800;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Cancelled Orders'),
       ),
@@ -68,17 +67,24 @@ class _CanceledWorkOrderPageState extends ConsumerState<CanceledWorkOrderPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Text("Select Date:  ",
+                Text("Select Date:  ",
                     style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.grey)),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6))),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkBorder
+                            : Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -145,9 +151,12 @@ class VirtualCancelledTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 2,
-      color: Colors.white,
+      color: colorScheme.surface,
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Column(
@@ -155,11 +164,16 @@ class VirtualCancelledTable extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.red.shade50,
+              color: isDark
+                  ? Colors.red.withValues(alpha: 0.15)
+                  : Colors.red.shade50,
               borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(8), topRight: Radius.circular(8)),
               border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+                  bottom: BorderSide(
+                      color:
+                          isDark ? AppColors.darkBorder : Colors.grey.shade300,
+                      width: 1)),
             ),
             child: const Row(
               children: [
@@ -178,8 +192,9 @@ class VirtualCancelledTable extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: rows.length,
-              separatorBuilder: (ctx, i) =>
-                  const Divider(height: 1, color: Colors.black12),
+              separatorBuilder: (ctx, i) => Divider(
+                  height: 1,
+                  color: isDark ? AppColors.darkDivider : Colors.black12),
               itemBuilder: (context, index) {
                 return RepaintBoundary(
                   child: _CancelledExpandableRow(
@@ -209,17 +224,21 @@ class _CancelledExpandableRowState extends State<_CancelledExpandableRow> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final wo = widget.workOrder;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
-          hoverColor: Colors.grey.shade100,
+          hoverColor: isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100,
           child: Container(
             decoration: BoxDecoration(
-                border:
-                    Border(bottom: BorderSide(color: Colors.grey.shade300))),
+                border: Border(
+                    bottom: BorderSide(
+                        color: isDark
+                            ? AppColors.darkDivider
+                            : Colors.grey.shade300))),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
               child: Row(
@@ -265,12 +284,13 @@ class _ExpandedContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final reason = workOrder.parsedDoc['cancel_reason'] ?? 'No reason provided';
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: isDark ? AppColors.darkBackground : Colors.grey.shade50,
         border: const Border(left: BorderSide(color: Colors.red, width: 3)),
       ),
       child: Column(
@@ -283,10 +303,14 @@ class _ExpandedContent extends StatelessWidget {
               2: FlexColumnWidth(3),
               3: FlexColumnWidth(2)
             },
-            border: TableBorder.all(color: Colors.grey.shade300),
+            border: TableBorder.all(
+                color: isDark ? AppColors.darkBorder : Colors.grey.shade300),
             children: [
               TableRow(
-                  decoration: BoxDecoration(color: Colors.grey.shade200),
+                  decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkSurfaceAlt
+                          : Colors.grey.shade200),
                   children: const [
                     WOTableHeader('Address'),
                     WOTableHeader('Pincode'),
@@ -419,16 +443,20 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final wo = widget.workOrder;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: AppColors.surface,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.mdAll,
         side: BorderSide(
-          color: _isExpanded ? AppColors.error : AppColors.divider,
+          color: _isExpanded
+              ? AppColors.error
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
           width: _isExpanded ? 1.5 : 1,
         ),
       ),
@@ -486,7 +514,8 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
                               '${wo.gender} • ${wo.age} • ${wo.mobile}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -527,21 +556,26 @@ class _MobileCancelledCardState extends State<_MobileCancelledCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceAlt,
+                          color: isDark
+                              ? AppColors.darkSurfaceAlt
+                              : AppColors.surfaceAlt,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.access_time,
-                                size: 12, color: AppColors.textSecondary),
+                                size: 12,
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.6)),
                             const SizedBox(width: 4),
                             Text(
                               wo.visitTime,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                           ],

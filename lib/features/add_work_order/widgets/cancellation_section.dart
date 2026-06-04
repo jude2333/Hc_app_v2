@@ -15,13 +15,18 @@ class CancellationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: EdgeInsets.only(top: AppSpacing.lg),
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.05),
+        color: isDark
+            ? AppColors.error.withValues(alpha: 0.15)
+            : AppColors.error.withOpacity(0.05),
         borderRadius: AppRadius.mdAll,
-        border: Border.all(color: AppColors.error.withOpacity(0.2)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,23 +49,24 @@ class CancellationSection extends StatelessWidget {
             SizedBox(height: AppSpacing.md),
             TextField(
               controller: reasonController,
+              style: TextStyle(color: colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Reason for Cancellation',
-                labelStyle: TextStyle(color: AppColors.error),
+                labelStyle: const TextStyle(color: AppColors.error),
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: colorScheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: AppRadius.smAll,
-                  borderSide: BorderSide(color: AppColors.error),
+                  borderSide: const BorderSide(color: AppColors.error),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: AppRadius.smAll,
                   borderSide:
-                      BorderSide(color: AppColors.error.withOpacity(0.5)),
+                      BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: AppRadius.smAll,
-                  borderSide: BorderSide(color: AppColors.error),
+                  borderSide: const BorderSide(color: AppColors.error),
                 ),
               ),
               maxLines: 3,

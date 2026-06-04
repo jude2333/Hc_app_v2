@@ -20,6 +20,9 @@ class AnalyticsRangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -39,16 +42,16 @@ class AnalyticsRangeSelector extends StatelessWidget {
                 }
               },
               selectedColor: AppColors.primary,
-              backgroundColor: AppColors.surfaceAlt,
+              backgroundColor: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textPrimary,
+                color: isSelected ? Colors.white : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 13,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSelected ? AppColors.primary : AppColors.border,
+                  color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border),
                 ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -87,15 +90,18 @@ class AnalyticsAggregateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: AppRadius.mdAll,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
+            color: isDark ? Colors.black54 : AppColors.shadowLight,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -217,13 +223,16 @@ class TechAnalyticsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: AppRadius.mdAll,
         border: Border.all(
-          color: isExpanded ? AppColors.primary : AppColors.border,
+          color: isExpanded ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.border),
         ),
         boxShadow: isExpanded
             ? [
@@ -274,7 +283,7 @@ class TechAnalyticsCard extends StatelessWidget {
                           '${tech.totalOrders} orders • ${tech.finished} done • ${tech.totalTests} tests',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -296,7 +305,7 @@ class TechAnalyticsCard extends StatelessWidget {
                           'HC: ${_currFmt.format(tech.hcCharges)}',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textSecondary,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                     ],
@@ -306,7 +315,7 @@ class TechAnalyticsCard extends StatelessWidget {
                     isExpanded
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ],
               ),
@@ -339,12 +348,12 @@ class TechAnalyticsCard extends StatelessWidget {
                   ),
                   if (tech.testBreakdown.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    const Text(
+                     Text(
                       'Test Breakdown',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -417,9 +426,12 @@ class TestBreakdownMiniTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.divider),
         borderRadius: AppRadius.smAll,
       ),
       child: Column(
@@ -427,7 +439,7 @@ class TestBreakdownMiniTable extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.primaryLight,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(5)),
             ),
@@ -455,9 +467,9 @@ class TestBreakdownMiniTable extends StatelessWidget {
           ),
           ...tests.take(15).map((t) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.divider)),
-                ),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider)),
+              ),
                 child: Row(
                   children: [
                     Expanded(
@@ -494,7 +506,7 @@ class TestBreakdownMiniTable extends StatelessWidget {
               child: Text(
                 '+${tests.length - 15} more tests',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
             ),
         ],
@@ -519,16 +531,19 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: AppSizes.cardElevation,
-      color: AppColors.surface,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.primaryLight,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(8)),
             ),
@@ -579,16 +594,14 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: isExpanded
-                              ? AppColors.tableRowExpanded
+                              ? (isDark ? AppColors.darkSurfaceAlt : AppColors.tableRowExpanded)
                               : (index % 2 == 0
-                                  ? AppColors.tableRowEven
-                                  : AppColors.tableRowOdd),
+                                  ? (isDark ? colorScheme.surface : AppColors.tableRowEven)
+                                  : (isDark ? AppColors.darkSurfaceAlt : AppColors.tableRowOdd)),
                           border: Border(
-                              bottom: BorderSide(color: AppColors.divider)),
+                              bottom: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider)),
                         ),
                         child: Row(
                           children: [
@@ -689,7 +702,7 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                                     ? Icons.expand_less
                                     : Icons.expand_more,
                                 size: 20,
-                                color: AppColors.textSecondary,
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -698,7 +711,7 @@ class _TechAnalyticsDesktopTableState extends State<TechAnalyticsDesktopTable> {
                     ),
                     if (isExpanded && tech.testBreakdown.isNotEmpty)
                       Container(
-                        color: AppColors.tableRowExpanded,
+                        color: isDark ? AppColors.darkSurfaceAlt : AppColors.tableRowExpanded,
                         padding: const EdgeInsets.fromLTRB(48, 8, 48, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,10 +793,10 @@ class _HeaderText extends StatelessWidget {
     return Text(
       text,
       textAlign: align,
-      style: const TextStyle(
+      style: TextStyle(
         fontWeight: FontWeight.w700,
         fontSize: 12,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -832,6 +845,9 @@ class _SkeletonBoxState extends State<SkeletonBox>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey.shade800 : const Color(0xFFE2E8F0);
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -840,7 +856,7 @@ class _SkeletonBoxState extends State<SkeletonBox>
           height: widget.height,
           margin: widget.margin,
           decoration: BoxDecoration(
-            color: const Color(0xFFE2E8F0).withOpacity(_animation.value),
+            color: baseColor.withValues(alpha: _animation.value),
             borderRadius: widget.borderRadius ?? BorderRadius.circular(6),
           ),
         );
@@ -854,12 +870,15 @@ class AnalyticsAggregateCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: AppRadius.mdAll,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,9 +886,9 @@ class AnalyticsAggregateCardSkeleton extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFEDF2F7),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(7)),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurfaceAlt : const Color(0xFFEDF2F7),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
             ),
             child: Row(
               children: const [
@@ -890,10 +909,10 @@ class AnalyticsAggregateCardSkeleton extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.border.withOpacity(0.2),
+                          color: (isDark ? AppColors.darkBorder : AppColors.border).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: AppColors.border.withOpacity(0.5)),
+                              color: (isDark ? AppColors.darkBorder : AppColors.border).withValues(alpha: 0.5)),
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -917,13 +936,16 @@ class TechAnalyticsCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: AppRadius.mdAll,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
       ),
       child: Row(
         children: [
@@ -964,16 +986,19 @@ class TechAnalyticsDesktopTableSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: AppSizes.cardElevation,
-      color: AppColors.surface,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.primaryLight,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(8)),
             ),
@@ -1017,10 +1042,10 @@ class TechAnalyticsDesktopTableSkeleton extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: index % 2 == 0
-                        ? AppColors.tableRowEven
-                        : AppColors.tableRowOdd,
+                        ? (isDark ? colorScheme.surface : AppColors.tableRowEven)
+                        : (isDark ? AppColors.darkSurfaceAlt : AppColors.tableRowOdd),
                     border:
-                        Border(bottom: BorderSide(color: AppColors.divider)),
+                        Border(bottom: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider)),
                   ),
                   child: Row(
                     children: [

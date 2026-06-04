@@ -32,14 +32,16 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
     final selectedRange = ref.watch(analyticsRangeProvider);
     final isMobile = MediaQuery.of(context).size.width < 900;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundSmoke,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 2,
-        surfaceTintColor: AppColors.surface,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Container(
@@ -61,7 +63,7 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
           
           IconButton(
             tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh, color: AppColors.textSecondary),
+            icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
             onPressed: () =>
                 ref.read(techAnalyticsProvider.notifier).loadData(),
           ),
@@ -98,13 +100,13 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
               child: Row(
                 children: [
                   Icon(Icons.date_range,
-                      size: 16, color: AppColors.textSecondary),
+                      size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   const SizedBox(width: 6),
                   Text(
                     '${DateFormat('dd MMM yyyy').format(state.report!.startDate)} — ${DateFormat('dd MMM yyyy').format(state.report!.endDate)}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -114,7 +116,7 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
                       '${state.report!.overallTotals.totalOrders} orders • ${state.report!.technicians.length} technicians',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                 ],
@@ -270,12 +272,20 @@ class _TechAnalyticsPageState extends ConsumerState<TechAnalyticsPage> {
       ),
       helpText: 'Select date range for analytics',
       builder: (ctx, child) {
+        final isDarkTheme = Theme.of(ctx).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(ctx).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-            ),
+            colorScheme: isDarkTheme
+                ? ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.darkSurfaceAlt,
+                    onSurface: AppColors.darkTextPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                  ),
           ),
           child: child!,
         );

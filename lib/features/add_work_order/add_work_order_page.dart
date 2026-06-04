@@ -487,7 +487,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     if (isCopyMode) title = 'Copy Work Order';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(title),
       body: _isInitialized
           ? Stack(
@@ -500,15 +500,15 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                 ),
                 if (ref.watch(addWorkOrderControllerProvider))
                   Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: Center(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: const Center(
                       child:
                           CircularProgressIndicator(color: AppColors.primary),
                     ),
                   ),
               ],
             )
-          : Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          : const Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
   }
 
@@ -706,11 +706,15 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Widget _buildDateTimeFields() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         DropdownButtonFormField<String>(
+          dropdownColor: colorScheme.surface,
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
           value: _collectionDate.isNotEmpty ? _collectionDate : null,
-          decoration: WorkOrderFormStyles.inputDecoration('Collection Date',
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Collection Date',
               icon: Icons.event),
           items: _suitableDates
               .map((date) => DropdownMenuItem(value: date, child: Text(date)))
@@ -724,11 +728,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
           child: Container(
             padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.surfaceAlt,
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
               border: Border.all(
                 color: _hasAttemptedValidation && _collectionTime == null
                     ? AppColors.error
-                    : AppColors.divider,
+                    : (isDark ? AppColors.darkBorder : AppColors.divider),
                 width:
                     _hasAttemptedValidation && _collectionTime == null ? 2 : 1,
               ),
@@ -738,8 +742,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               children: [
                 Icon(Icons.access_time_rounded,
                     color: _collectionTime == null
-                        ? AppColors.textHint
-                        : AppColors.primary,
+                        ? (isDark ? AppColors.darkTextSecondary : AppColors.textHint)
+                        : (isDark ? AppColors.gradientEnd : AppColors.primary),
                     size: 20),
                 SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -748,15 +752,15 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                     style: TextStyle(
                       fontSize: 16,
                       color: _collectionTime == null
-                          ? AppColors.textHint
-                          : AppColors.textPrimary,
+                          ? (isDark ? AppColors.darkTextSecondary : AppColors.textHint)
+                          : colorScheme.onSurface,
                     ),
                   ),
                 ),
                 if (_collectionTime != null)
                   IconButton(
                     icon:
-                        Icon(Icons.clear, size: 18, color: AppColors.textHint),
+                        Icon(Icons.clear, size: 18, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                     onPressed: () => setState(() => _collectionTime = null),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -770,7 +774,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             padding: EdgeInsets.only(left: AppSpacing.sm, top: AppSpacing.xs),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Please select collection time',
+              child: const Text('Please select collection time',
                   style: TextStyle(color: AppColors.error, fontSize: 12)),
             ),
           ),
@@ -779,11 +783,14 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Widget _buildAdditionalFields() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         TextFormField(
           controller: _doctorController,
-          decoration: WorkOrderFormStyles.inputDecoration('Referring Doctor',
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Referring Doctor',
               icon: Icons.medical_services_outlined, prefix: 'Dr. '),
         ),
         SizedBox(height: AppSpacing.md),
@@ -792,7 +799,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             Expanded(
               child: TextFormField(
                 controller: _marketingPersonNameController,
-                decoration: WorkOrderFormStyles.inputDecoration(
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: WorkOrderFormStyles.inputDecoration(context,
                     'Marketing Person Name',
                     icon: Icons.person_outline),
               ),
@@ -801,7 +809,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             Expanded(
               child: TextFormField(
                 controller: _marketingPersonNumberController,
-                decoration: WorkOrderFormStyles.inputDecoration(
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: WorkOrderFormStyles.inputDecoration(context,
                     'Marketing Person Number',
                     icon: Icons.phone_outlined),
                 keyboardType: TextInputType.phone,
@@ -815,7 +824,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             Expanded(
               child: TextFormField(
                 controller: _clientCodeController,
-                decoration: WorkOrderFormStyles.inputDecoration('Client Code',
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: WorkOrderFormStyles.inputDecoration(context, 'Client Code',
                     icon: Icons.badge_outlined),
               ),
             ),
@@ -823,7 +833,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             Expanded(
               child: TextFormField(
                 controller: _doctorCodeController,
-                decoration: WorkOrderFormStyles.inputDecoration('Doctor Code',
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: WorkOrderFormStyles.inputDecoration(context, 'Doctor Code',
                     icon: Icons.local_hospital_outlined),
               ),
             ),
@@ -838,17 +849,17 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             child: Container(
               padding: EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
+                color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withOpacity(0.05),
                 borderRadius: AppRadius.smAll,
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                border: Border.all(color: isDark ? AppColors.primary.withValues(alpha: 0.3) : AppColors.primary.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.business, color: AppColors.primary, size: 20),
+                  Icon(Icons.business, color: isDark ? AppColors.gradientEnd : AppColors.primary, size: 20),
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(_selectedB2BClientName!,
-                        style: TextStyle(color: AppColors.primary)),
+                        style: TextStyle(color: isDark ? AppColors.gradientEnd : AppColors.primary)),
                   ),
                 ],
               ),
@@ -857,7 +868,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         SizedBox(height: AppSpacing.md),
         // TextFormField(
         //   controller: _freeTextController,
-        //   decoration: WorkOrderFormStyles.inputDecoration('Remarks / Notes',
+        //   decoration: WorkOrderFormStyles.inputDecoration(context, 'Remarks / Notes',
         //       icon: Icons.notes),
         //   maxLines: 3,
         // ),
@@ -865,8 +876,10 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         _buildTagsRow(),
         SizedBox(height: AppSpacing.md),
         DropdownButtonFormField<String>(
+          dropdownColor: colorScheme.surface,
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
           value: _creditSelect,
-          decoration: WorkOrderFormStyles.inputDecoration('Payment Type',
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Payment Type',
               icon: Icons.payment),
           items: ['None', 'Credit', 'Trial']
               .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -883,28 +896,35 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Widget _buildB2BToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color:
-            _isB2B ? AppColors.primary.withOpacity(0.05) : AppColors.surfaceAlt,
+        color: _isB2B
+            ? AppColors.primary.withValues(alpha: 0.15)
+            : (isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt),
         borderRadius: AppRadius.smAll,
         border: Border.all(
-          color:
-              _isB2B ? AppColors.primary.withOpacity(0.2) : AppColors.divider,
+          color: _isB2B
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
         ),
       ),
       child: Row(
         children: [
           Icon(Icons.business_center,
-              color: _isB2B ? AppColors.primary : AppColors.textHint, size: 20),
+              color: _isB2B
+                  ? (isDark ? AppColors.gradientEnd : AppColors.primary)
+                  : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+              size: 20),
           SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text('B2B Client',
                 style: TextStyle(
-                    color:
-                        _isB2B ? AppColors.primary : AppColors.textSecondary)),
+                    color: _isB2B
+                        ? (isDark ? AppColors.gradientEnd : AppColors.primary)
+                        : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary))),
           ),
           Switch(
             value: _isB2B,
@@ -948,6 +968,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Widget _buildTagChip(String label, bool value, Function(bool) onChanged) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () => onChanged(!value),
       borderRadius: AppRadius.smAll,
@@ -957,11 +978,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         decoration: BoxDecoration(
           color: value
               ? (label == 'Urgent'
-                  ? AppColors.error.withOpacity(0.1)
+                  ? AppColors.error.withValues(alpha: 0.15)
                   : label == 'VIP'
-                      ? AppColors.warning.withOpacity(0.1)
-                      : AppColors.secondary.withOpacity(0.1))
-              : AppColors.surfaceAlt,
+                      ? AppColors.warning.withValues(alpha: 0.15)
+                      : AppColors.secondary.withValues(alpha: 0.15))
+              : (isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt),
           borderRadius: AppRadius.smAll,
           border: Border.all(
             color: value
@@ -970,7 +991,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                     : label == 'VIP'
                         ? AppColors.warning
                         : AppColors.secondary)
-                : AppColors.divider,
+                : (isDark ? AppColors.darkBorder : AppColors.divider),
           ),
         ),
         child: Row(
@@ -985,7 +1006,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                       : label == 'VIP'
                           ? AppColors.warning
                           : AppColors.secondary)
-                  : AppColors.textHint,
+                  : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
             ),
             SizedBox(width: AppSpacing.xs),
             Expanded(
@@ -998,7 +1019,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                           : label == 'VIP'
                               ? AppColors.warning
                               : AppColors.secondary)
-                      : AppColors.textSecondary,
+                      : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   fontWeight: value ? FontWeight.w600 : FontWeight.normal,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -1012,11 +1033,13 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Widget _buildContactFieldsDesktop() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         TextFormField(
           controller: _addressController,
-          decoration: WorkOrderFormStyles.inputDecoration('Address',
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Address',
               icon: Icons.location_on_outlined),
           maxLines: 3,
           validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -1028,7 +1051,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
               flex: 3,
               child: TextFormField(
                 controller: _emailController,
-                decoration: WorkOrderFormStyles.inputDecoration('Email',
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: WorkOrderFormStyles.inputDecoration(context, 'Email',
                     icon: Icons.email_outlined),
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -1042,8 +1066,9 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _pincodeController,
+                      style: TextStyle(color: colorScheme.onSurface),
                       decoration:
-                          WorkOrderFormStyles.inputDecoration('Pincode'),
+                          WorkOrderFormStyles.inputDecoration(context, 'Pincode'),
                       keyboardType: TextInputType.number,
                       maxLength: 6,
                       validator: (v) => v!.length != 6 ? 'Invalid' : null,
@@ -1052,11 +1077,11 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
                   SizedBox(width: AppSpacing.xs),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: AppRadius.smAll,
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.search, color: AppColors.primary),
+                      icon: const Icon(Icons.search, color: AppColors.primary),
                       tooltip: 'Search Pincode',
                       onPressed: _showPincodeDialog,
                     ),
@@ -1069,7 +1094,8 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
         SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: _freeTextController,
-          decoration: WorkOrderFormStyles.inputDecoration('Remarks / Notes',
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: WorkOrderFormStyles.inputDecoration(context, 'Remarks / Notes',
               icon: Icons.notes),
           minLines: 6,
           maxLines: null,
@@ -1079,12 +1105,13 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   PreferredSizeWidget _buildAppBar(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: colorScheme.surface,
       elevation: 0,
-      surfaceTintColor: AppColors.surface,
+      surfaceTintColor: colorScheme.surface,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+        icon: Icon(Icons.arrow_back_ios, color: colorScheme.onSurface),
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Row(
@@ -1093,12 +1120,12 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             padding: AppPadding.badge,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
               ),
               borderRadius: AppRadius.lgAll,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -1123,7 +1150,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                AppColors.primary.withOpacity(0.2),
+                AppColors.primary.withValues(alpha: 0.2),
                 Colors.transparent,
               ],
             ),
@@ -1134,18 +1161,23 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
   }
 
   Widget _buildNotificationChip() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeCount =
         [_sendSms, _sendWhatsapp, _sendEmail].where((b) => b).length;
     return ActionChip(
       avatar: Icon(Icons.notifications_outlined,
           size: 18,
-          color: activeCount > 0 ? AppColors.primary : AppColors.textHint),
+          color: activeCount > 0
+              ? (isDark ? AppColors.gradientEnd : AppColors.primary)
+              : (isDark ? AppColors.darkTextSecondary : AppColors.textHint)),
       label: Text('$activeCount/3'),
       backgroundColor: activeCount > 0
-          ? AppColors.primary.withOpacity(0.1)
-          : AppColors.surfaceAlt,
+          ? AppColors.primary.withValues(alpha: 0.15)
+          : (isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt),
       labelStyle: TextStyle(
-        color: activeCount > 0 ? AppColors.primary : AppColors.textHint,
+        color: activeCount > 0
+            ? (isDark ? AppColors.gradientEnd : AppColors.primary)
+            : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
         fontWeight: FontWeight.w500,
       ),
       onPressed: () async {

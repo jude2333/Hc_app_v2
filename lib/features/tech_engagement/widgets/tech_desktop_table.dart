@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/providers/tech_engagement_provider.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/widgets/tech_patient_list.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/widgets/tech_shared_widgets.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class TechDesktopTable extends StatelessWidget {
   final List<TechSummary> techList;
@@ -15,23 +16,26 @@ class TechDesktopTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 2,
-      color: Colors.white,
+      color: colorScheme.surface,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         children: [
-          _buildTableHeader(),
+          _buildTableHeader(context),
           Expanded(
             child: isLoading
-                ? _buildSkeletonLoading()
+                ? _buildSkeletonLoading(context)
                 : ListView.separated(
                     itemCount: techList.length,
                     separatorBuilder: (_, __) =>
-                        const Divider(height: 1, color: Colors.black12),
+                        Divider(height: 1, color: isDark ? AppColors.darkDivider : Colors.black12),
                     itemBuilder: (context, index) {
                       return TechDesktopRow(summary: techList[index]);
                     },
@@ -42,14 +46,17 @@ class TechDesktopTable extends StatelessWidget {
     );
   }
 
-  Widget _buildSkeletonLoading() {
+  Widget _buildSkeletonLoading(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final skeletonColor = isDark ? AppColors.darkBorder : Colors.grey.shade200;
+
     return ListView.builder(
       itemCount: 8,
       itemBuilder: (context, index) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            border: Border(bottom: BorderSide(color: isDark ? AppColors.darkDivider : Colors.grey.shade200)),
           ),
           child: Row(
             children: List.generate(
@@ -59,7 +66,7 @@ class TechDesktopTable extends StatelessWidget {
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         height: 14,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: skeletonColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -71,13 +78,15 @@ class TechDesktopTable extends StatelessWidget {
     );
   }
 
-  Widget _buildTableHeader() {
+  Widget _buildTableHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+        border: Border(bottom: BorderSide(color: isDark ? AppColors.darkBorder : Colors.grey.shade300)),
       ),
       child: const Row(
         children: [
@@ -115,15 +124,20 @@ class _TechDesktopRowState extends State<TechDesktopRow> {
     final s = widget.summary;
     if (s.assigned == 0) return const SizedBox.shrink();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         InkWell(
           onTap: () => setState(() => _expanded = !_expanded),
-          hoverColor: Colors.grey.shade100,
+          hoverColor: isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: _expanded ? Colors.orange.shade50 : Colors.white,
+              color: _expanded
+                  ? (isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50)
+                  : (isDark ? colorScheme.surface : Colors.white),
             ),
             child: Row(
               children: [

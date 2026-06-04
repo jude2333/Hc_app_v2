@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -113,9 +114,8 @@ class AddWorkOrderController extends StateNotifier<bool> {
           email: email,
           pincode: pincode,
           freeText: freeText,
-          prescriptionPath: prescriptionPaths.isNotEmpty
-              ? prescriptionPaths.join(',')
-              : null,
+          prescriptionPath:
+              prescriptionPaths.isNotEmpty ? prescriptionPaths.join(',') : null,
           vip: isVip,
           urgent: isUrgent,
           cghsClient: isCghs,
@@ -181,22 +181,22 @@ class AddWorkOrderController extends StateNotifier<bool> {
             .read(managerWorkOrderRepositoryProvider)
             .updateWorkOrder(updatedOrder, customDoc: customDoc);
 
-        if (success) {
-          // Wait for CRUD queue to drain so db.watch() resumes
-          await ref
-              .read(managerWONotifierProvider.notifier)
-              .syncAfterMutation();
-        }
-
-        if (success && isCancelled && existingWorkOrder.status != 'cancelled') {
-          await _sendCancellationNotifications(
-            workOrder: existingWorkOrder,
-            sendSms: sendSms,
-            sendWhatsapp: sendWhatsapp,
-          );
-        }
-
         setLoading(false);
+
+        if (success) {
+          // Fire-and-forget: PowerSync db.watch() will update the list reactively
+          unawaited(
+              ref.read(managerWONotifierProvider.notifier).syncAfterMutation());
+
+          if (isCancelled && existingWorkOrder.status != 'cancelled') {
+            unawaited(_sendCancellationNotifications(
+              workOrder: existingWorkOrder,
+              sendSms: sendSms,
+              sendWhatsapp: sendWhatsapp,
+            ));
+          }
+        }
+
         return {'success': success, 'message': 'Work Order Updated'};
       } else {
         final workOrder = WorkOrder.fromFormData(
@@ -275,12 +275,15 @@ class AddWorkOrderController extends StateNotifier<bool> {
               .read(managerWorkOrderRepositoryProvider)
               .createWorkOrder(finalOrder);
 
-          if (success) {
-            await ref
-                .read(managerWONotifierProvider.notifier)
-                .syncAfterMutation();
-          }
           setLoading(false);
+
+          if (success) {
+            // Fire-and-forget: list updates via db.watch()
+            unawaited(ref
+                .read(managerWONotifierProvider.notifier)
+                .syncAfterMutation());
+          }
+
           return {
             'success': success,
             'message': 'Work Order Copied Successfully'
@@ -290,14 +293,16 @@ class AddWorkOrderController extends StateNotifier<bool> {
               .read(managerWorkOrderRepositoryProvider)
               .createWorkOrder(workOrder);
 
+          setLoading(false);
+
           if (success) {
-            await ref
+            // Fire-and-forget: list updates via db.watch(), SMS is best-effort
+            unawaited(ref
                 .read(managerWONotifierProvider.notifier)
-                .syncAfterMutation();
-            await _sendConfirmationSms(workOrder, sendSms);
+                .syncAfterMutation());
+            unawaited(_sendConfirmationSms(workOrder, sendSms));
           }
 
-          setLoading(false);
           return {'success': success, 'message': 'Work Order Created'};
         }
       }

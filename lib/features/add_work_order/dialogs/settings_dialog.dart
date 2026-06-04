@@ -32,8 +32,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: colorScheme.surface,
       child: Container(
         padding: EdgeInsets.all(AppSpacing.lg),
         constraints: const BoxConstraints(maxWidth: 400),
@@ -46,23 +51,24 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 Container(
                   padding: EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: AppRadius.smAll,
                   ),
-                  child: Icon(Icons.notifications_outlined,
+                  child: const Icon(Icons.notifications_outlined,
                       color: AppColors.primary),
                 ),
                 SizedBox(width: AppSpacing.md),
-                Text('Notification Settings', style: AppTextStyles.h3),
+                Text('Notification Settings', style: AppTextStyles.h3.copyWith(color: colorScheme.onSurface)),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.close, color: AppColors.textHint),
+                  icon: Icon(Icons.close, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
             SizedBox(height: AppSpacing.lg),
             _buildNotificationToggle(
+              context,
               'SMS',
               Icons.sms_outlined,
               _msgSms,
@@ -70,6 +76,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ),
             SizedBox(height: AppSpacing.sm),
             _buildNotificationToggle(
+              context,
               'WhatsApp',
               Icons.chat_outlined,
               _msgWhatsapp,
@@ -77,6 +84,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ),
             SizedBox(height: AppSpacing.sm),
             _buildNotificationToggle(
+              context,
               'Email',
               Icons.email_outlined,
               _msgEmail,
@@ -99,7 +107,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
                 ),
-                child: Text('Save Settings'),
+                child: const Text('Save Settings'),
               ),
             ),
           ],
@@ -109,28 +117,36 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Widget _buildNotificationToggle(
-      String label, IconData icon, bool value, Function(bool) onChanged) {
+      BuildContext context, String label, IconData icon, bool value, Function(bool) onChanged) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color:
-            value ? AppColors.success.withOpacity(0.05) : AppColors.surfaceAlt,
+        color: value
+            ? AppColors.success.withValues(alpha: 0.15)
+            : (isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt),
         borderRadius: AppRadius.smAll,
         border: Border.all(
-          color: value ? AppColors.success.withOpacity(0.3) : AppColors.divider,
+          color: value
+              ? AppColors.success.withValues(alpha: 0.3)
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
         ),
       ),
       child: Row(
         children: [
           Icon(icon,
-              color: value ? AppColors.success : AppColors.textHint, size: 20),
+              color: value
+                  ? AppColors.success
+                  : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+              size: 20),
           SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(label,
                 style: TextStyle(
-                    color:
-                        value ? AppColors.success : AppColors.textSecondary)),
+                    color: value
+                        ? AppColors.success
+                        : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary))),
           ),
           Switch(
             value: value,

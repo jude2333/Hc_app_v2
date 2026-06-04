@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:anderson_crm_flutter/features/price_list/price_list.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class HistorySheet extends ConsumerStatefulWidget {
   const HistorySheet({Key? key}) : super(key: key);
@@ -23,6 +24,8 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(priceListProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     // Derive filtered list directly from provider state
     final fullList = state.globalHistory;
@@ -49,9 +52,9 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
       height: MediaQuery.of(context).size.height * 0.9,
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         children: [
@@ -76,6 +79,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
           const SizedBox(height: 10),
           TextField(
             controller: _searchController,
+            style: TextStyle(color: colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'Search History...',
               prefixIcon: const Icon(Icons.search, size: 20),
@@ -83,10 +87,18 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
                   const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: isDark ? AppColors.darkBorder : Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: isDark ? AppColors.darkBorder : Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.orange),
               ),
               filled: true,
-              fillColor: Colors.grey.shade100,
+              fillColor: isDark ? AppColors.darkBackground : Colors.grey.shade100,
             ),
             onChanged: (val) {
               Future.delayed(const Duration(milliseconds: 300), () {
@@ -100,8 +112,8 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
-              color: Colors.orange.shade100,
-              border: Border(bottom: BorderSide(color: Colors.orange)),
+              color: isDark ? AppColors.primary.withValues(alpha: 0.15) : Colors.orange.shade100,
+              border: const Border(bottom: BorderSide(color: Colors.orange)),
             ),
             child: const Row(
               children: [
@@ -141,7 +153,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color:
-                                                _getActionColor(item['action']),
+                                                _getActionColor(context, item['action']),
                                             fontSize: 14,
                                           ),
                                         ),
@@ -153,8 +165,10 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
                                               const EdgeInsets.only(right: 8.0),
                                           child: Text(
                                             item['summary'] ?? '',
-                                            style: const TextStyle(
-                                                fontSize: 14, height: 1.3),
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                height: 1.3,
+                                                color: colorScheme.onSurface),
                                           ),
                                         ),
                                       ),
@@ -162,25 +176,26 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
                                         flex: 2,
                                         child: Text(
                                           item['emp_name'] ?? '',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 14,
-                                              fontWeight: FontWeight.w500),
+                                              fontWeight: FontWeight.w500,
+                                              color: colorScheme.onSurface),
                                         ),
                                       ),
                                       Expanded(
                                         flex: 3,
                                         child: Text(
                                           item['time_stamp'] ?? '',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.black),
+                                              color: colorScheme.onSurface.withValues(alpha: 0.7)),
                                           textAlign: TextAlign.start,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const Divider(height: 1, thickness: 0.5),
+                                Divider(height: 1, thickness: 0.5, color: isDark ? AppColors.darkDivider : Colors.grey.shade300),
                               ],
                             ),
                           );
@@ -192,7 +207,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
     );
   }
 
-  Color _getActionColor(String? action) {
+  Color _getActionColor(BuildContext context, String? action) {
     switch (action?.toLowerCase()) {
       case 'created':
         return Colors.green;
@@ -201,17 +216,22 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
       case 'deleted':
         return Colors.red;
       default:
-        return Colors.black87;
+        return Theme.of(context).colorScheme.onSurface;
     }
   }
 
   Widget _buildSkeletonLoading() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final skeletonColor = isDark ? AppColors.darkBorder : Colors.grey.shade200;
+    final skeletonColorAlt = isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100;
+    final dividerColor = isDark ? AppColors.darkDivider : Colors.grey.shade200;
+
     return ListView.builder(
       itemCount: 10,
       itemBuilder: (context, index) => Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+          border: Border(bottom: BorderSide(color: dividerColor)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +241,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
               child: Container(
                 height: 14,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -235,7 +255,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
                   Container(
                     height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: skeletonColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -244,7 +264,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
                     height: 10,
                     width: 150,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: skeletonColorAlt,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -257,7 +277,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
               child: Container(
                 height: 14,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -268,7 +288,7 @@ class _HistorySheetState extends ConsumerState<HistorySheet> {
               child: Container(
                 height: 14,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

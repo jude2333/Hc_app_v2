@@ -53,7 +53,7 @@ class _HCStepPrescriptionState extends ConsumerState<HCStepPrescription> {
       if (source == null) return;
 
       pickedFile =
-          await _imagePicker.pickImage(source: source, imageQuality: 85);
+          await _imagePicker.pickImage(source: source, imageQuality: 50);
     } else {
       final result = await FilePicker.platform.pickFiles(type: FileType.image);
       if (result == null) return;

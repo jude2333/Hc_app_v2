@@ -25,27 +25,36 @@ class ImageUploadSection extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.photo_library, color: AppColors.primary),
-                title: Text('Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onPickImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: AppColors.primary),
-                title: Text('Camera'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onPickImage(ImageSource.camera);
-                },
-              ),
-            ],
+        final colorScheme = Theme.of(context).colorScheme;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          color: colorScheme.surface,
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(Icons.photo_library,
+                      color: isDark ? AppColors.gradientEnd : AppColors.primary),
+                  title: Text('Gallery',
+                      style: TextStyle(color: colorScheme.onSurface)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onPickImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.camera_alt,
+                      color: isDark ? AppColors.gradientEnd : AppColors.primary),
+                  title: Text('Camera',
+                      style: TextStyle(color: colorScheme.onSurface)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onPickImage(ImageSource.camera);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -55,6 +64,8 @@ class ImageUploadSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAny = images.isNotEmpty || initialUrls.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,46 +78,48 @@ class ImageUploadSection extends StatelessWidget {
             children: [
               for (int i = 0; i < initialUrls.length; i++)
                 Chip(
-                  avatar: Icon(Icons.image_rounded,
+                  avatar: const Icon(Icons.image_rounded,
                       size: 16, color: AppColors.success),
                   label: Text(
                     _extractFileName(initialUrls[i]),
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
                     overflow: TextOverflow.ellipsis,
                   ),
                   deleteIcon:
-                      Icon(Icons.close, size: 16, color: AppColors.error),
+                      const Icon(Icons.close, size: 16, color: AppColors.error),
                   onDeleted: onRemoveExisting != null
                       ? () => onRemoveExisting!(i)
                       : null,
-                  backgroundColor: AppColors.success.withOpacity(0.08),
-                  side: BorderSide(color: AppColors.success.withOpacity(0.2)),
+                  backgroundColor: AppColors.success.withValues(alpha: 0.15),
+                  side: BorderSide(
+                      color: AppColors.success.withValues(alpha: 0.3)),
                 ),
             ],
           ),
 
         // Newly picked image chips
         if (images.isNotEmpty) ...[
-          if (initialUrls.isNotEmpty) SizedBox(height: 6),
+          if (initialUrls.isNotEmpty) const SizedBox(height: 6),
           Wrap(
             spacing: 8,
             runSpacing: 6,
             children: [
               for (int i = 0; i < images.length; i++)
                 Chip(
-                  avatar: Icon(Icons.add_photo_alternate_rounded,
+                  avatar: const Icon(Icons.add_photo_alternate_rounded,
                       size: 16, color: AppColors.secondary),
                   label: Text(
                     images[i].name,
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
                     overflow: TextOverflow.ellipsis,
                   ),
                   deleteIcon:
-                      Icon(Icons.close, size: 16, color: AppColors.error),
+                      const Icon(Icons.close, size: 16, color: AppColors.error),
                   onDeleted:
                       onRemoveImage != null ? () => onRemoveImage!(i) : null,
-                  backgroundColor: AppColors.secondary.withOpacity(0.08),
-                  side: BorderSide(color: AppColors.secondary.withOpacity(0.2)),
+                  backgroundColor: AppColors.secondary.withValues(alpha: 0.15),
+                  side: BorderSide(
+                      color: AppColors.secondary.withValues(alpha: 0.3)),
                 ),
             ],
           ),
@@ -116,15 +129,18 @@ class ImageUploadSection extends StatelessWidget {
 
         // Upload button — always visible so user can add more
         OutlinedButton.icon(
-          icon: Icon(Icons.camera_alt_rounded, color: AppColors.secondary),
+          icon: Icon(Icons.camera_alt_rounded,
+              color: isDark ? AppColors.gradientEnd : AppColors.secondary),
           label: Text(
             hasAny ? 'Add More' : 'Upload Prescription',
-            style: TextStyle(color: AppColors.secondary),
+            style: TextStyle(
+                color: isDark ? AppColors.gradientEnd : AppColors.secondary),
           ),
           onPressed: () => _showImageSourceDialog(context),
           style: OutlinedButton.styleFrom(
             side: BorderSide(
-                color: AppColors.secondary, style: BorderStyle.solid),
+                color: isDark ? AppColors.gradientEnd : AppColors.secondary,
+                style: BorderStyle.solid),
             padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
             shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
           ),

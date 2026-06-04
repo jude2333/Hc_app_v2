@@ -6,26 +6,43 @@ import '../../../../features/theme/theme.dart';
 class WorkOrderFormStyles {
   WorkOrderFormStyles._();
 
-  static InputDecoration inputDecoration(String label,
+  static InputDecoration inputDecoration(BuildContext context, String label,
       {IconData? icon, String? prefix}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(
+        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+      ),
       prefixText: prefix,
-      prefixIcon:
-          icon != null ? Icon(icon, size: 20, color: AppColors.textHint) : null,
+      prefixStyle: TextStyle(color: colorScheme.onSurface),
+      prefixIcon: icon != null
+          ? Icon(
+              icon,
+              size: 20,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+            )
+          : null,
       filled: true,
-      fillColor: AppColors.surfaceAlt,
+      fillColor: isDark ? AppColors.darkSurface : AppColors.surfaceAlt,
       border: OutlineInputBorder(
         borderRadius: AppRadius.smAll,
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.divider),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.darkBorder : AppColors.divider,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.primary, width: 2),
+        borderSide: BorderSide(
+          color: AppColors.primary,
+          width: 2,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: AppRadius.smAll,

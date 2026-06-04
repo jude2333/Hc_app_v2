@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class AggCell extends StatelessWidget {
   final String label;
@@ -8,19 +9,20 @@ class AggCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Text(label,
             style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600)),
+                color: colorScheme.onSurface.withValues(alpha: 0.6))),
         const SizedBox(height: 2),
         Text(value,
             style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: color ?? Colors.black87)),
+                color: color ?? colorScheme.onSurface)),
       ],
     );
   }
@@ -47,7 +49,7 @@ class TechHeaderCell extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 12,
-            color: Colors.grey.shade700,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       );
@@ -80,7 +82,7 @@ class TechDataCell extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
-              color: color ?? Colors.black87,
+              color: color ?? Theme.of(context).colorScheme.onSurface,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -129,6 +131,9 @@ class RemittanceToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onToggle,
       borderRadius: BorderRadius.circular(12),
@@ -137,9 +142,9 @@ class RemittanceToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: accepted
               ? Colors.green.withValues(alpha: 0.1)
-              : Colors.grey.shade100,
+              : (isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100),
           border: Border.all(
-            color: accepted ? Colors.green : Colors.grey.shade400,
+            color: accepted ? Colors.green : (isDark ? AppColors.darkBorder : Colors.grey.shade400),
             width: 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -152,7 +157,7 @@ class RemittanceToggle extends StatelessWidget {
               Icon(
                 accepted ? Icons.check_circle : Icons.circle_outlined,
                 size: 10,
-                color: accepted ? Colors.green : Colors.grey,
+                color: accepted ? Colors.green : (isDark ? colorScheme.onSurface.withValues(alpha: 0.4) : Colors.grey),
               ),
               const SizedBox(width: 2),
               Text(
@@ -160,7 +165,7 @@ class RemittanceToggle extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: accepted ? Colors.green : Colors.grey.shade600,
+                  color: accepted ? Colors.green : (isDark ? colorScheme.onSurface.withValues(alpha: 0.6) : Colors.grey.shade600),
                 ),
               ),
             ],

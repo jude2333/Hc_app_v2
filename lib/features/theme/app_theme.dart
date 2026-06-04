@@ -22,6 +22,7 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         surfaceTintColor: AppColors.surface,
+        actionsIconTheme: IconThemeData(color: AppColors.textPrimary),
         elevation: 2,
       ),
       cardTheme: CardThemeData(
@@ -70,6 +71,7 @@ class AppTheme {
         backgroundColor: AppColors.darkSurface,
         foregroundColor: AppColors.darkTextPrimary,
         surfaceTintColor: AppColors.darkSurface,
+        actionsIconTheme: IconThemeData(color: AppColors.darkTextPrimary),
         elevation: 2,
       ),
       cardTheme: CardThemeData(

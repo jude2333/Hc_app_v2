@@ -17,11 +17,12 @@ class ManagerExpandedContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: AppPadding.card,
       decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(left: BorderSide(color: AppColors.primary, width: 3)),
+        color: isDark ? AppColors.darkBackground : AppColors.background,
+        border: const Border(left: BorderSide(color: AppColors.primary, width: 3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,9 +39,9 @@ class ManagerExpandedContent extends ConsumerWidget {
               workOrder.clientCode.isNotEmpty ||
               workOrder.doctorCode.isNotEmpty)
             _buildCodesSection(),
-          _buildProcessSteps(ref),
+          _buildProcessSteps(context, ref),
           const SizedBox(height: AppSpacing.md),
-          if (workOrder.parsedDoc['remarks'] != null) _buildRemarksSection(),
+          if (workOrder.parsedDoc['remarks'] != null) _buildRemarksSection(context),
           if (workOrder.serverStatus == 'Billed') _buildBillInfo(),
           if (workOrder.parsedDoc['report_path'] != null)
             _buildReportSection(context, ref),
@@ -52,6 +53,7 @@ class ManagerExpandedContent extends ConsumerWidget {
   }
 
   Widget _buildInfoTable(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Table(
       columnWidths: const {
         0: FlexColumnWidth(2),
@@ -60,10 +62,14 @@ class ManagerExpandedContent extends ConsumerWidget {
         3: FlexColumnWidth(2),
         4: FlexColumnWidth(2),
       },
-      border: TableBorder.all(color: AppColors.tableBorder),
+      border: TableBorder.all(
+        color: isDark ? AppColors.darkBorder : AppColors.tableBorder,
+      ),
       children: [
         TableRow(
-          decoration: BoxDecoration(color: AppColors.surfaceAlt),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
+          ),
           children: const [
             WOTableHeader('Address'),
             WOTableHeader('Pincode'),
@@ -83,7 +89,9 @@ class ManagerExpandedContent extends ConsumerWidget {
         ),
         if (workOrder.alternateMobile.isNotEmpty) ...[
           TableRow(
-            decoration: BoxDecoration(color: AppColors.surfaceAlt),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
+            ),
             children: const [
               WOTableHeader('Alt. Mobile'),
               WOTableHeader('Client Code'),
@@ -213,10 +221,11 @@ class ManagerExpandedContent extends ConsumerWidget {
     );
   }
 
-  Widget _buildProcessSteps(WidgetRef ref) {
+  Widget _buildProcessSteps(BuildContext context, WidgetRef ref) {
     final process = workOrder.process;
     bool isStepDone(String? key) =>
         process[key] != null && process[key].toString().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,11 +235,12 @@ class ManagerExpandedContent extends ConsumerWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         _buildGenericStep(
+          context,
           'Step-1',
           workOrder.firstStep.isNotEmpty
               ? 'Delay: ${workOrder.firstStep}'
@@ -238,9 +248,10 @@ class ManagerExpandedContent extends ConsumerWidget {
           isDone: workOrder.firstStep.isNotEmpty,
         ),
         SizedBox(height: AppSpacing.xs),
-        _buildProformaStep(ref, workOrder.proformaPath),
+        _buildProformaStep(context, ref, workOrder.proformaPath),
         SizedBox(height: AppSpacing.xs),
         _buildGenericStep(
+          context,
           'Step-3',
           isStepDone('third_step')
               ? 'Bill: ${process['third_step']}'
@@ -249,6 +260,7 @@ class ManagerExpandedContent extends ConsumerWidget {
         ),
         SizedBox(height: AppSpacing.xs),
         _buildGenericStep(
+          context,
           'Step-4',
           isStepDone('fourth_step')
               ? 'OTP: ${process['fourth_step']}'
@@ -256,18 +268,19 @@ class ManagerExpandedContent extends ConsumerWidget {
           isDone: isStepDone('fourth_step'),
         ),
         SizedBox(height: AppSpacing.xs),
-        _buildPrescriptionPhotoStep(ref, process['fifth_step']),
+        _buildPrescriptionPhotoStep(context, ref, process['fifth_step']),
       ],
     );
   }
 
-  Widget _buildGenericStep(String label, String content,
+  Widget _buildGenericStep(BuildContext context, String label, String content,
       {bool isDone = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         _BorderedChip(
           label: label,
-          color: isDone ? AppColors.primary : AppColors.textHint,
+          color: isDone ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.textHint),
         ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
@@ -275,7 +288,10 @@ class ManagerExpandedContent extends ConsumerWidget {
               ? _FilledChip(label: content, color: AppColors.success)
               : Text(
                   content,
-                  style: TextStyle(fontSize: 11, color: AppColors.textHint),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
         ),
@@ -283,8 +299,9 @@ class ManagerExpandedContent extends ConsumerWidget {
     );
   }
 
-  Widget _buildProformaStep(WidgetRef ref, String? stepData) {
+  Widget _buildProformaStep(BuildContext context, WidgetRef ref, String? stepData) {
     final isDone = stepData != null && stepData.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     String statusText = 'Pending';
     if (isDone) {
       if (workOrder.b2bClientId != null && workOrder.b2bClientId! > 0) {
@@ -301,14 +318,16 @@ class ManagerExpandedContent extends ConsumerWidget {
       children: [
         _BorderedChip(
           label: 'Step-2',
-          color: isDone ? AppColors.primary : AppColors.textHint,
+          color: isDone ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.textHint),
         ),
         const SizedBox(width: AppSpacing.sm),
         Text(
           'Proforma:',
           style: TextStyle(
             fontSize: 11,
-            color: isDone ? AppColors.textPrimary : AppColors.textHint,
+            color: isDone
+                ? Theme.of(context).colorScheme.onSurface
+                : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
           ),
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -328,26 +347,32 @@ class ManagerExpandedContent extends ConsumerWidget {
         ],
         if (!isDone)
           Text('Pending',
-              style: TextStyle(fontSize: 11, color: AppColors.textHint)),
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+              )),
       ],
     );
   }
 
-  Widget _buildPrescriptionPhotoStep(WidgetRef ref, dynamic stepData) {
+  Widget _buildPrescriptionPhotoStep(BuildContext context, WidgetRef ref, dynamic stepData) {
     final isDone = stepData != null && stepData.toString().isNotEmpty;
     final path = stepData?.toString() ?? '';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         _BorderedChip(
           label: 'Step-5',
-          color: isDone ? AppColors.primary : AppColors.textHint,
+          color: isDone ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.textHint),
         ),
         const SizedBox(width: AppSpacing.sm),
         Text(
           'Photos:',
           style: TextStyle(
             fontSize: 11,
-            color: isDone ? AppColors.textPrimary : AppColors.textHint,
+            color: isDone
+                ? Theme.of(context).colorScheme.onSurface
+                : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
           ),
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -361,14 +386,18 @@ class ManagerExpandedContent extends ConsumerWidget {
           ),
         if (!isDone)
           Text('Pending',
-              style: TextStyle(fontSize: 11, color: AppColors.textHint)),
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+              )),
       ],
     );
   }
 
-  Widget _buildRemarksSection() {
+  Widget _buildRemarksSection(BuildContext context) {
     final remarks = workOrder.parsedDoc['remarks']?.toString() ?? '';
     final hasRemarks = remarks.trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
@@ -381,7 +410,9 @@ class ManagerExpandedContent extends ConsumerWidget {
               hasRemarks ? remarks : 'No Remarks',
               style: TextStyle(
                 fontSize: 12,
-                color: hasRemarks ? AppColors.textPrimary : AppColors.textHint,
+                color: hasRemarks
+                    ? Theme.of(context).colorScheme.onSurface
+                    : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
               ),
             ),
           ),

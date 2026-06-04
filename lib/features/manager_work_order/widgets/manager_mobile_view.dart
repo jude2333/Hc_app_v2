@@ -31,6 +31,7 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
   Widget build(BuildContext context) {
     final filtered = ref.watch(managerFilteredWorkOrdersPod);
     final currentFilter = ref.watch(managerStatusFilterPod);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
@@ -39,9 +40,9 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Search patients...',
-              prefixIcon: Icon(Icons.search, color: AppColors.textHint),
+              prefixIcon: Icon(Icons.search, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
                 borderRadius: AppRadius.mdAll,
                 borderSide: BorderSide.none,
@@ -63,15 +64,15 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip('All', 'all', currentFilter),
+                _buildFilterChip(context, 'All', 'all', currentFilter),
                 const SizedBox(width: 6),
-                _buildFilterChip('New', 'new', currentFilter),
+                _buildFilterChip(context, 'New', 'new', currentFilter),
                 const SizedBox(width: 6),
-                _buildFilterChip('In Progress', 'in_progress', currentFilter),
+                _buildFilterChip(context, 'In Progress', 'in_progress', currentFilter),
                 const SizedBox(width: 6),
-                _buildFilterChip('Finished', 'finished', currentFilter),
+                _buildFilterChip(context, 'Finished', 'finished', currentFilter),
                 const SizedBox(width: 6),
-                _buildFilterChip('Cancelled', 'cancelled', currentFilter),
+                _buildFilterChip(context, 'Cancelled', 'cancelled', currentFilter),
               ],
             ),
           ),
@@ -84,18 +85,18 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
                 '${filtered.length} work order(s)',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const Spacer(),
-              _buildSortDropdown(),
+              _buildSortDropdown(context),
             ],
           ),
         ),
         Expanded(
           child: filtered.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(context)
               : ListView.builder(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -114,17 +115,22 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value, String current) {
+  Widget _buildFilterChip(BuildContext context, String label, String value, String current) {
     final isSelected = current == value;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => ref.read(managerStatusFilterPod.notifier).state = value,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected
+              ? AppColors.primary
+              : Theme.of(context).colorScheme.surface,
           borderRadius: AppRadius.lgAll,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.tableBorder,
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? AppColors.darkBorder : AppColors.tableBorder),
           ),
         ),
         child: Text(
@@ -132,27 +138,32 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSortDropdown() {
+  Widget _buildSortDropdown(BuildContext context) {
     final sortCol = ref.watch(managerSortColumnPod);
     final sortAsc = ref.watch(managerSortAscendingPod);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.sort, size: 14, color: AppColors.textSecondary),
+        Icon(Icons.sort, size: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
         const SizedBox(width: 4),
         DropdownButton<String>(
           value: sortCol,
           isDense: true,
           underline: const SizedBox.shrink(),
-          style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+          dropdownColor: colorScheme.surface,
           items: const [
             DropdownMenuItem(value: 'date', child: Text('Date & Time')),
             DropdownMenuItem(value: 'time', child: Text('Time')),
@@ -172,7 +183,7 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
           icon: Icon(
             sortAsc ? Icons.arrow_upward : Icons.arrow_downward,
             size: 14,
-            color: AppColors.textSecondary,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
           ),
           onPressed: () =>
               ref.read(managerSortAscendingPod.notifier).state = !sortAsc,
@@ -185,7 +196,8 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -193,13 +205,13 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.surfaceAlt,
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.assignment_outlined,
               size: 48,
-              color: AppColors.textHint,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
             ),
           ),
           const SizedBox(height: 16),
@@ -208,7 +220,7 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -216,7 +228,7 @@ class _ManagerMobileViewState extends ConsumerState<ManagerMobileView> {
             'Try adjusting your search or filter',
             style: TextStyle(
               fontSize: 13,
-              color: AppColors.textHint,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
             ),
           ),
         ],
@@ -245,15 +257,19 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
   @override
   Widget build(BuildContext context) {
     final wo = widget.workOrder;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: AppColors.surface,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.mdAll,
         side: BorderSide(
-          color: _isExpanded ? AppColors.primary : AppColors.divider,
+          color: _isExpanded
+              ? AppColors.primary
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
           width: _isExpanded ? 1.5 : 1,
         ),
       ),
@@ -273,7 +289,9 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: isDark
+                              ? AppColors.primary.withValues(alpha: 0.15)
+                              : AppColors.primaryLight,
                           borderRadius: AppRadius.mdAll,
                         ),
                         child: Center(
@@ -303,7 +321,7 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                                   '${wo.gender} • ${wo.age} • ',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                   ),
                                 ),
                                 Flexible(
@@ -312,7 +330,7 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                                     isPhoneNumber: true,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.textSecondary,
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -346,21 +364,21 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceAlt,
+                          color: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.access_time,
-                                size: 12, color: AppColors.textSecondary),
+                                size: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Text(
                               wo.visitTime,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                               ),
                             ),
                           ],
@@ -382,8 +400,8 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
                           style: TextStyle(
                             fontSize: 12,
                             color: wo.assignedTo.isNotEmpty
-                                ? AppColors.textPrimary
-                                : AppColors.textHint,
+                                ? colorScheme.onSurface
+                                : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -398,13 +416,19 @@ class _MobileWorkOrderCardState extends ConsumerState<_MobileWorkOrderCard> {
             RepaintBoundary(
               child: Column(
                 children: [
-                  Divider(height: 1, color: AppColors.divider),
+                  Divider(
+                    height: 1,
+                    color: isDark ? AppColors.darkBorder : AppColors.divider,
+                  ),
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     child: ManagerActions(workOrder: wo),
                   ),
-                  Divider(height: 1, color: AppColors.divider),
+                  Divider(
+                    height: 1,
+                    color: isDark ? AppColors.darkBorder : AppColors.divider,
+                  ),
                   ManagerExpandedContent(workOrder: wo),
                 ],
               ),

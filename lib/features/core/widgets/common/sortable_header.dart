@@ -24,6 +24,8 @@ class SortableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = currentSortColumn == sortKey;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     // Non-sortable header (empty sortKey)
     if (sortKey.isEmpty) {
@@ -31,7 +33,10 @@ class SortableHeader extends StatelessWidget {
         flex: flex,
         child: Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
       );
     }
@@ -48,14 +53,16 @@ class SortableHeader extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isActive ? Colors.orange : Colors.black,
+                  color: isActive
+                      ? (isDark ? AppColors.gradientEnd : AppColors.primary)
+                      : colorScheme.onSurface,
                 ),
               ),
               if (isActive)
                 Icon(
                   isAscending ? Icons.arrow_upward : Icons.arrow_downward,
                   size: 14,
-                  color: Colors.orange,
+                  color: isDark ? AppColors.gradientEnd : AppColors.primary,
                 ),
             ],
           ),
@@ -80,7 +87,10 @@ class HeaderCell extends StatelessWidget {
         padding: AppPadding.custom,
         child: Text(
           text,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
       ),

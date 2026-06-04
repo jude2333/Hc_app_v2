@@ -28,6 +28,7 @@ class TrackingDashboardPage extends ConsumerStatefulWidget {
 class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final TrackingDashboardWsNotifier _wsNotifier;
   String _token = '';
   List<Map<String, dynamic>> _fences = [];
 
@@ -35,6 +36,7 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _wsNotifier = ref.read(dashboardWsProvider.notifier);
     _initWebSocket();
     _loadFences();
   }
@@ -43,7 +45,7 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
     final storage = ref.read(storageServiceProvider);
     _token = storage.getFromSession('pg_admin');
     if (_token.isNotEmpty) {
-      ref.read(dashboardWsProvider.notifier).connect(_token);
+      _wsNotifier.connect(_token);
     }
   }
 
@@ -52,8 +54,8 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
     final freshToken = storage.getFromSession('pg_admin');
     if (freshToken.isNotEmpty) {
       _token = freshToken;
-      ref.read(dashboardWsProvider.notifier).disconnect();
-      ref.read(dashboardWsProvider.notifier).connect(_token);
+      _wsNotifier.disconnect();
+      _wsNotifier.connect(_token);
     }
   }
 
@@ -71,7 +73,7 @@ class _TrackingDashboardPageState extends ConsumerState<TrackingDashboardPage>
   @override
   void dispose() {
     _tabController.dispose();
-    ref.read(dashboardWsProvider.notifier).disconnect();
+    _wsNotifier.disconnect();
     super.dispose();
   }
 

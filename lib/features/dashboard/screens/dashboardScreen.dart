@@ -9,6 +9,8 @@ import '../tabs/daily_tab.dart';
 import '../tabs/weekly_tab.dart';
 import '../tabs/monthly_tab.dart';
 import '../tabs/yearly_tab.dart';
+import '../tabs/tech_daily_tab.dart';
+import '../tabs/tech_weekly_tab.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -19,7 +21,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
   String? _roleName;
   String? _tenantId;
   bool _isLoading = true;
@@ -31,7 +33,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserData();
@@ -48,6 +49,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         _tenantId = storage.getFromSession("logged_in_tenant_id");
         _isLoading = false;
       });
+    }
+  }
+
+  /// Ensures the TabController length matches the current role.
+  /// Self-heals on hot reload, navigation reuse, and login/logout flows.
+  void _ensureTabController() {
+    final required = _roleName == 'TECHNICIAN' ? 2 : 4;
+    if (_tabController == null || _tabController!.length != required) {
+      _tabController?.dispose();
+      _tabController = TabController(length: required, vsync: this);
     }
   }
 
@@ -70,6 +81,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       return const _SkeletonDashboard();
     }
 
+    // Ensure controller matches current role before rendering tabs
+    _ensureTabController();
+
     if (!_checkTenant(_tenantId)) {
       return _buildComingSoonScreen('Dashboard Yet To Come');
     }
@@ -77,7 +91,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     if (_roleName == 'MANAGER' || _roleName == 'ADMIN') {
       return _buildManagerDashboard();
     } else if (_roleName == 'TECHNICIAN') {
-      return _buildComingSoonScreen('Technician Dashboard - Coming Soon');
+      return _buildTechnicianDashboard();
     } else {
       return _buildComingSoonScreen('Dashboard Yet To Come');
     }
@@ -94,13 +108,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           _buildTabBar(),
           Expanded(
             child: TabBarView(
-              controller: _tabController,
+              controller: _tabController!,
               physics: const BouncingScrollPhysics(),
               children: const [
                 DailyTab(),
                 WeeklyTab(),
                 MonthlyTab(),
                 YearlyTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTechnicianDashboard() {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Column(
+        children: [
+          _buildHeader(),
+          if (kIsWeb && _apkDownloadInfo != null && _showDownloadBanner)
+            _buildDownloadBanner(),
+          _buildTechTabBar(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController!,
+              physics: const BouncingScrollPhysics(),
+              children: const [
+                TechDailyTab(),
+                TechWeeklyTab(),
               ],
             ),
           ),
@@ -193,7 +231,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         ],
       ),
       child: TabBar(
-        controller: _tabController,
+        controller: _tabController!,
         labelColor: AppColors.gradientStart,
         unselectedLabelColor: AppColors.textSecondary,
         labelStyle: const TextStyle(
@@ -222,6 +260,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           _TabItem(icon: Icons.view_week_rounded, label: 'Weekly'),
           _TabItem(icon: Icons.calendar_month_rounded, label: 'Monthly'),
           _TabItem(icon: Icons.calendar_today_rounded, label: 'Yearly'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTechTabBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController!,
+        labelColor: AppColors.gradientStart,
+        unselectedLabelColor: AppColors.textSecondary,
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+        ),
+        indicator: UnderlineTabIndicator(
+          borderSide: const BorderSide(
+            color: AppColors.gradientStart,
+            width: 3,
+          ),
+          borderRadius: AppRadius.xxsAll,
+        ),
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: Colors.transparent,
+        splashFactory: InkRipple.splashFactory,
+        overlayColor: WidgetStateProperty.all(
+          AppColors.primary.withValues(alpha: 0.1),
+        ),
+        tabs: const [
+          _TabItem(icon: Icons.today_rounded, label: 'Today'),
+          _TabItem(icon: Icons.view_week_rounded, label: '7-Day'),
         ],
       ),
     );
@@ -499,7 +583,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 }

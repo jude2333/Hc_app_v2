@@ -40,8 +40,8 @@ class _DailyTabState extends ConsumerState<DailyTab>
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Colors.orange,
-            ),
+                  primary: Colors.orange,
+                ),
           ),
           child: child!,
         );

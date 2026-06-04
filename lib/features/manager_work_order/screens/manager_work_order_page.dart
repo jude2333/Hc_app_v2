@@ -99,12 +99,12 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
       return _DateChipProps(date, label, isFuturePlus: isFuturePlus);
     }).toList();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundSmoke,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
         elevation: 4,
-        surfaceTintColor: AppColors.surface,
         title: Padding(
           padding: EdgeInsets.only(left: AppSpacing.sm),
           child: Row(
@@ -144,7 +144,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
         actions: [
           IconButton(
             tooltip: 'Cancelled',
-            icon: const Icon(Icons.cancel_outlined, color: Colors.black87),
+            icon: const Icon(Icons.cancel_outlined),
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -152,7 +152,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
           IconButton(
             tooltip: 'Manage Prices',
-            icon: const Icon(Icons.price_change, color: Colors.black87),
+            icon: const Icon(Icons.price_change),
             onPressed: () {
               Navigator.push(
                 context,
@@ -163,8 +163,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
           IconButton(
             tooltip: 'Tech engagement',
-            icon:
-                const Icon(Icons.person_search_outlined, color: Colors.black87),
+            icon: const Icon(Icons.person_search_outlined),
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -172,8 +171,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
           IconButton(
             tooltip: 'Tech Analytics & Export',
-            icon:
-                const Icon(Icons.analytics_outlined, color: Colors.black87),
+            icon: const Icon(Icons.analytics_outlined),
             onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -181,7 +179,7 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
           ),
           IconButton(
             tooltip: 'Add',
-            icon: const Icon(Icons.add_circle_outline, color: Colors.black87),
+            icon: const Icon(Icons.add_circle_outline),
             onPressed: () => _openAddEditPage(context, ref),
           ),
         ],
@@ -191,9 +189,12 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
             height: 60,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               border: Border(
-                top: BorderSide(color: AppColors.divider, width: 0.5),
+                top: BorderSide(
+                  color: isDark ? AppColors.darkBorder : AppColors.divider,
+                  width: 0.5,
+                ),
               ),
             ),
             child: ListView.builder(
@@ -307,27 +308,31 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
   }
 
   Widget _buildSkeletonLoading() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         Container(
           margin: EdgeInsets.only(bottom: AppSpacing.md),
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.tableBorder,
+            color: isDark ? AppColors.darkBorder : AppColors.tableBorder,
             borderRadius: AppRadius.mdAll,
           ),
         ),
         Expanded(
           child: Card(
             elevation: AppSizes.cardElevation,
-            color: AppColors.surface,
+            color: colorScheme.surface,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
             child: Column(
               children: [
                 Container(
                   padding: AppPadding.tableCell,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: isDark
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : AppColors.primaryLight,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(8),
                       topRight: Radius.circular(8),
@@ -342,7 +347,9 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                                     horizontal: AppSpacing.xs),
                                 height: 14,
                                 decoration: BoxDecoration(
-                                  color: AppColors.tableBorder,
+                                  color: isDark
+                                      ? AppColors.darkBorder
+                                      : AppColors.tableBorder,
                                   borderRadius: AppRadius.xsAll,
                                 ),
                               ),
@@ -357,7 +364,9 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                         padding: AppPadding.tableCell,
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: AppColors.divider),
+                            bottom: BorderSide(
+                              color: isDark ? AppColors.darkBorder : AppColors.divider,
+                            ),
                           ),
                         ),
                         child: Row(
@@ -369,7 +378,9 @@ class _ManagerWorkOrderPageState extends ConsumerState<ManagerWorkOrderPage> {
                                           horizontal: AppSpacing.xs),
                                       height: 12,
                                       decoration: BoxDecoration(
-                                        color: AppColors.tableBorder,
+                                        color: isDark
+                                            ? AppColors.darkBorder
+                                            : AppColors.tableBorder,
                                         borderRadius: AppRadius.xsAll,
                                       ),
                                     ),
@@ -437,6 +448,8 @@ class _ModernDateChip extends StatelessWidget {
     final hasTitle = lines.length > 1;
     final title = hasTitle ? lines[0] : null;
     final dateText = hasTitle ? lines[1] : lines[0];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
       color: Colors.transparent,
@@ -459,7 +472,11 @@ class _ModernDateChip extends StatelessWidget {
                 : null,
             color: isSelected
                 ? null
-                : (isToday ? AppColors.primaryLight : AppColors.surfaceAlt),
+                : (isToday
+                    ? (isDark
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : AppColors.primaryLight)
+                    : (isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt)),
             borderRadius: BorderRadius.circular(12),
             border: isToday && !isSelected
                 ? Border.all(color: AppColors.primary, width: 1.5)
@@ -484,7 +501,9 @@ class _ModernDateChip extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.primary,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? AppColors.gradientEnd : AppColors.primary),
                     letterSpacing: 0.3,
                     height: 1.2,
                   ),
@@ -494,7 +513,9 @@ class _ModernDateChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: hasTitle ? 12 : 13,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  color: isSelected
+                      ? Colors.white
+                      : colorScheme.onSurface,
                   height: 1.2,
                 ),
               ),

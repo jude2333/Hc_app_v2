@@ -182,6 +182,8 @@ class _AssignTechnicianDialogState
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Dialog(
       insetPadding: isMobile
@@ -192,7 +194,7 @@ class _AssignTechnicianDialogState
       child: Container(
         width: isMobile ? double.infinity : screenWidth * 0.5,
         height: MediaQuery.of(context).size.height * (isMobile ? 0.8 : 0.7),
-        color: AppColors.surface,
+        color: colorScheme.surface,
         child: Column(
           children: [
             // ── Header ──
@@ -212,7 +214,7 @@ class _AssignTechnicianDialogState
                             const SizedBox(height: 12),
                             Text('Loading technicians...',
                                 style:
-                                    TextStyle(color: AppColors.textSecondary)),
+                                    TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                           ],
                         ),
                       ),
@@ -228,12 +230,12 @@ class _AssignTechnicianDialogState
                               Text('Failed to load technicians',
                                   style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary)),
+                                      color: colorScheme.onSurface)),
                               const SizedBox(height: 4),
                               Text('$error',
                                   style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.textSecondary),
+                                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                   textAlign: TextAlign.center),
                             ],
                           ),
@@ -252,7 +254,7 @@ class _AssignTechnicianDialogState
                                 const SizedBox(height: 12),
                                 Text('No technicians found',
                                     style: TextStyle(
-                                        color: AppColors.textSecondary,
+                                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                         fontWeight: FontWeight.w500)),
                               ],
                             ),
@@ -262,7 +264,7 @@ class _AssignTechnicianDialogState
                         return ListView.separated(
                           itemCount: sortedTechnicians.length,
                           separatorBuilder: (_, __) =>
-                              Divider(height: 1, color: AppColors.divider),
+                              Divider(height: 1, color: isDark ? AppColors.darkDivider : AppColors.divider),
                           itemBuilder: (context, index) {
                             final tech = sortedTechnicians[index];
                             return _TechnicianListItem(
@@ -357,42 +359,45 @@ class _AssignTechnicianDialogState
   }
 
   Widget _buildMobileSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      color: AppColors.surfaceAlt,
+      color: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
       child: _buildSearchField(),
     );
   }
 
   Widget _buildSearchField() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return TextField(
       controller: _searchController,
-      style: const TextStyle(fontSize: 14),
+      style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: 'Search technician...',
-        hintStyle: TextStyle(fontSize: 13, color: AppColors.textHint),
-        prefixIcon: Icon(Icons.search, size: 20, color: AppColors.textHint),
+        hintStyle: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+        prefixIcon: Icon(Icons.search, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
-                icon: Icon(Icons.clear, size: 18, color: AppColors.textHint),
+                icon: Icon(Icons.clear, size: 18, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                 onPressed: () {
                   _searchController.clear();
                   _onSearchChanged('');
                 },
               )
             : null,
-        fillColor: Colors.white,
+        fillColor: isDark ? AppColors.darkBackground : Colors.white,
         filled: true,
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         border: OutlineInputBorder(
           borderRadius: AppRadius.smAll,
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.smAll,
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.smAll,
@@ -421,11 +426,12 @@ class _TechnicianListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final allocatedAreas =
         technician['allocated_areas'] as List<dynamic>? ?? [];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
       onTap: onTap,
-      splashColor: AppColors.primaryLight,
-      highlightColor: AppColors.primaryLight,
+      splashColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
+      highlightColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 12 : 16,
@@ -433,27 +439,28 @@ class _TechnicianListItem extends StatelessWidget {
         ),
         decoration: matchesPincode
             ? BoxDecoration(
-                color: AppColors.primaryLight.withValues(alpha: 0.5),
+                color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight.withValues(alpha: 0.5),
                 border: Border(
                   left: BorderSide(color: AppColors.primary, width: 3),
                 ),
               )
             : null,
         child: isMobile
-            ? _buildMobileLayout(allocatedAreas)
-            : _buildDesktopLayout(allocatedAreas),
+            ? _buildMobileLayout(context, allocatedAreas)
+            : _buildDesktopLayout(context, allocatedAreas),
       ),
     );
   }
 
-  Widget _buildDesktopLayout(List<dynamic> allocatedAreas) {
+  Widget _buildDesktopLayout(BuildContext context, List<dynamic> allocatedAreas) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        _buildAvatar(),
+        _buildAvatar(context),
         const SizedBox(width: 12),
         Expanded(
           flex: 2,
-          child: _buildNameSection(),
+          child: _buildNameSection(context),
         ),
         if (matchesPincode)
           Container(
@@ -480,22 +487,23 @@ class _TechnicianListItem extends StatelessWidget {
           ),
         Expanded(
           flex: 3,
-          child: _buildAreaChips(allocatedAreas),
+          child: _buildAreaChips(context, allocatedAreas),
         ),
-        Icon(Icons.chevron_right, size: 20, color: AppColors.textHint),
+        Icon(Icons.chevron_right, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
       ],
     );
   }
 
-  Widget _buildMobileLayout(List<dynamic> allocatedAreas) {
+  Widget _buildMobileLayout(BuildContext context, List<dynamic> allocatedAreas) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            _buildAvatar(),
+            _buildAvatar(context),
             const SizedBox(width: 10),
-            Expanded(child: _buildNameSection()),
+            Expanded(child: _buildNameSection(context)),
             if (matchesPincode)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -517,31 +525,32 @@ class _TechnicianListItem extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 4),
-            Icon(Icons.chevron_right, size: 20, color: AppColors.textHint),
+            Icon(Icons.chevron_right, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
           ],
         ),
         if (allocatedAreas.isNotEmpty) ...[
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.only(left: 42),
-            child: _buildAreaChips(allocatedAreas),
+            child: _buildAreaChips(context, allocatedAreas),
           ),
         ],
       ],
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return CircleAvatar(
       radius: isMobile ? 16 : 18,
-      backgroundColor: AppColors.primaryLight,
+      backgroundColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
       child: Text(
         Util.getInitials(
           technician['first_name'] ?? '',
           technician['last_name'] ?? '',
         ),
         style: TextStyle(
-          color: AppColors.primary,
+          color: isDark ? AppColors.gradientEnd : AppColors.primary,
           fontWeight: FontWeight.bold,
           fontSize: isMobile ? 11 : 13,
         ),
@@ -549,7 +558,9 @@ class _TechnicianListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildNameSection() {
+  Widget _buildNameSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -558,7 +569,7 @@ class _TechnicianListItem extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: isMobile ? 13 : 14,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface,
           ),
           overflow: TextOverflow.ellipsis,
         ),
@@ -566,7 +577,7 @@ class _TechnicianListItem extends StatelessWidget {
         Text(
           technician['mobile']?.toString() ?? '',
           style: TextStyle(
-            color: AppColors.textSecondary,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             fontSize: isMobile ? 11 : 12,
           ),
         ),
@@ -574,12 +585,13 @@ class _TechnicianListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildAreaChips(List<dynamic> allocatedAreas) {
+  Widget _buildAreaChips(BuildContext context, List<dynamic> allocatedAreas) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (allocatedAreas.isEmpty) {
       return Text('No areas assigned',
           style: TextStyle(
               fontSize: 11,
-              color: AppColors.textHint,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
               fontStyle: FontStyle.italic));
     }
 
@@ -590,14 +602,14 @@ class _TechnicianListItem extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
+            color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
             borderRadius: AppRadius.xsAll,
           ),
           child: Text(
             '${area['pincode']} ${area['area']}',
             style: TextStyle(
               fontSize: isMobile ? 9 : 10,
-              color: AppColors.primary,
+              color: isDark ? AppColors.gradientEnd : AppColors.primary,
               fontWeight: FontWeight.w500,
             ),
           ),

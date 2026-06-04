@@ -17,13 +17,18 @@ class WorkOrderSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: AppRadius.lgAll,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -35,14 +40,17 @@ class WorkOrderSectionCard extends StatelessWidget {
             padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [color.withOpacity(0.08), color.withOpacity(0.02)],
+                colors: [
+                  color.withValues(alpha: 0.08),
+                  color.withValues(alpha: 0.02)
+                ],
               ),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
               border: Border(
-                bottom: BorderSide(color: color.withOpacity(0.1)),
+                bottom: BorderSide(color: color.withValues(alpha: 0.1)),
               ),
             ),
             child: Row(
@@ -50,7 +58,7 @@ class WorkOrderSectionCard extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: AppRadius.smAll,
                   ),
                   child: Icon(icon, color: color, size: 20),

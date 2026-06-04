@@ -117,10 +117,11 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
     final isMobile = screenWidth < 800;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
         title: Row(
           children: [
             Container(
@@ -140,16 +141,17 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                 height: 40,
                 child: TextField(
                   controller: _searchController,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Search (Name, Dept, >500)',
                     prefixIcon:
                         const Icon(Icons.search, size: 20, color: Colors.grey),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).colorScheme.surface,
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.grey.shade100)),
+                        borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBorder : Colors.grey.shade100)),
                   ),
                   onChanged: _onSearchChanged,
                 ),
@@ -190,6 +192,11 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
   }
 
   Widget _buildSkeletonLoading(bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final skeletonColor = isDark ? AppColors.darkBorder : Colors.grey.shade200;
+    final skeletonColorAlt = isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100;
+
     if (isMobile) {
       return ListView.builder(
         padding: const EdgeInsets.all(12),
@@ -198,9 +205,9 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: isDark ? AppColors.darkBorder : Colors.grey.shade200),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,14 +218,14 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                       width: 60,
                       height: 20,
                       decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: skeletonColor,
                           borderRadius: BorderRadius.circular(8))),
                   const SizedBox(width: 8),
                   Expanded(
                       child: Container(
                           height: 18,
                           decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
+                              color: skeletonColor,
                               borderRadius: BorderRadius.circular(4)))),
                 ],
               ),
@@ -228,38 +235,38 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                 children: [
                   Column(children: [
                     Container(
-                        width: 40, height: 10, color: Colors.grey.shade100),
+                        width: 40, height: 10, color: skeletonColorAlt),
                     const SizedBox(height: 4),
                     Container(
                         width: 60,
                         height: 16,
                         decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: skeletonColor,
                             borderRadius: BorderRadius.circular(4))),
                   ]),
                   Column(children: [
                     Container(
-                        width: 30, height: 10, color: Colors.grey.shade100),
+                        width: 30, height: 10, color: skeletonColorAlt),
                     const SizedBox(height: 4),
                     Container(
                         width: 50,
                         height: 14,
                         decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: skeletonColor,
                             borderRadius: BorderRadius.circular(4))),
                   ]),
                   Column(children: [
                     Container(
-                        width: 35, height: 10, color: Colors.grey.shade100),
+                        width: 35, height: 10, color: skeletonColorAlt),
                     const SizedBox(height: 4),
                     Container(
                         width: 50,
                         height: 14,
                         decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
+                            color: skeletonColor,
                             borderRadius: BorderRadius.circular(4))),
                   ]),
-                  Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade300),
+                  Icon(Icons.keyboard_arrow_down, color: isDark ? AppColors.darkBorder : Colors.grey.shade300),
                 ],
               ),
             ],
@@ -272,14 +279,14 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
       padding: const EdgeInsets.all(16),
       child: Card(
         elevation: 4,
-        color: Colors.white,
+        color: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12)),
@@ -293,7 +300,7 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               height: 14,
                               decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
+                                  color: skeletonColor,
                                   borderRadius: BorderRadius.circular(4))),
                         )),
               ),
@@ -306,7 +313,7 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                       border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade200))),
+                          bottom: BorderSide(color: isDark ? AppColors.darkDivider : Colors.grey.shade200))),
                   child: Row(
                     children: List.generate(
                         6,
@@ -317,7 +324,7 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                                       const EdgeInsets.symmetric(horizontal: 4),
                                   height: 12,
                                   decoration: BoxDecoration(
-                                      color: Colors.grey.shade200,
+                                      color: skeletonColor,
                                       borderRadius: BorderRadius.circular(4))),
                             )),
                   ),
@@ -346,6 +353,9 @@ class _VirtualPriceTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (items.isEmpty) {
       return const Center(
           child: Text('No items found', style: TextStyle(color: Colors.grey)));
@@ -355,15 +365,15 @@ class _VirtualPriceTable extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Card(
         elevation: 4,
-        color: Colors.white,
-        surfaceTintColor: Colors.white,
+        color: colorScheme.surface,
+        surfaceTintColor: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12)),
@@ -451,6 +461,8 @@ class _ManagerExpandableRowState extends State<_ManagerExpandableRow>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final item = widget.item;
     final price = item.baseCost;
     final minPrice = item.minCost;
@@ -462,7 +474,7 @@ class _ManagerExpandableRowState extends State<_ManagerExpandableRow>
       children: [
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
-          hoverColor: Colors.grey.shade100,
+          hoverColor: isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
@@ -506,7 +518,7 @@ class _ManagerExpandableRowState extends State<_ManagerExpandableRow>
         ),
         if (_isExpanded)
           _ExpandedDetails(history: history, itemId: item.investId),
-        const Divider(height: 1, color: Colors.black12),
+        Divider(height: 1, color: isDark ? AppColors.darkDivider : Colors.black12),
       ],
     );
   }
@@ -520,8 +532,9 @@ class _ExpandedDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: Colors.grey.shade50,
+      color: isDark ? AppColors.darkBackground : Colors.grey.shade50,
       padding: const EdgeInsets.all(16),
       width: double.infinity,
       child: Column(
@@ -554,7 +567,7 @@ class _ExpandedDetails extends StatelessWidget {
                         children: [
                           Text(h['summary'] ?? '',
                               style: TextStyle(
-                                  color: Colors.grey.shade800, fontSize: 13)),
+                                  color: isDark ? AppColors.darkTextPrimary : Colors.grey.shade800, fontSize: 13)),
                           Text('${h['emp_name']} • ${h['time_stamp']}',
                               style: const TextStyle(
                                   fontSize: 11, color: Colors.grey)),
@@ -687,14 +700,17 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
     super.build(context);
     final item = widget.item;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: Colors.white,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.mdAll,
         side: BorderSide(
-          color: _isExpanded ? Colors.orange : AppColors.divider,
+          color: _isExpanded ? Colors.orange : (isDark ? AppColors.darkBorder : AppColors.divider),
           width: _isExpanded ? 1.5 : 1,
         ),
       ),
@@ -716,16 +732,16 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
+                          color: isDark ? AppColors.primary.withValues(alpha: 0.15) : Colors.orange.shade50,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange.shade100),
+                          border: Border.all(color: isDark ? AppColors.primary.withValues(alpha: 0.3) : Colors.orange.shade100),
                         ),
                         child: Text(
                           item.deptName,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade800,
+                            color: isDark ? AppColors.gradientEnd : Colors.orange.shade800,
                           ),
                         ),
                       ),
@@ -733,10 +749,10 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                       Expanded(
                         child: Text(
                           item.investName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -778,10 +794,10 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                           Text(
                             widget.formatter.format(item.minCost),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -798,10 +814,10 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                           ),
                           Text(
                             widget.formatter.format(item.cghsPrice),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],

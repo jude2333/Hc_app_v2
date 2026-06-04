@@ -44,6 +44,9 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
       }
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         WorkOrderSearchBar(
@@ -58,12 +61,12 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
         Expanded(
           child: Card(
             elevation: AppSizes.cardElevation,
-            color: AppColors.surface,
+            color: colorScheme.surface,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
             child: Column(
               children: [
-                _buildTableHeader(sortCol, sortAsc, handleSort),
+                _buildTableHeader(context, sortCol, sortAsc, handleSort),
                 Expanded(
                   child: widget.workOrders.isEmpty
                       ? Center(
@@ -75,7 +78,9 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
                               const SizedBox(height: 12),
                               Text('No Work Orders Found',
                                   style: TextStyle(
-                                      color: AppColors.textSecondary,
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textSecondary,
                                       fontWeight: FontWeight.w500)),
                             ],
                           ),
@@ -85,8 +90,12 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
                           cacheExtent: 500,
                           addAutomaticKeepAlives: false,
                           addRepaintBoundaries: true,
-                          separatorBuilder: (ctx, i) =>
-                              Divider(height: 1, color: AppColors.divider),
+                          separatorBuilder: (ctx, i) => Divider(
+                            height: 1,
+                            color: isDark
+                                ? AppColors.darkBorder
+                                : AppColors.divider,
+                          ),
                           itemBuilder: (context, index) {
                             final wo = widget.workOrders[index];
                             return RepaintBoundary(
@@ -105,16 +114,19 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
     );
   }
 
-  Widget _buildTableHeader(
-      String sortCol, bool sortAsc, Function(String) handleSort) {
+  Widget _buildTableHeader(BuildContext context, String sortCol, bool sortAsc,
+      Function(String) handleSort) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: AppPadding.customTable,
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: isDark ? AppColors.darkSurfaceAlt : AppColors.primaryLight,
         borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(8), topRight: Radius.circular(8)),
-        border:
-            Border(bottom: BorderSide(color: AppColors.tableBorder, width: 1)),
+        border: Border(
+            bottom: BorderSide(
+                color: isDark ? AppColors.darkBorder : AppColors.tableBorder,
+                width: 1)),
       ),
       child: Row(
         children: [
@@ -170,10 +182,13 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
             isAscending: sortAsc,
             onSort: handleSort,
           ),
-          const Expanded(
+          Expanded(
               flex: 3,
               child: Text('Actions',
-                  style: TextStyle(fontWeight: FontWeight.bold))),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ))),
           const SizedBox(width: 40),
         ],
       ),
@@ -188,7 +203,7 @@ class _ManagerExpandableRow extends ConsumerStatefulWidget {
   const _ManagerExpandableRow({
     required this.workOrder,
     required this.index,
-    super.key,
+    // super.key,
   });
 
   @override
@@ -207,16 +222,20 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
   Widget build(BuildContext context) {
     super.build(context);
     final wo = widget.workOrder;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
-          hoverColor: AppColors.surfaceAlt,
+          hoverColor: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
           child: Container(
             decoration: BoxDecoration(
-                border:
-                    Border(bottom: BorderSide(color: AppColors.tableBorder))),
+                border: Border(
+                    bottom: BorderSide(
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.tableBorder))),
             child: Padding(
               padding:
                   EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 2),

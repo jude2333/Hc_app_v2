@@ -3,7 +3,6 @@ import 'package:anderson_crm_flutter/features/core/util.dart';
 import '../models/dashboard_report.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-
 class ReportDataTable extends StatelessWidget {
   final List<ReportRow> rows;
   final ReportType type;
@@ -22,30 +21,178 @@ class ReportDataTable extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double tableWidth =
-            constraints.maxWidth < minWidth ? minWidth : constraints.maxWidth;
+        // Desktop/tablet: existing table with horizontal scroll
+        if (constraints.maxWidth >= 600) {
+          return _buildDesktopTable(context, constraints);
+        }
+        // Mobile: compact card layout
+        return _buildMobileCards(context);
+      },
+    );
+  }
 
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          clipBehavior: Clip.antiAlias,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: tableWidth,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  ...rows.map((row) => _buildDataRow(context, row)),
-                ],
-              ),
+  Widget _buildDesktopTable(BuildContext context, BoxConstraints constraints) {
+    final double tableWidth =
+        constraints.maxWidth < minWidth ? minWidth : constraints.maxWidth;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: tableWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              ...rows.map((row) => _buildDataRow(context, row)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileCards(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: rows.map((row) {
+        final m = row.metrics;
+        final isTotal = row.isTotal;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isTotal
+                ? colorScheme.surfaceContainerHighest
+                : colorScheme.surface,
+            borderRadius: AppRadius.xlAll,
+            border: Border.all(
+              color: isTotal
+                  ? AppColors.andersonBlue.withValues(alpha: 0.3)
+                  : colorScheme.outlineVariant,
             ),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Period label
+              Text(
+                row.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+                  color:
+                      isTotal ? AppColors.andersonBlue : colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Status chips row
+              Row(
+                children: [
+                  _buildChip(
+                      'A', m.assigned.toString(), Colors.blue, colorScheme),
+                  const SizedBox(width: 6),
+                  _buildChip('F', m.finished.toString(), AppColors.success,
+                      colorScheme),
+                  const SizedBox(width: 6),
+                  _buildChip('P', m.pending.toString(), AppColors.primary,
+                      colorScheme),
+                  const SizedBox(width: 6),
+                  _buildChip('C', m.cancelled.toString(), AppColors.error,
+                      colorScheme),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Financial row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildFinancialItem(
+                        'Collection', m.collection, Colors.indigo, colorScheme,
+                        isBold: isTotal),
+                  ),
+                  Expanded(
+                    child: _buildFinancialItem(
+                        'Received', m.received, AppColors.success, colorScheme,
+                        isBold: isTotal),
+                  ),
+                  Expanded(
+                    child: _buildFinancialItem(
+                        'Credit', m.credit, Colors.purple, colorScheme,
+                        isBold: isTotal),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
-      },
+      }).toList(),
+    );
+  }
+
+  Widget _buildChip(
+      String label, String value, Color color, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppRadius.smAll,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinancialItem(
+      String label, double value, Color color, ColorScheme colorScheme,
+      {bool isBold = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          Util.formatMoney(value),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 
@@ -252,7 +399,9 @@ class _MetricCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade600,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : Colors.grey.shade600,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),

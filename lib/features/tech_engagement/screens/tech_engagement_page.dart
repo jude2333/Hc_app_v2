@@ -5,6 +5,7 @@ import 'package:anderson_crm_flutter/features/tech_engagement/providers/tech_eng
 import 'package:anderson_crm_flutter/features/tech_engagement/widgets/tech_desktop_table.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/widgets/tech_mobile_view.dart';
 import 'package:anderson_crm_flutter/features/tech_engagement/widgets/tech_shared_widgets.dart';
+import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 class TechEngagementPage extends ConsumerStatefulWidget {
   const TechEngagementPage({super.key});
@@ -37,10 +38,11 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
     final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -58,11 +60,11 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.grey),
+            icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
             onPressed: () => notifier.loadData(),
           ),
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.black54),
+            icon: const Icon(Icons.close),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 8),
@@ -114,8 +116,8 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade300),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBorder : Colors.grey.shade300),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -157,20 +159,21 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
   }
 
   Widget _buildAggregatesCard(AggregateSummary agg, bool isMobile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: isDark ? AppColors.darkBorder : Colors.grey.shade200),
       ),
       child: Column(
         children: [
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2196F3),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(7)),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurfaceAlt : const Color(0xFF2196F3),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
             ),
             child: const Text(
               "Aggregates",
@@ -213,7 +216,7 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              border: Border(top: BorderSide(color: isDark ? AppColors.darkDivider : Colors.grey.shade200)),
             ),
             child: Row(
               children: [
@@ -250,13 +253,13 @@ class _TechEngagementPageState extends ConsumerState<TechEngagementPage> {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBorder : Colors.grey.shade300),
       ),
       child: TextField(
         controller: _searchController,
-        style: const TextStyle(fontSize: 13),
+        style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: "Search technician...",
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),

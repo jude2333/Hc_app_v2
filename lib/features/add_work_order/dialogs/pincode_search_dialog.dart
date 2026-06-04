@@ -73,8 +73,13 @@ class _PincodeSearchDialogState extends ConsumerState<PincodeSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: colorScheme.surface,
       child: Container(
         width: 500,
         height: 450,
@@ -89,14 +94,14 @@ class _PincodeSearchDialogState extends ConsumerState<PincodeSearchDialog> {
                     color: AppColors.primary,
                     borderRadius: AppRadius.smAll,
                   ),
-                  child: Text('Search Pincode',
+                  child: const Text('Search Pincode',
                       style: TextStyle(
                           color: AppColors.textOnPrimary,
                           fontWeight: FontWeight.bold)),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.close, color: AppColors.textHint),
+                  icon: Icon(Icons.close, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -104,15 +109,17 @@ class _PincodeSearchDialogState extends ConsumerState<PincodeSearchDialog> {
             SizedBox(height: AppSpacing.md),
             TextField(
               controller: widget.searchController,
+              style: TextStyle(color: colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Enter pincode or area name...',
-                prefixIcon: Icon(Icons.search, color: AppColors.textHint),
+                hintStyle: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+                prefixIcon: Icon(Icons.search, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                 suffixIcon: IconButton(
-                  icon: Icon(Icons.arrow_forward, color: AppColors.primary),
+                  icon: const Icon(Icons.arrow_forward, color: AppColors.primary),
                   onPressed: () => _doSearch(widget.searchController.text),
                 ),
                 filled: true,
-                fillColor: AppColors.surfaceAlt,
+                fillColor: isDark ? AppColors.darkBackground : AppColors.surfaceAlt,
                 border: OutlineInputBorder(
                   borderRadius: AppRadius.smAll,
                   borderSide: BorderSide.none,
@@ -124,7 +131,7 @@ class _PincodeSearchDialogState extends ConsumerState<PincodeSearchDialog> {
             SizedBox(height: AppSpacing.md),
             Expanded(
               child: isLoading
-                  ? Center(
+                  ? const Center(
                       child:
                           CircularProgressIndicator(color: AppColors.primary))
                   : pincodeResults.isEmpty
@@ -133,17 +140,17 @@ class _PincodeSearchDialogState extends ConsumerState<PincodeSearchDialog> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.location_searching,
-                                  color: AppColors.textHint, size: 48),
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textHint, size: 48),
                               SizedBox(height: AppSpacing.sm),
                               Text('No pincodes found',
-                                  style: AppTextStyles.caption),
+                                  style: AppTextStyles.caption.copyWith(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                             ],
                           ),
                         )
                       : ListView.separated(
                           itemCount: pincodeResults.length,
                           separatorBuilder: (_, __) =>
-                              Divider(height: 1, color: AppColors.divider),
+                              Divider(height: 1, color: isDark ? AppColors.darkDivider : AppColors.divider),
                           itemBuilder: (context, i) {
                             final item = pincodeResults[i];
                             final pincode = item['pincode'] ?? '';
@@ -157,8 +164,8 @@ class _PincodeSearchDialogState extends ConsumerState<PincodeSearchDialog> {
                                   horizontal: AppSpacing.sm,
                                   vertical: AppSpacing.xs),
                               leading: Icon(Icons.place,
-                                  color: AppColors.primary.withOpacity(0.7)),
-                              title: Text(display, style: AppTextStyles.body),
+                                  color: AppColors.primary.withValues(alpha: 0.75)),
+                              title: Text(display, style: AppTextStyles.body.copyWith(color: colorScheme.onSurface)),
                               onTap: () {
                                 widget.onSelected(pincode, display);
                               },

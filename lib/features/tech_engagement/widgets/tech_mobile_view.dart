@@ -17,7 +17,7 @@ class TechMobileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return _buildSkeletonLoading();
+      return _buildSkeletonLoading(context);
     }
 
     if (techList.isEmpty) {
@@ -42,7 +42,13 @@ class TechMobileView extends StatelessWidget {
     );
   }
 
-  Widget _buildSkeletonLoading() {
+  Widget _buildSkeletonLoading(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final skeletonColor = isDark ? AppColors.darkBorder : Colors.grey.shade200;
+    final skeletonColorAlt =
+        isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100;
+
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 24),
       itemCount: 6,
@@ -50,10 +56,11 @@ class TechMobileView extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 0,
-          color: Colors.white,
+          color: colorScheme.surface,
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.mdAll,
-            side: BorderSide(color: AppColors.divider),
+            side: BorderSide(
+                color: isDark ? AppColors.darkBorder : AppColors.divider),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -66,7 +73,7 @@ class TechMobileView extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: skeletonColor,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -75,7 +82,7 @@ class TechMobileView extends StatelessWidget {
                       child: Container(
                         height: 16,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: skeletonColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -85,7 +92,7 @@ class TechMobileView extends StatelessWidget {
                       width: 80,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: skeletonColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
@@ -102,7 +109,7 @@ class TechMobileView extends StatelessWidget {
                                   height: 20,
                                   width: 40,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
+                                    color: skeletonColor,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -111,7 +118,7 @@ class TechMobileView extends StatelessWidget {
                                   height: 12,
                                   width: 50,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
+                                    color: skeletonColorAlt,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -120,7 +127,10 @@ class TechMobileView extends StatelessWidget {
                           )),
                 ),
                 const SizedBox(height: 12),
-                Divider(height: 1, color: Colors.grey.shade200),
+                Divider(
+                    height: 1,
+                    color:
+                        isDark ? AppColors.darkDivider : Colors.grey.shade200),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -129,13 +139,13 @@ class TechMobileView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                            height: 10, width: 50, color: Colors.grey.shade100),
+                            height: 10, width: 50, color: skeletonColorAlt),
                         const SizedBox(height: 4),
                         Container(
                             height: 16,
                             width: 70,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
+                              color: skeletonColor,
                               borderRadius: BorderRadius.circular(4),
                             )),
                       ],
@@ -144,19 +154,21 @@ class TechMobileView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                            height: 10, width: 40, color: Colors.grey.shade100),
+                            height: 10, width: 40, color: skeletonColorAlt),
                         const SizedBox(height: 4),
                         Container(
                             height: 16,
                             width: 60,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
+                              color: skeletonColor,
                               borderRadius: BorderRadius.circular(4),
                             )),
                       ],
                     ),
                     Icon(Icons.keyboard_arrow_down,
-                        color: Colors.grey.shade300),
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : Colors.grey.shade300),
                   ],
                 ),
               ],
@@ -183,14 +195,19 @@ class _TechMobileCardState extends State<TechMobileCard> {
   Widget build(BuildContext context) {
     final s = widget.summary;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: Colors.white,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.mdAll,
         side: BorderSide(
-          color: _isExpanded ? Colors.orange : AppColors.divider,
+          color: _isExpanded
+              ? Colors.orange
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
           width: _isExpanded ? 1.5 : 1,
         ),
       ),
@@ -209,13 +226,17 @@ class _TechMobileCardState extends State<TechMobileCard> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: isDark
+                              ? Colors.blue.withValues(alpha: 0.15)
+                              : Colors.blue.shade50,
                           shape: BoxShape.circle,
                         ),
                         child: Text(
                           s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
                           style: TextStyle(
-                              color: Colors.blue.shade700,
+                              color: isDark
+                                  ? Colors.blue.shade300
+                                  : Colors.blue.shade700,
                               fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -223,10 +244,10 @@ class _TechMobileCardState extends State<TechMobileCard> {
                       Expanded(
                         child: Text(
                           s.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -234,7 +255,9 @@ class _TechMobileCardState extends State<TechMobileCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: isDark
+                              ? Colors.blue.withValues(alpha: 0.15)
+                              : Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -242,7 +265,9 @@ class _TechMobileCardState extends State<TechMobileCard> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blue.shade700,
+                            color: isDark
+                                ? Colors.blue.shade300
+                                : Colors.blue.shade700,
                           ),
                         ),
                       ),
@@ -259,7 +284,11 @@ class _TechMobileCardState extends State<TechMobileCard> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Divider(height: 1),
+                  Divider(
+                      height: 1,
+                      color: isDark
+                          ? AppColors.darkDivider
+                          : Colors.grey.shade200),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -284,10 +313,10 @@ class _TechMobileCardState extends State<TechMobileCard> {
                               style: TextStyle(
                                   fontSize: 11, color: AppColors.textHint)),
                           Text("₹${s.totalAmount.toInt()}",
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87)),
+                                  color: colorScheme.onSurface)),
                         ],
                       ),
                       Icon(

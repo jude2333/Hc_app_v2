@@ -292,11 +292,15 @@ class DBHandler {
     String token = await _getToken();
     String remoteUrl = "${Settings.remoteCouchUrl}/$resolvedName";
 
+    // connectTimeout: TCP handshake only, 30s is sufficient.
+    // receiveTimeout: Must exceed the server-side longpoll timeout (30s)
+    // by a wide margin to account for network latency and server processing.
+    // 90s provides a safe 3x buffer.
     Dio pollingClient = Dio(BaseOptions(
       baseUrl: remoteUrl,
       headers: {"Authorization": "Bearer $token", "Accept": "application/json"},
-      connectTimeout: const Duration(seconds: 40),
-      receiveTimeout: const Duration(seconds: 40),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 90),
     ));
 
     String currentSeq = 'now';
@@ -306,11 +310,13 @@ class DBHandler {
 
     while (_isSyncActive) {
       try {
+        // Note: 'heartbeat' is omitted intentionally — it's only meaningful
+        // for 'continuous' feed mode. In 'longpoll' mode, the server sends
+        // a single complete response after changes arrive or timeout expires.
         Response response = await pollingClient.get(
           '/_changes',
           queryParameters: {
             'feed': 'longpoll',
-            'heartbeat': 10000,
             'include_docs': 'true',
             'since': currentSeq,
             'timeout': 30000,
@@ -337,10 +343,13 @@ class DBHandler {
         if (e is DioException &&
             (e.type == DioExceptionType.receiveTimeout ||
                 e.type == DioExceptionType.connectionTimeout)) {
+          // Server didn't respond within the client timeout — safe to retry.
+          // This is expected under poor network conditions.
+          debugPrint("Longpoll timeout for $resolvedName, reconnecting...");
           continue;
         }
 
-        debugPrint(" Connection interrupted: $e");
+        debugPrint("Longpoll connection interrupted for $resolvedName: $e");
 
         if (_isSyncActive) {
           await Future.delayed(const Duration(seconds: 5));
@@ -350,7 +359,7 @@ class DBHandler {
       await Future.delayed(const Duration(milliseconds: 50));
     }
 
-    debugPrint(" Sync Loop Terminated.");
+    debugPrint("Sync Loop Terminated for $resolvedName.");
   }
 
   // void _startFilteredSync(String dbName, String filterField, int filterValue) {
