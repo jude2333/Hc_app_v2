@@ -8,9 +8,6 @@ class FileSaver {
     Directory? directory;
 
     if (Platform.isAndroid) {
-      // On Android, use getExternalStorageDirectory or getApplicationDocumentsDirectory
-      // For visible downloads, external is better, but app docs is safer for permissions.
-      // We'll try to get downloads directory if possible, or fallback to app docs.
       directory = await getExternalStorageDirectory();
     } else if (Platform.isIOS || Platform.isMacOS) {
       directory = await getApplicationDocumentsDirectory();
@@ -33,8 +30,6 @@ class FileSaver {
     final result = await OpenFilex.open(filePath);
     if (result.type != ResultType.done) {
       debugPrint('Error opening file: ${result.message}');
-      // On some desktop platforms OpenFilex might not work perfectly,
-      // but the file is saved.
     }
   }
 }

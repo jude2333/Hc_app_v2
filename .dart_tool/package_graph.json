@@ -290,13 +290,29 @@
     },
     {
       "name": "powersync",
-      "version": "1.17.0",
+      "version": "2.2.0",
       "dependencies": [
+        "args",
+        "async",
+        "code_assets",
         "collection",
-        "flutter",
-        "powersync_core",
+        "crypto",
+        "hooks",
+        "http",
+        "logging",
+        "meta",
+        "path",
         "powersync_flutter_libs",
-        "sqlite3_flutter_libs"
+        "pub_semver",
+        "pubspec_parse",
+        "sqlcipher_flutter_libs",
+        "sqlite3",
+        "sqlite3_flutter_libs",
+        "sqlite3_web",
+        "sqlite_async",
+        "typed_data",
+        "uuid",
+        "web"
       ]
     },
     {
@@ -689,7 +705,7 @@
     },
     {
       "name": "meta",
-      "version": "1.16.0",
+      "version": "1.18.0",
       "dependencies": []
     },
     {
@@ -953,7 +969,7 @@
     },
     {
       "name": "matcher",
-      "version": "0.12.17",
+      "version": "0.12.19",
       "dependencies": [
         "async",
         "meta",
@@ -964,7 +980,7 @@
     },
     {
       "name": "test_api",
-      "version": "0.7.6",
+      "version": "0.7.11",
       "dependencies": [
         "async",
         "boolean_selector",
@@ -1205,37 +1221,82 @@
       ]
     },
     {
-      "name": "powersync_flutter_libs",
-      "version": "0.4.14",
+      "name": "hooks",
+      "version": "2.0.2",
       "dependencies": [
-        "flutter"
+        "collection",
+        "crypto",
+        "logging",
+        "meta",
+        "pub_semver",
+        "record_use",
+        "yaml"
       ]
     },
     {
-      "name": "powersync_core",
-      "version": "1.7.0",
+      "name": "code_assets",
+      "version": "1.2.1",
       "dependencies": [
-        "args",
-        "async",
         "collection",
-        "http",
-        "logging",
+        "hooks"
+      ]
+    },
+    {
+      "name": "sqlcipher_flutter_libs",
+      "version": "0.7.0+eol",
+      "dependencies": []
+    },
+    {
+      "name": "sqlite3_flutter_libs",
+      "version": "0.6.0+eol",
+      "dependencies": []
+    },
+    {
+      "name": "powersync_flutter_libs",
+      "version": "0.5.0+eol",
+      "dependencies": []
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "sqlite3",
+      "version": "3.3.2",
+      "dependencies": [
+        "code_assets",
+        "collection",
+        "crypto",
+        "ffi",
+        "hooks",
         "meta",
+        "native_toolchain_c",
         "path",
-        "pub_semver",
-        "pubspec_parse",
-        "sqlite3_web",
-        "sqlite_async",
         "typed_data",
-        "uuid",
         "web"
       ]
     },
     {
-      "name": "sqlite3_flutter_libs",
-      "version": "0.5.41",
+      "name": "sqlite3_web",
+      "version": "0.8.1",
       "dependencies": [
-        "flutter"
+        "meta",
+        "sqlite3",
+        "web"
+      ]
+    },
+    {
+      "name": "sqlite_async",
+      "version": "0.14.2",
+      "dependencies": [
+        "async",
+        "collection",
+        "meta",
+        "sqlite3",
+        "sqlite3_connection_pool",
+        "sqlite3_web",
+        "web"
       ]
     },
     {
@@ -1265,11 +1326,6 @@
     {
       "name": "dart_earcut",
       "version": "1.2.0",
-      "dependencies": []
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
       "dependencies": []
     },
     {
@@ -1677,14 +1733,14 @@
     },
     {
       "name": "material_color_utilities",
-      "version": "0.11.1",
+      "version": "0.13.0",
       "dependencies": [
         "collection"
       ]
     },
     {
       "name": "characters",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "dependencies": []
     },
     {
@@ -1780,26 +1836,35 @@
       ]
     },
     {
-      "name": "sqlite3_web",
-      "version": "0.4.1",
+      "name": "record_use",
+      "version": "0.6.0",
       "dependencies": [
+        "collection",
         "meta",
-        "sqlite3",
-        "stream_channel",
-        "web"
+        "pub_semver"
       ]
     },
     {
-      "name": "sqlite_async",
-      "version": "0.13.1",
+      "name": "native_toolchain_c",
+      "version": "0.19.1",
       "dependencies": [
-        "async",
-        "collection",
+        "code_assets",
+        "glob",
+        "hooks",
+        "logging",
         "meta",
-        "mutex",
-        "sqlite3",
-        "sqlite3_web",
-        "web"
+        "pub_semver"
+      ]
+    },
+    {
+      "name": "sqlite3_connection_pool",
+      "version": "0.2.6",
+      "dependencies": [
+        "code_assets",
+        "ffi",
+        "hooks",
+        "meta",
+        "sqlite3"
       ]
     },
     {
@@ -1866,23 +1931,6 @@
     {
       "name": "vm_service",
       "version": "15.0.2",
-      "dependencies": []
-    },
-    {
-      "name": "sqlite3",
-      "version": "2.9.4",
-      "dependencies": [
-        "collection",
-        "ffi",
-        "meta",
-        "path",
-        "typed_data",
-        "web"
-      ]
-    },
-    {
-      "name": "mutex",
-      "version": "3.1.0",
       "dependencies": []
     },
     {

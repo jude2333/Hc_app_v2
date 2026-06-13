@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-/// Circular progress ring showing completion rate (finished / assigned).
 class CompletionRateRing extends StatelessWidget {
   final int finished;
   final int assigned;

@@ -4,9 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import '../models/technician_metrics.dart';
 
-/// Repository for computing technician analytics from local PowerSync SQLite.
-/// All queries run against the synced hc_patient_visit_detail table.
-/// Financial details are extracted from the doc JSON column via json_extract().
 class TechnicianAnalyticsRepository {
   final PowerSyncService _ps;
 
@@ -88,20 +85,18 @@ class TechnicianAnalyticsRepository {
   }
 
   /// Reactive stream for daily metrics — rebuilds when any work order changes.
-  Stream<TechnicianMetrics> watchDailyMetrics(
-      String techId, DateTime date) {
+  Stream<TechnicianMetrics> watchDailyMetrics(String techId, DateTime date) {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
-    return _ps
-        .createRecoverableWatch(
-          '''
+    return _ps.createRecoverableWatch(
+      '''
           SELECT $_baseCols
           FROM hc_patient_visit_detail
           WHERE assigned_id = ? AND visit_date = ? AND visible = 1
           ''',
-          [techId, dateStr],
-        )
-        .map((rows) =>
-            rows.isEmpty ? const TechnicianMetrics() : TechnicianMetrics.fromRow(rows.first));
+      [techId, dateStr],
+    ).map((rows) => rows.isEmpty
+        ? const TechnicianMetrics()
+        : TechnicianMetrics.fromRow(rows.first));
   }
 }
 

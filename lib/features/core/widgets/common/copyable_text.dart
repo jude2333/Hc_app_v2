@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Production-safe text widget with copy, call, and SMS actions.
-///
 /// - Long-press (mobile/web mobile) or right-click (web desktop) triggers actions.
 /// - When [isPhoneNumber] is true, a popup menu offers Copy / Call / Message.
 /// - When [isPhoneNumber] is false, long-press/right-click instantly copies.
 ///
-/// Usage:
-///   CopyableText('Patient Name')                          // instant copy
-///   CopyableText('9876543210', isPhoneNumber: true)       // copy + call + sms
+
 class CopyableText extends StatelessWidget {
   final String text;
   final TextStyle? style;
@@ -106,7 +102,8 @@ class CopyableText extends StatelessWidget {
     return hasLeadingPlus ? '+$digitsOnly' : digitsOnly;
   }
 
-  Future<void> _launchUri(ScaffoldMessengerState messenger, String scheme) async {
+  Future<void> _launchUri(
+      ScaffoldMessengerState messenger, String scheme) async {
     final number = _cleanedNumber;
     if (number.isEmpty) return;
     try {

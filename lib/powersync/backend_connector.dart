@@ -7,8 +7,6 @@ import 'package:jose/jose.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import '../../config/settings.dart';
 
-/// Structured exception for PostgREST HTTP errors.
-/// Enables reliable status code checking in _isPermanentError.
 class PostgRESTException implements Exception {
   final String message;
   final int statusCode;

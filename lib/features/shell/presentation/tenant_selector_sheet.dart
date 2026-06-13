@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../services/postgresService.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
+import 'package:anderson_crm_flutter/providers/notification_provider.dart';
+import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
+import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
+import 'package:anderson_crm_flutter/services/dbHandler_service.dart';
+import '../providers/shell_providers.dart';
 
 final _debounceTimerProvider = StateProvider<DateTime?>((ref) => null);
 
@@ -113,9 +120,9 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
 
           Navigator.of(context).pop();
 
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {}
-          });
+          // Reset app state for new tenant context
+          // (equivalent of Vue's location.reload())
+          _resetAppStateForTenantChange();
         } else {
           _showSnackbar('Failed to change tenant: $result');
         }
@@ -128,6 +135,46 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
         });
         _showSnackbar('Error: ${e.toString()}');
       }
+    }
+  }
+
+  /// Resets all tenant-scoped app state after a successful tenant switch.
+  /// Mirrors the Vue legacy behavior of `location.reload()` which
+  /// re-initializes CouchDB sync, notifications, tracking, and UI.
+  void _resetAppStateForTenantChange() {
+    // Shutdown tracking (GPS + WebSocket)
+    try {
+      ref.read(trackingProvider.notifier).shutdown();
+    } catch (_) {}
+
+    // Cancel notification streams while auth is still valid
+    ref.read(liveNotificationProvider.notifier).reset();
+
+    // Stop CouchDB sync and clear cached Dio instances
+    // so they reconnect with the new tenant's doc_dbs
+    ref.read(dbHandlerProvider).stopSync();
+    ref.read(couchDbClientProvider).clearCache();
+
+    // Invalidate notification provider for fresh state
+    ref.invalidate(liveNotificationProvider);
+
+    // Re-initialize: sync new tenant DBs, restart notifications & tracking
+    // This mirrors what _initializeInBackground() does in MainShell
+    ref.read(initializingProvider.notifier).state = true;
+    ref.read(dbHandlerServiceProvider).init().then((_) {
+      ref.read(liveNotificationProvider.notifier).loadNotifications();
+      try {
+        ref.read(trackingProvider.notifier).initialize();
+      } catch (_) {}
+      ref.read(initializingProvider.notifier).state = false;
+    }).catchError((e) {
+      debugPrint('[TenantSelector] Re-init after tenant change failed: $e');
+      ref.read(initializingProvider.notifier).state = false;
+    });
+
+    // Navigate to dashboard for fresh data
+    if (mounted) {
+      context.go('/dashboard');
     }
   }
 
@@ -150,8 +197,10 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: Column(
+      child: Stack(
         children: [
+          Column(
+            children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -354,10 +403,16 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
                         },
                       ),
           ),
+            ],
+          ),
           if (_isChangingTenant)
             Positioned.fill(
               child: Container(
-                color: Colors.black54,
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
                 child: const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

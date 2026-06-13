@@ -1,0 +1,1747 @@
+{
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\build.gradle.kts": {
+    "mtime": 1777953654.5055287,
+    "ast_hash": "7f7b3f04347aa70fdc29b1b8665c3f32",
+    "semantic_hash": "7f7b3f04347aa70fdc29b1b8665c3f32"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\java\\io\\flutter\\plugins\\GeneratedPluginRegistrant.java": {
+    "mtime": 1780639097.1942015,
+    "ast_hash": "838c73cde85ae008b94a62ae5a6ca194",
+    "semantic_hash": "838c73cde85ae008b94a62ae5a6ca194"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\kotlin\\com\\example\\anderson_crm_flutter\\MainActivity.kt": {
+    "mtime": 1753332010.26434,
+    "ast_hash": "03a9b1e7579831a1b92d294dddf75d5d",
+    "semantic_hash": "03a9b1e7579831a1b92d294dddf75d5d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\build.gradle.kts": {
+    "mtime": 1772691179.4242043,
+    "ast_hash": "7859f9317113dd96a4a89a96705e4b0e",
+    "semantic_hash": "7859f9317113dd96a4a89a96705e4b0e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\gradlew": {
+    "mtime": 1762782072.1452012,
+    "ast_hash": "7f1cd7eb3f75a1dc85cd37753972a6e2",
+    "semantic_hash": "7f1cd7eb3f75a1dc85cd37753972a6e2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\settings.gradle.kts": {
+    "mtime": 1753332010.323601,
+    "ast_hash": "7e2b812e622b81575eb9060fa80d2ae2",
+    "semantic_hash": "7e2b812e622b81575eb9060fa80d2ae2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\generate_keys.js": {
+    "mtime": 1762921635.9011292,
+    "ast_hash": "cf85ffc2aa5df45f76c272cb327451e6",
+    "semantic_hash": "cf85ffc2aa5df45f76c272cb327451e6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Flutter\\ephemeral\\flutter_lldb_helper.py": {
+    "mtime": 1780639096.6619976,
+    "ast_hash": "98fc75412162af387e2e3461e4e58094",
+    "semantic_hash": "98fc75412162af387e2e3461e4e58094"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Flutter\\flutter_export_environment.sh": {
+    "mtime": 1780639096.6759064,
+    "ast_hash": "46ceb15a30a99810d2701964e24212cf",
+    "semantic_hash": "46ceb15a30a99810d2701964e24212cf"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\RunnerTests\\RunnerTests.swift": {
+    "mtime": 1753332010.4850798,
+    "ast_hash": "24e5d095048eb86c30423f4e04b6e57b",
+    "semantic_hash": "24e5d095048eb86c30423f4e04b6e57b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\AppDelegate.swift": {
+    "mtime": 1751617026.5249054,
+    "ast_hash": "e277c49e98c9f80e9e71c0524a5cb60f",
+    "semantic_hash": "e277c49e98c9f80e9e71c0524a5cb60f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Contents.json": {
+    "mtime": 1751617026.5249054,
+    "ast_hash": "31a08e429403e265cabfb31b3d65f049",
+    "semantic_hash": "31a08e429403e265cabfb31b3d65f049"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\Contents.json": {
+    "mtime": 1751617026.5249054,
+    "ast_hash": "b9e927ac17345f2d5f052fe68a3487f9",
+    "semantic_hash": "b9e927ac17345f2d5f052fe68a3487f9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\GeneratedPluginRegistrant.h": {
+    "mtime": 1753332011.9105816,
+    "ast_hash": "decb9041b5e91a07e66f4664e5dac408",
+    "semantic_hash": "decb9041b5e91a07e66f4664e5dac408"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\GeneratedPluginRegistrant.m": {
+    "mtime": 1780639097.2261577,
+    "ast_hash": "50ebf5e0a9e1711b7c4657dbf9e0aea1",
+    "semantic_hash": "50ebf5e0a9e1711b7c4657dbf9e0aea1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Runner-Bridging-Header.h": {
+    "mtime": 1751617026.5249054,
+    "ast_hash": "7ad7b5cea096132de13ba526b2b9efbe",
+    "semantic_hash": "7ad7b5cea096132de13ba526b2b9efbe"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\assign_technicians.dart": {
+    "mtime": 1780551079.1146038,
+    "ast_hash": "296955070adac8d05dd551a74bcb5e27",
+    "semantic_hash": "296955070adac8d05dd551a74bcb5e27"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\cancel_work_order_dialog.dart": {
+    "mtime": 1780483179.2690575,
+    "ast_hash": "c334b769652682d34e9f674f560c33e2",
+    "semantic_hash": "c334b769652682d34e9f674f560c33e2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\canceled_work_order_page.dart": {
+    "mtime": 1780483179.2690575,
+    "ast_hash": "f845e8bf1846e204e630959aded3f0b5",
+    "semantic_hash": "f845e8bf1846e204e630959aded3f0b5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\edit_work_order_dialog.dart": {
+    "mtime": 1780483179.2666242,
+    "ast_hash": "cf4a7b329602ae53bff66a891c4c0f9f",
+    "semantic_hash": "cf4a7b329602ae53bff66a891c4c0f9f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\price_view_page.dart": {
+    "mtime": 1770812825.8273034,
+    "ast_hash": "c1da84be843a461848707bfa511454bd",
+    "semantic_hash": "c1da84be843a461848707bfa511454bd"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\tech_engagement_page.dart": {
+    "mtime": 1769145906.8131537,
+    "ast_hash": "132ea0a0763281ce53bd72549be0ef0b",
+    "semantic_hash": "132ea0a0763281ce53bd72549be0ef0b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\time_line_page.dart": {
+    "mtime": 1769488639.396042,
+    "ast_hash": "aaa189153b06faab68fc50472835549e",
+    "semantic_hash": "aaa189153b06faab68fc50472835549e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\data\\cghs_data.dart": {
+    "mtime": 1771305621.3957834,
+    "ast_hash": "4a31bdb24c19bc7ba46fbb05bb303131",
+    "semantic_hash": "4a31bdb24c19bc7ba46fbb05bb303131"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\authorize.dart": {
+    "mtime": 1777951908.5597148,
+    "ast_hash": "aad85598e738cf2bdbe0c78dada6e7a1",
+    "semantic_hash": "aad85598e738cf2bdbe0c78dada6e7a1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\cghs_data.dart": {
+    "mtime": 1757049166.5082142,
+    "ast_hash": "5ddc8fc440ea42ab6eb575e954ae722f",
+    "semantic_hash": "5ddc8fc440ea42ab6eb575e954ae722f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\com_center.dart": {
+    "mtime": 1769501249.330796,
+    "ast_hash": "41475488cc6c213e9d6b04930bbb8392",
+    "semantic_hash": "41475488cc6c213e9d6b04930bbb8392"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\couch_db.dart": {
+    "mtime": 1772524536.1482697,
+    "ast_hash": "ea630bf088b88f5d321061f6267bf13a",
+    "semantic_hash": "ea630bf088b88f5d321061f6267bf13a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\cron_job.dart": {
+    "mtime": 1764748559.1649275,
+    "ast_hash": "6e0b423c06a1dca5fcc865ad3324b9b7",
+    "semantic_hash": "6e0b423c06a1dca5fcc865ad3324b9b7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\dashboardDb.dart": {
+    "mtime": 1769501336.6888578,
+    "ast_hash": "d650cb84bc8e8cb4fafce786766565b7",
+    "semantic_hash": "d650cb84bc8e8cb4fafce786766565b7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\db_handler.dart": {
+    "mtime": 1780552830.6506085,
+    "ast_hash": "61a5c246a4f7f03122e4accbf03464f7",
+    "semantic_hash": "61a5c246a4f7f03122e4accbf03464f7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\notification_center.dart": {
+    "mtime": 1770199657.3624341,
+    "ast_hash": "48d5bad1eb16fa89104954e25a57d299",
+    "semantic_hash": "48d5bad1eb16fa89104954e25a57d299"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\notifications.dart": {
+    "mtime": 1772524538.8237453,
+    "ast_hash": "43992458339c847243fe8373c9135344",
+    "semantic_hash": "43992458339c847243fe8373c9135344"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\pincode_db.dart": {
+    "mtime": 1767780383.4339588,
+    "ast_hash": "cb4ec6813b1c18e4a045e9469576f823",
+    "semantic_hash": "cb4ec6813b1c18e4a045e9469576f823"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\postgres_db.dart": {
+    "mtime": 1777952451.6076376,
+    "ast_hash": "b303a66e87942913b29acbf4e05fd9c3",
+    "semantic_hash": "b303a66e87942913b29acbf4e05fd9c3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\priceList_db.dart": {
+    "mtime": 1769501920.092603,
+    "ast_hash": "bb7187b397a5af2091c365f8377a9bc8",
+    "semantic_hash": "bb7187b397a5af2091c365f8377a9bc8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\database\\sms_template.dart": {
+    "mtime": 1762876368.6330209,
+    "ast_hash": "ccc8feeb69487abf4e3b500e1a2af376",
+    "semantic_hash": "ccc8feeb69487abf4e3b500e1a2af376"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\add_work_order_page.dart": {
+    "mtime": 1780551402.9864426,
+    "ast_hash": "4d26b6a4a3a13939886cfaad53693a69",
+    "semantic_hash": "4d26b6a4a3a13939886cfaad53693a69"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\controllers\\add_work_order_controller.dart": {
+    "mtime": 1780564040.0871332,
+    "ast_hash": "9cbaa697e8ba9321a34b3da3e9cf45c0",
+    "semantic_hash": "9cbaa697e8ba9321a34b3da3e9cf45c0"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\dialogs\\b2b_client_dialog.dart": {
+    "mtime": 1780551370.066119,
+    "ast_hash": "b112db5d0fa53c25d08325378247334c",
+    "semantic_hash": "b112db5d0fa53c25d08325378247334c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\dialogs\\pincode_search_dialog.dart": {
+    "mtime": 1780551376.8705113,
+    "ast_hash": "292ef0a837787eed7bf106c1d983ac05",
+    "semantic_hash": "292ef0a837787eed7bf106c1d983ac05"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\dialogs\\settings_dialog.dart": {
+    "mtime": 1780551383.476743,
+    "ast_hash": "fcd2f2924dbeb84a9238fa2115837d15",
+    "semantic_hash": "fcd2f2924dbeb84a9238fa2115837d15"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\providers.dart": {
+    "mtime": 1769488639.4029727,
+    "ast_hash": "8edef3ac0297716e966ef997299d6808",
+    "semantic_hash": "8edef3ac0297716e966ef997299d6808"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\appointment_section.dart": {
+    "mtime": 1768895919.7844572,
+    "ast_hash": "6a9c9a524b5ceeb88c0d969fd62f9c6f",
+    "semantic_hash": "6a9c9a524b5ceeb88c0d969fd62f9c6f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\cancellation_section.dart": {
+    "mtime": 1780551355.2645774,
+    "ast_hash": "510843ef3abe71663f62ae2d9abb68bb",
+    "semantic_hash": "510843ef3abe71663f62ae2d9abb68bb"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\contact_info_section.dart": {
+    "mtime": 1780551344.3784893,
+    "ast_hash": "70ce35c635312ec4b4bcd74954702d31",
+    "semantic_hash": "70ce35c635312ec4b4bcd74954702d31"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\image_upload_section.dart": {
+    "mtime": 1780551362.980165,
+    "ast_hash": "6d9d029c86ac3f8ed831fa1cc734b5bb",
+    "semantic_hash": "6d9d029c86ac3f8ed831fa1cc734b5bb"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\patient_details_section.dart": {
+    "mtime": 1780551340.5896046,
+    "ast_hash": "dbe208bd471ab7cfdd37aaad7f7526f3",
+    "semantic_hash": "dbe208bd471ab7cfdd37aaad7f7526f3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\work_order_form_styles.dart": {
+    "mtime": 1780551334.703463,
+    "ast_hash": "22e86eb03eaeda06391507391141e76c",
+    "semantic_hash": "22e86eb03eaeda06391507391141e76c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\add_work_order\\widgets\\work_order_section_card.dart": {
+    "mtime": 1780551348.9674098,
+    "ast_hash": "02804cbef326b132c254b63399689b35",
+    "semantic_hash": "02804cbef326b132c254b63399689b35"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\auth.dart": {
+    "mtime": 1769488538.0909445,
+    "ast_hash": "797ee1401ee7ff6619b338a7b7eed196",
+    "semantic_hash": "797ee1401ee7ff6619b338a7b7eed196"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\models\\auth_state.dart": {
+    "mtime": 1769488537.9952514,
+    "ast_hash": "cf0978ce7736eed030c19456f647e809",
+    "semantic_hash": "cf0978ce7736eed030c19456f647e809"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\providers\\auth_provider.dart": {
+    "mtime": 1769488538.0790844,
+    "ast_hash": "98ac4cab0206037b4a1e08ab388054b0",
+    "semantic_hash": "98ac4cab0206037b4a1e08ab388054b0"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\repositories\\auth_repository.dart": {
+    "mtime": 1769488538.0846093,
+    "ast_hash": "b40cef096bffcb55c8e59de4af9ab8f5",
+    "semantic_hash": "b40cef096bffcb55c8e59de4af9ab8f5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\screens\\login_screen.dart": {
+    "mtime": 1780477101.4715405,
+    "ast_hash": "8ff420630e0052e8e6d39d94748cbbb9",
+    "semantic_hash": "8ff420630e0052e8e6d39d94748cbbb9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\widgets\\login_card.dart": {
+    "mtime": 1769488538.1009269,
+    "ast_hash": "f5c8a5a706cdc7478eacec6cf59aefa4",
+    "semantic_hash": "f5c8a5a706cdc7478eacec6cf59aefa4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\auth\\widgets\\otp_dialog.dart": {
+    "mtime": 1780313527.5337996,
+    "ast_hash": "7d37a8a04a54f748a6c669ad28ab603c",
+    "semantic_hash": "7d37a8a04a54f748a6c669ad28ab603c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\billing_work_order.dart": {
+    "mtime": 1767254125.1625736,
+    "ast_hash": "0082dc320976842f0d9efefff83a6653",
+    "semantic_hash": "0082dc320976842f0d9efefff83a6653"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\data\\billing_work_order_repository.dart": {
+    "mtime": 1780313741.2896209,
+    "ast_hash": "671a91d786952c093a8943c85fca42f5",
+    "semantic_hash": "671a91d786952c093a8943c85fca42f5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\providers\\billing_work_order_provider.dart": {
+    "mtime": 1780313741.2773845,
+    "ast_hash": "a7c2a3c9b8786204081eb542f55cff61",
+    "semantic_hash": "a7c2a3c9b8786204081eb542f55cff61"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\screens\\billing_work_order_page.dart": {
+    "mtime": 1780313741.2773845,
+    "ast_hash": "e09fa66a1ecd42c4d6aa949ab12595e7",
+    "semantic_hash": "e09fa66a1ecd42c4d6aa949ab12595e7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\widgets\\bill_dialog.dart": {
+    "mtime": 1767254144.3233647,
+    "ast_hash": "7adf4837438de343329d63b9101ee1e0",
+    "semantic_hash": "7adf4837438de343329d63b9101ee1e0"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\widgets\\billing_desktop_table.dart": {
+    "mtime": 1780313741.2401164,
+    "ast_hash": "1bf87b70b90236ca43bbb5119ed0a44a",
+    "semantic_hash": "1bf87b70b90236ca43bbb5119ed0a44a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\billing_work_order\\widgets\\billing_mobile_list.dart": {
+    "mtime": 1779167026.6714363,
+    "ast_hash": "8d57d95ba69a9529d8c24c0acb3391b7",
+    "semantic_hash": "8d57d95ba69a9529d8c24c0acb3391b7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\services\\file_saver.dart": {
+    "mtime": 1770802080.367499,
+    "ast_hash": "61a9b5aa8364ab23b5a46d8e69e006e8",
+    "semantic_hash": "61a9b5aa8364ab23b5a46d8e69e006e8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\services\\file_saver_io.dart": {
+    "mtime": 1780645328.1205199,
+    "ast_hash": "63ca20b6186ecaa873c91f64a553b336",
+    "semantic_hash": "63ca20b6186ecaa873c91f64a553b336"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\services\\file_saver_stub.dart": {
+    "mtime": 1780645328.1113322,
+    "ast_hash": "036b5dec49ed0cd827d3254ec9989d3a",
+    "semantic_hash": "036b5dec49ed0cd827d3254ec9989d3a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\services\\file_saver_web.dart": {
+    "mtime": 1770802180.236823,
+    "ast_hash": "e521b6066bb7fe45c770d03398dc8515",
+    "semantic_hash": "e521b6066bb7fe45c770d03398dc8515"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\services\\file_service.dart": {
+    "mtime": 1770803631.1449466,
+    "ast_hash": "a2ade9ec239089b3e32bb3be8c10dc0a",
+    "semantic_hash": "a2ade9ec239089b3e32bb3be8c10dc0a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\util.dart": {
+    "mtime": 1770198577.2176979,
+    "ast_hash": "332416bb971764bdb2cd0cf1439c1a18",
+    "semantic_hash": "332416bb971764bdb2cd0cf1439c1a18"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\common_widgets.dart": {
+    "mtime": 1778857741.2499223,
+    "ast_hash": "a6dec082eaccf8bc76fb35c0ddeda0e1",
+    "semantic_hash": "a6dec082eaccf8bc76fb35c0ddeda0e1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\copyable_text.dart": {
+    "mtime": 1780645328.1205199,
+    "ast_hash": "7ec866399e1a0d4879872b3b3fddfa80",
+    "semantic_hash": "7ec866399e1a0d4879872b3b3fddfa80"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\flex_cells.dart": {
+    "mtime": 1780645328.1123297,
+    "ast_hash": "0360c8efa6ea354a080d7d7829a86432",
+    "semantic_hash": "0360c8efa6ea354a080d7d7829a86432"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\name_with_badges.dart": {
+    "mtime": 1780645328.1113322,
+    "ast_hash": "be42260c4578e28441d2869f5b930b2f",
+    "semantic_hash": "be42260c4578e28441d2869f5b930b2f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\search_bar.dart": {
+    "mtime": 1780551825.391111,
+    "ast_hash": "b04833fb300bda18dbf116529f8c8619",
+    "semantic_hash": "b04833fb300bda18dbf116529f8c8619"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\server_chip.dart": {
+    "mtime": 1780645328.1113322,
+    "ast_hash": "69d7d057b7724a7196c777df27aa05e1",
+    "semantic_hash": "69d7d057b7724a7196c777df27aa05e1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\sortable_header.dart": {
+    "mtime": 1780481737.193963,
+    "ast_hash": "5b0e4026569e528dde1038ef4bc27a1b",
+    "semantic_hash": "5b0e4026569e528dde1038ef4bc27a1b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\status_chip.dart": {
+    "mtime": 1769765148.3566482,
+    "ast_hash": "9b41c71068d43c54843b6a3e4a706f29",
+    "semantic_hash": "9b41c71068d43c54843b6a3e4a706f29"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\table_widgets.dart": {
+    "mtime": 1779171783.125281,
+    "ast_hash": "e340ff6864c8a35ddc27326c63743445",
+    "semantic_hash": "e340ff6864c8a35ddc27326c63743445"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\update_dialog.dart": {
+    "mtime": 1780645328.1038208,
+    "ast_hash": "4d8a6a2260ebb8e8ffadef0f73fd9f6f",
+    "semantic_hash": "4d8a6a2260ebb8e8ffadef0f73fd9f6f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\common\\work_order_chips.dart": {
+    "mtime": 1769764868.3622122,
+    "ast_hash": "dfe73ed9c8aaa3ad1dcf758a3a52cff5",
+    "semantic_hash": "dfe73ed9c8aaa3ad1dcf758a3a52cff5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\file_viewer\\file_viewer.dart": {
+    "mtime": 1769501684.3582714,
+    "ast_hash": "4b55cd3c08877479e58666c232fb747f",
+    "semantic_hash": "4b55cd3c08877479e58666c232fb747f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\file_viewer\\file_viewer_exports.dart": {
+    "mtime": 1768292429.3448331,
+    "ast_hash": "18d82f9179d56b7242786890760fdfb3",
+    "semantic_hash": "18d82f9179d56b7242786890760fdfb3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\file_viewer\\image_viewer_page.dart": {
+    "mtime": 1770796049.0500393,
+    "ast_hash": "79e48c15deccbb6617a2d88b79ce4cb5",
+    "semantic_hash": "79e48c15deccbb6617a2d88b79ce4cb5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\file_viewer\\pdf_viewer_page.dart": {
+    "mtime": 1772688942.7662666,
+    "ast_hash": "2b8543776cece55c537256ce571316c5",
+    "semantic_hash": "2b8543776cece55c537256ce571316c5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\file_viewer\\pdf_web_impl.dart": {
+    "mtime": 1772688769.5235717,
+    "ast_hash": "9a36cb84f870d53025d24ab8865c244b",
+    "semantic_hash": "9a36cb84f870d53025d24ab8865c244b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\core\\widgets\\file_viewer\\pdf_web_stub.dart": {
+    "mtime": 1772688767.3130543,
+    "ast_hash": "65d67c5930e171268e357be2ebc41727",
+    "semantic_hash": "65d67c5930e171268e357be2ebc41727"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\models\\dashboard_report.dart": {
+    "mtime": 1767254144.5063138,
+    "ast_hash": "47af9adf895dee641ce5ceec53175f6d",
+    "semantic_hash": "47af9adf895dee641ce5ceec53175f6d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\models\\technician_metrics.dart": {
+    "mtime": 1780561823.417942,
+    "ast_hash": "c7ef027ab723b38f051cf76849ec2630",
+    "semantic_hash": "c7ef027ab723b38f051cf76849ec2630"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\providers\\dashboard_providers.dart": {
+    "mtime": 1770837721.6695924,
+    "ast_hash": "4fa3e6960116c0447f07750cb393febf",
+    "semantic_hash": "4fa3e6960116c0447f07750cb393febf"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\providers\\dashboard_state.dart": {
+    "mtime": 1767254144.4680433,
+    "ast_hash": "4ea2a6bb379b65a38c757f47f23fee97",
+    "semantic_hash": "4ea2a6bb379b65a38c757f47f23fee97"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\providers\\technician_dashboard_providers.dart": {
+    "mtime": 1780645201.0028362,
+    "ast_hash": "71a131b59be69d6c42b024eac9740532",
+    "semantic_hash": "71a131b59be69d6c42b024eac9740532"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\repositories\\technician_analytics_repository.dart": {
+    "mtime": 1780645201.0028362,
+    "ast_hash": "52f25e2540537a7376f1abe86ebaf6e3",
+    "semantic_hash": "52f25e2540537a7376f1abe86ebaf6e3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\screens\\dashboardScreen.dart": {
+    "mtime": 1780562779.0717883,
+    "ast_hash": "fe8746107b72526944a91729000cdcac",
+    "semantic_hash": "fe8746107b72526944a91729000cdcac"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\tabs\\daily_tab.dart": {
+    "mtime": 1780562784.0230172,
+    "ast_hash": "c82c3c4e89bc46771a36679dbbe8982e",
+    "semantic_hash": "c82c3c4e89bc46771a36679dbbe8982e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\tabs\\monthly_tab.dart": {
+    "mtime": 1780480778.9289572,
+    "ast_hash": "4cc431ff114337632f2d655931aa73c0",
+    "semantic_hash": "4cc431ff114337632f2d655931aa73c0"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\tabs\\tech_daily_tab.dart": {
+    "mtime": 1780562139.0476074,
+    "ast_hash": "380d6c51050b8eff85da07b04f3bdf4e",
+    "semantic_hash": "380d6c51050b8eff85da07b04f3bdf4e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\tabs\\tech_weekly_tab.dart": {
+    "mtime": 1780562555.9294207,
+    "ast_hash": "f27e415681bf18d99f10493306f56a63",
+    "semantic_hash": "f27e415681bf18d99f10493306f56a63"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\tabs\\weekly_tab.dart": {
+    "mtime": 1780480769.6840968,
+    "ast_hash": "11edb0d6aa27cc450013fb2c333266a6",
+    "semantic_hash": "11edb0d6aa27cc450013fb2c333266a6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\tabs\\yearly_tab.dart": {
+    "mtime": 1780480809.1211495,
+    "ast_hash": "14f74214dea97ce5ab5c215a0581ad84",
+    "semantic_hash": "14f74214dea97ce5ab5c215a0581ad84"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\widgets\\dashboard_widgets.dart": {
+    "mtime": 1780480913.048604,
+    "ast_hash": "967d9c33dcaed39f1960ddd78127fe26",
+    "semantic_hash": "967d9c33dcaed39f1960ddd78127fe26"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\widgets\\report_chart.dart": {
+    "mtime": 1780481137.0657759,
+    "ast_hash": "90eea535d5db02d55ba54ea448610f56",
+    "semantic_hash": "90eea535d5db02d55ba54ea448610f56"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\widgets\\report_table.dart": {
+    "mtime": 1780563117.1038089,
+    "ast_hash": "425299d44fd94c48f14ff5a6064c07aa",
+    "semantic_hash": "425299d44fd94c48f14ff5a6064c07aa"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\dashboard\\widgets\\tech_dashboard_widgets.dart": {
+    "mtime": 1780645219.1639128,
+    "ast_hash": "fe287b59ac6efa4eff3e5d635d1b2db3",
+    "semantic_hash": "fe287b59ac6efa4eff3e5d635d1b2db3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\domain\\hc_process_state.dart": {
+    "mtime": 1780313741.3510666,
+    "ast_hash": "36aafcb0a35e59527a92e6399735858d",
+    "semantic_hash": "36aafcb0a35e59527a92e6399735858d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\hc_process.dart": {
+    "mtime": 1767775160.6793425,
+    "ast_hash": "3d77613373a7c35bb48960e614e2872d",
+    "semantic_hash": "3d77613373a7c35bb48960e614e2872d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\providers\\hc_process_controller.dart": {
+    "mtime": 1780313741.3166356,
+    "ast_hash": "00188917b4202392744b32e50a96f0d8",
+    "semantic_hash": "00188917b4202392744b32e50a96f0d8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\providers\\hc_process_provider.dart": {
+    "mtime": 1780313741.3116372,
+    "ast_hash": "8622315491a78e44a56deda07a17c12e",
+    "semantic_hash": "8622315491a78e44a56deda07a17c12e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\screens\\hc_process_page.dart": {
+    "mtime": 1780313741.2946198,
+    "ast_hash": "998e9e1350df4b0dee4e43b5316d853f",
+    "semantic_hash": "998e9e1350df4b0dee4e43b5316d853f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\widgets\\hc_step_billing.dart": {
+    "mtime": 1780313741.292618,
+    "ast_hash": "0c96ce59b605dfe3ba10c6aa5b86aef7",
+    "semantic_hash": "0c96ce59b605dfe3ba10c6aa5b86aef7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\widgets\\hc_step_delay.dart": {
+    "mtime": 1778783545.2770264,
+    "ast_hash": "02b75223daf7d0d0ea593aa8ed96b06f",
+    "semantic_hash": "02b75223daf7d0d0ea593aa8ed96b06f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\widgets\\hc_step_otp.dart": {
+    "mtime": 1770826539.480724,
+    "ast_hash": "8d89f44dcc41cc969f4a3ae3584c1a16",
+    "semantic_hash": "8d89f44dcc41cc969f4a3ae3584c1a16"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\widgets\\hc_step_payment.dart": {
+    "mtime": 1780313741.2906208,
+    "ast_hash": "a46534443afdea975dbe087a33f2b818",
+    "semantic_hash": "a46534443afdea975dbe087a33f2b818"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\widgets\\hc_step_prescription.dart": {
+    "mtime": 1780563530.0481699,
+    "ast_hash": "3e08150860713bbe0d427acd801adcf9",
+    "semantic_hash": "3e08150860713bbe0d427acd801adcf9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\hc_process\\widgets\\hc_step_tests.dart": {
+    "mtime": 1780313741.2896209,
+    "ast_hash": "05edba2728f49e0be277faf4faf9092c",
+    "semantic_hash": "05edba2728f49e0be277faf4faf9092c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\controllers\\manager_assignment_controller.dart": {
+    "mtime": 1780313741.497789,
+    "ast_hash": "a3c5543fbcab0a6dcf4995e319705e3a",
+    "semantic_hash": "a3c5543fbcab0a6dcf4995e319705e3a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\manager_work_order.dart": {
+    "mtime": 1767775160.6986246,
+    "ast_hash": "03e56619fa7c3ec3969dcf29b18a93f9",
+    "semantic_hash": "03e56619fa7c3ec3969dcf29b18a93f9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\models\\tech_analytics_models.dart": {
+    "mtime": 1780313741.497789,
+    "ast_hash": "290470269948f52d4fb57110334519d9",
+    "semantic_hash": "290470269948f52d4fb57110334519d9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\providers\\manager_work_order_provider.dart": {
+    "mtime": 1780313741.497789,
+    "ast_hash": "ccd734b2427d1095f76f9ba447db6271",
+    "semantic_hash": "ccd734b2427d1095f76f9ba447db6271"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\providers\\tech_analytics_provider.dart": {
+    "mtime": 1780313741.4912682,
+    "ast_hash": "acedd170758390cb624375d931fcfff2",
+    "semantic_hash": "acedd170758390cb624375d931fcfff2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\repositories\\manager_work_order_repository.dart": {
+    "mtime": 1780313741.4912682,
+    "ast_hash": "7c9e8652462e9df47fc8c4b34454aa57",
+    "semantic_hash": "7c9e8652462e9df47fc8c4b34454aa57"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\screens\\manager_work_order_page.dart": {
+    "mtime": 1780481759.2000666,
+    "ast_hash": "b3771cc0a81eaf25a8da1720c376e4aa",
+    "semantic_hash": "b3771cc0a81eaf25a8da1720c376e4aa"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\screens\\tech_analytics_page.dart": {
+    "mtime": 1780482105.4364157,
+    "ast_hash": "3dc2600ccec78fa54166b313a8b37efe",
+    "semantic_hash": "3dc2600ccec78fa54166b313a8b37efe"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\services\\excel_export_mobile.dart": {
+    "mtime": 1780313741.485243,
+    "ast_hash": "8259f753c9ec101a781476883ed88e7d",
+    "semantic_hash": "8259f753c9ec101a781476883ed88e7d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\services\\excel_export_service.dart": {
+    "mtime": 1780313741.497789,
+    "ast_hash": "651d5781c3918ce329674f3319613ac7",
+    "semantic_hash": "651d5781c3918ce329674f3319613ac7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\services\\excel_export_stub.dart": {
+    "mtime": 1780313741.4665482,
+    "ast_hash": "53fb35f7914128d2263d73d6ed909fa4",
+    "semantic_hash": "53fb35f7914128d2263d73d6ed909fa4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\services\\excel_export_web.dart": {
+    "mtime": 1780313741.4665482,
+    "ast_hash": "257a02f7943bd6a459f78413eb225052",
+    "semantic_hash": "257a02f7943bd6a459f78413eb225052"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\widgets\\manager_actions.dart": {
+    "mtime": 1780313741.4570527,
+    "ast_hash": "cf2c1c4d74c4a45083d4aa3f869c769b",
+    "semantic_hash": "cf2c1c4d74c4a45083d4aa3f869c769b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\widgets\\manager_desktop_view.dart": {
+    "mtime": 1780551605.4772096,
+    "ast_hash": "5ed47c6901095ac1049267f021c0b1ba",
+    "semantic_hash": "5ed47c6901095ac1049267f021c0b1ba"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\widgets\\manager_expanded_content.dart": {
+    "mtime": 1780481820.8136394,
+    "ast_hash": "cbecdfe78b42d5dc2a74a6e66a2cc77a",
+    "semantic_hash": "cbecdfe78b42d5dc2a74a6e66a2cc77a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\widgets\\manager_mobile_view.dart": {
+    "mtime": 1780481805.3245647,
+    "ast_hash": "3ae68b4e3ed11c7087d7867cc3dfde4c",
+    "semantic_hash": "3ae68b4e3ed11c7087d7867cc3dfde4c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\manager_work_order\\widgets\\tech_analytics_widgets.dart": {
+    "mtime": 1780482157.6292868,
+    "ast_hash": "acb25efef172e18a93acf86a714731a4",
+    "semantic_hash": "acb25efef172e18a93acf86a714731a4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\notifications.dart": {
+    "mtime": 1767862933.4587698,
+    "ast_hash": "bb3faa55c203c8305e5bf243eb371c59",
+    "semantic_hash": "bb3faa55c203c8305e5bf243eb371c59"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\providers\\notifications_page_provider.dart": {
+    "mtime": 1769488179.803191,
+    "ast_hash": "541c24682fa7617097c73fbdeb5d5358",
+    "semantic_hash": "541c24682fa7617097c73fbdeb5d5358"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\screens\\notifications_page.dart": {
+    "mtime": 1770667969.2193182,
+    "ast_hash": "b37ba92250befec22cfd61bbb2114a2c",
+    "semantic_hash": "b37ba92250befec22cfd61bbb2114a2c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_desktop_view.dart": {
+    "mtime": 1772523219.983662,
+    "ast_hash": "5562ab4e207a284295ccea8ec53d0893",
+    "semantic_hash": "5562ab4e207a284295ccea8ec53d0893"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_expanded.dart": {
+    "mtime": 1769488179.81172,
+    "ast_hash": "fd5dc28bab3394b034e3e7997066318c",
+    "semantic_hash": "fd5dc28bab3394b034e3e7997066318c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_header.dart": {
+    "mtime": 1767862790.9866312,
+    "ast_hash": "777066b167f4f190ab9d24596b7c1774",
+    "semantic_hash": "777066b167f4f190ab9d24596b7c1774"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_mobile_view.dart": {
+    "mtime": 1772523190.309029,
+    "ast_hash": "9b3c6e60c485355f1bcbc7850883bd90",
+    "semantic_hash": "9b3c6e60c485355f1bcbc7850883bd90"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_search.dart": {
+    "mtime": 1767862798.918738,
+    "ast_hash": "b9bc8d2bd39a597d8907de6649087b38",
+    "semantic_hash": "b9bc8d2bd39a597d8907de6649087b38"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_skeleton.dart": {
+    "mtime": 1769488179.81172,
+    "ast_hash": "93f405ac1b040bb1595cf91c5b08d471",
+    "semantic_hash": "93f405ac1b040bb1595cf91c5b08d471"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\notifications\\widgets\\notification_status_chip.dart": {
+    "mtime": 1769488179.81172,
+    "ast_hash": "52c7965a027c6c391029625c87a2c2af",
+    "semantic_hash": "52c7965a027c6c391029625c87a2c2af"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\data\\price_list_model.dart": {
+    "mtime": 1777800544.0554085,
+    "ast_hash": "ad57324737d6b436314938b152f0b001",
+    "semantic_hash": "ad57324737d6b436314938b152f0b001"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\data\\price_list_repository.dart": {
+    "mtime": 1780313741.2401164,
+    "ast_hash": "917a0f93f3bc488a158d0e24b7e1d422",
+    "semantic_hash": "917a0f93f3bc488a158d0e24b7e1d422"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\price_list.dart": {
+    "mtime": 1769488538.1515024,
+    "ast_hash": "4ef0bc6d64a2a48ed4b81ec533dab2ad",
+    "semantic_hash": "4ef0bc6d64a2a48ed4b81ec533dab2ad"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\providers\\price_list_providers.dart": {
+    "mtime": 1777800436.8336363,
+    "ast_hash": "89942b11e0cc1f7b095e718e8252e5f1",
+    "semantic_hash": "89942b11e0cc1f7b095e718e8252e5f1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\screens\\add_edit_price_dialog.dart": {
+    "mtime": 1777800452.5023112,
+    "ast_hash": "b8117596f6233bc6b1168f771680313f",
+    "semantic_hash": "b8117596f6233bc6b1168f771680313f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\screens\\add_test_dialog.dart": {
+    "mtime": 1778783189.657539,
+    "ast_hash": "73a3ef2c7f2b747510cfde80f682b901",
+    "semantic_hash": "73a3ef2c7f2b747510cfde80f682b901"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\screens\\history_sheet.dart": {
+    "mtime": 1780551060.1689644,
+    "ast_hash": "732ab7f222491a85a33bffb740e22ecc",
+    "semantic_hash": "732ab7f222491a85a33bffb740e22ecc"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\price_list\\screens\\manager_price_view_page.dart": {
+    "mtime": 1780482185.667969,
+    "ast_hash": "b37d523195b346c9532517c473fa5e1b",
+    "semantic_hash": "b37d523195b346c9532517c473fa5e1b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\providers\\search_provider.dart": {
+    "mtime": 1770817492.3808885,
+    "ast_hash": "f5898d9aa45b77d4d4e16430569535d2",
+    "semantic_hash": "f5898d9aa45b77d4d4e16430569535d2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\screens\\search_page.dart": {
+    "mtime": 1769488538.2146826,
+    "ast_hash": "cdd3a8fb12a8d85a8511f62d89867e78",
+    "semantic_hash": "cdd3a8fb12a8d85a8511f62d89867e78"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\search.dart": {
+    "mtime": 1776843986.0001423,
+    "ast_hash": "b23d68ce0246261340cab23c48b9fbea",
+    "semantic_hash": "b23d68ce0246261340cab23c48b9fbea"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\widgets\\search_bar_panel.dart": {
+    "mtime": 1769488538.247497,
+    "ast_hash": "6d533a61134bc6e463d03c8fa25253bd",
+    "semantic_hash": "6d533a61134bc6e463d03c8fa25253bd"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\widgets\\search_desktop_table.dart": {
+    "mtime": 1779166740.9775052,
+    "ast_hash": "dbae8ffa9df800d7555e90893109c232",
+    "semantic_hash": "dbae8ffa9df800d7555e90893109c232"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\widgets\\search_header.dart": {
+    "mtime": 1769488538.2316487,
+    "ast_hash": "45b338ef315724f840aa0239d2c6af71",
+    "semantic_hash": "45b338ef315724f840aa0239d2c6af71"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\widgets\\search_mobile_view.dart": {
+    "mtime": 1779166989.0840876,
+    "ast_hash": "efa0faeac5da56b643168830aa68fd8a",
+    "semantic_hash": "efa0faeac5da56b643168830aa68fd8a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\search\\widgets\\search_skeleton.dart": {
+    "mtime": 1770813196.127911,
+    "ast_hash": "5c838dacf347c1a23be64e309c19b8af",
+    "semantic_hash": "5c838dacf347c1a23be64e309c19b8af"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\session\\storage_provider.dart": {
+    "mtime": 1769488538.2779915,
+    "ast_hash": "6245f7d26bdca75ac50d303bcf35fa35",
+    "semantic_hash": "6245f7d26bdca75ac50d303bcf35fa35"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\session\\storage_repository.dart": {
+    "mtime": 1769488538.2747388,
+    "ast_hash": "0268c491c9b87a877be4903b9af1146a",
+    "semantic_hash": "0268c491c9b87a877be4903b9af1146a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\session\\storage_service.dart": {
+    "mtime": 1772524613.4866076,
+    "ast_hash": "6206f182216d577398c532b36f00e7de",
+    "semantic_hash": "6206f182216d577398c532b36f00e7de"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\presentation\\main_shell.dart": {
+    "mtime": 1780481126.8709495,
+    "ast_hash": "911864973f37f94102001663a18b0511",
+    "semantic_hash": "911864973f37f94102001663a18b0511"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\presentation\\tenant_selector_sheet.dart": {
+    "mtime": 1769488538.2779915,
+    "ast_hash": "ad1cbad9bb84f6e2509f9df6454e2dca",
+    "semantic_hash": "ad1cbad9bb84f6e2509f9df6454e2dca"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\providers\\shell_providers.dart": {
+    "mtime": 1780480415.3773131,
+    "ast_hash": "810f59bea631c96966b3dc34d06c92c1",
+    "semantic_hash": "810f59bea631c96966b3dc34d06c92c1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\widgets\\app_drawer.dart": {
+    "mtime": 1780481131.995123,
+    "ast_hash": "480bfb138a4c8cad01b987456422fa62",
+    "semantic_hash": "480bfb138a4c8cad01b987456422fa62"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\widgets\\main_app_bar.dart": {
+    "mtime": 1780480539.4914782,
+    "ast_hash": "04acc2252bdc39ce1b4b4501312c9931",
+    "semantic_hash": "04acc2252bdc39ce1b4b4501312c9931"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\widgets\\notification_drawer.dart": {
+    "mtime": 1780480627.8629718,
+    "ast_hash": "fcc60c08ed855f6b9a2743595573695f",
+    "semantic_hash": "fcc60c08ed855f6b9a2743595573695f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\shell\\widgets\\status_footer.dart": {
+    "mtime": 1780480555.8918822,
+    "ast_hash": "93ba8b44825790bcfbf09d2c3ecee616",
+    "semantic_hash": "93ba8b44825790bcfbf09d2c3ecee616"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tech_engagement\\providers\\tech_engagement_provider.dart": {
+    "mtime": 1770839210.1035604,
+    "ast_hash": "af7280a5bc2666dee9a0721d409b9435",
+    "semantic_hash": "af7280a5bc2666dee9a0721d409b9435"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tech_engagement\\screens\\tech_engagement_page.dart": {
+    "mtime": 1780482193.4767783,
+    "ast_hash": "b86eebcb31822106488252c8210e95db",
+    "semantic_hash": "b86eebcb31822106488252c8210e95db"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tech_engagement\\widgets\\tech_desktop_table.dart": {
+    "mtime": 1780482202.1526535,
+    "ast_hash": "4e5e01b5dd506ee65de46c6cf787364e",
+    "semantic_hash": "4e5e01b5dd506ee65de46c6cf787364e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tech_engagement\\widgets\\tech_mobile_view.dart": {
+    "mtime": 1780482377.8955603,
+    "ast_hash": "8d80d8453a0ece821f3f59468807bdf7",
+    "semantic_hash": "8d80d8453a0ece821f3f59468807bdf7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tech_engagement\\widgets\\tech_patient_list.dart": {
+    "mtime": 1780482224.1383545,
+    "ast_hash": "b8a968122e7e4d377216efa9beafffe2",
+    "semantic_hash": "b8a968122e7e4d377216efa9beafffe2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tech_engagement\\widgets\\tech_shared_widgets.dart": {
+    "mtime": 1780482233.3610039,
+    "ast_hash": "d213a2ec2b0929d0c996cc1bd83b995a",
+    "semantic_hash": "d213a2ec2b0929d0c996cc1bd83b995a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\providers\\technician_work_order_provider.dart": {
+    "mtime": 1778856167.9511523,
+    "ast_hash": "d331bd3c873d20ffb125c7e742df4c34",
+    "semantic_hash": "d331bd3c873d20ffb125c7e742df4c34"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\repositories\\technician_work_order_repository.dart": {
+    "mtime": 1771925482.2824488,
+    "ast_hash": "34fa7b12efd98ee5a153597a65f462e8",
+    "semantic_hash": "34fa7b12efd98ee5a153597a65f462e8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\screens\\technician_work_order_page.dart": {
+    "mtime": 1779166658.7013276,
+    "ast_hash": "8ae7ea4d442571cc4997641496cf7a92",
+    "semantic_hash": "8ae7ea4d442571cc4997641496cf7a92"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\technician_work_order.dart": {
+    "mtime": 1767775390.5917377,
+    "ast_hash": "e1a873410fba47d3f638ba22e2261d39",
+    "semantic_hash": "e1a873410fba47d3f638ba22e2261d39"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\widgets\\add_tests_post_completion_page.dart": {
+    "mtime": 1776761057.5352626,
+    "ast_hash": "972b7372bee285bd1730e92175d1fee3",
+    "semantic_hash": "972b7372bee285bd1730e92175d1fee3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\widgets\\technician_actions.dart": {
+    "mtime": 1776760986.493827,
+    "ast_hash": "7913eff9a5d206af49e587ced6fcd71d",
+    "semantic_hash": "7913eff9a5d206af49e587ced6fcd71d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\widgets\\technician_daily_summary_dialog.dart": {
+    "mtime": 1772445080.7211998,
+    "ast_hash": "2d362365b6456b605ef07641bab113d1",
+    "semantic_hash": "2d362365b6456b605ef07641bab113d1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\widgets\\technician_expanded_content.dart": {
+    "mtime": 1779171814.5350275,
+    "ast_hash": "4a3bf074845688c11f9b8e714fb161f6",
+    "semantic_hash": "4a3bf074845688c11f9b8e714fb161f6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\technician_work_order\\widgets\\technician_mobile_view.dart": {
+    "mtime": 1779354276.6780882,
+    "ast_hash": "7996f2e6bde9e3df8d1379e2482fa6f7",
+    "semantic_hash": "7996f2e6bde9e3df8d1379e2482fa6f7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\app_colors.dart": {
+    "mtime": 1780480364.2669537,
+    "ast_hash": "ec2cf42acce51b7303ff313c9f379b46",
+    "semantic_hash": "ec2cf42acce51b7303ff313c9f379b46"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\app_decorations.dart": {
+    "mtime": 1780478749.0487447,
+    "ast_hash": "1497426c9fa6c567217db77f15139160",
+    "semantic_hash": "1497426c9fa6c567217db77f15139160"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\app_spacing.dart": {
+    "mtime": 1780478864.7224207,
+    "ast_hash": "13b411ba37e4a9031b1e92c35674bd58",
+    "semantic_hash": "13b411ba37e4a9031b1e92c35674bd58"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\app_text_styles.dart": {
+    "mtime": 1775638370.363077,
+    "ast_hash": "42ba681cefe0bbb8290baac5899a1262",
+    "semantic_hash": "42ba681cefe0bbb8290baac5899a1262"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\app_theme.dart": {
+    "mtime": 1780481718.2555785,
+    "ast_hash": "fef126f75d97c1b9de8db6ed1bab77d9",
+    "semantic_hash": "fef126f75d97c1b9de8db6ed1bab77d9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\theme.dart": {
+    "mtime": 1780480378.5269172,
+    "ast_hash": "a98c6c53af3128e287cc8dba6d6b51c4",
+    "semantic_hash": "a98c6c53af3128e287cc8dba6d6b51c4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\theme\\theme_provider.dart": {
+    "mtime": 1780480323.3351703,
+    "ast_hash": "716778b735310bed571ad23cf58ee7cb",
+    "semantic_hash": "716778b735310bed571ad23cf58ee7cb"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\providers\\gps_monitor_provider.dart": {
+    "mtime": 1780313741.2301366,
+    "ast_hash": "060f75ea6da9b579a59f3e2891652f14",
+    "semantic_hash": "060f75ea6da9b579a59f3e2891652f14"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\providers\\tracking_provider.dart": {
+    "mtime": 1780313741.2050965,
+    "ast_hash": "35bda44883f71f70e08449de1b32ee03",
+    "semantic_hash": "35bda44883f71f70e08449de1b32ee03"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\services\\location_cache_service.dart": {
+    "mtime": 1780313741.1363387,
+    "ast_hash": "c8edf0b61a9e8ff046da695d46be3223",
+    "semantic_hash": "c8edf0b61a9e8ff046da695d46be3223"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\services\\location_service.dart": {
+    "mtime": 1780313741.1534674,
+    "ast_hash": "bbc6b817064b07f1d38c9b3e62edc702",
+    "semantic_hash": "bbc6b817064b07f1d38c9b3e62edc702"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\services\\tracking_ws_service.dart": {
+    "mtime": 1779441175.5551765,
+    "ast_hash": "d99b1b09b976aaef48ff829273ee38a2",
+    "semantic_hash": "d99b1b09b976aaef48ff829273ee38a2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\widgets\\tracking_status_chip.dart": {
+    "mtime": 1775115734.6185386,
+    "ast_hash": "dfbae7a13a2ef9601c284b8362a7af1c",
+    "semantic_hash": "dfbae7a13a2ef9601c284b8362a7af1c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking\\widgets\\tracking_toggle.dart": {
+    "mtime": 1775115732.5957236,
+    "ast_hash": "ad4cbc6e09ead221ff66fefb6fbc493b",
+    "semantic_hash": "ad4cbc6e09ead221ff66fefb6fbc493b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\data\\tracking_models.dart": {
+    "mtime": 1775639078.6729217,
+    "ast_hash": "ca784e5b26b536e9e73440037f0290e9",
+    "semantic_hash": "ca784e5b26b536e9e73440037f0290e9"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\data\\tracking_repository.dart": {
+    "mtime": 1780313770.6533394,
+    "ast_hash": "478ad7eaccc5a4804eb6d1fd02997931",
+    "semantic_hash": "478ad7eaccc5a4804eb6d1fd02997931"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\providers\\tracking_ui_providers.dart": {
+    "mtime": 1775638434.3114128,
+    "ast_hash": "f39337918c94019dd3fc0d9ec4681564",
+    "semantic_hash": "f39337918c94019dd3fc0d9ec4681564"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\providers\\tracking_ws_provider.dart": {
+    "mtime": 1779443278.7684362,
+    "ast_hash": "575b887e13ff82101ce8f39965356c0a",
+    "semantic_hash": "575b887e13ff82101ce8f39965356c0a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\screens\\tracking_dashboard_page.dart": {
+    "mtime": 1780483067.2730837,
+    "ast_hash": "169d044c08be183fea91710e2f8bc415",
+    "semantic_hash": "169d044c08be183fea91710e2f8bc415"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\alerts_panel.dart": {
+    "mtime": 1775639047.3992648,
+    "ast_hash": "295f5f2cb7a7b9fcae13e87e25a67516",
+    "semantic_hash": "295f5f2cb7a7b9fcae13e87e25a67516"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\analytics_tab.dart": {
+    "mtime": 1780313839.6067379,
+    "ast_hash": "d97750927ce4d23a1a9e7bee5481785d",
+    "semantic_hash": "d97750927ce4d23a1a9e7bee5481785d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\fence_manager.dart": {
+    "mtime": 1775638803.1652138,
+    "ast_hash": "9a13a3e451b4dd29b8278aedbec6bb84",
+    "semantic_hash": "9a13a3e451b4dd29b8278aedbec6bb84"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\filter_bar.dart": {
+    "mtime": 1780313839.598385,
+    "ast_hash": "61cfeae4e5a23ba0ccd247d0806f9475",
+    "semantic_hash": "61cfeae4e5a23ba0ccd247d0806f9475"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\live_map_view.dart": {
+    "mtime": 1780313839.598385,
+    "ast_hash": "b17b7441cf0ad8e837e06603adce2c03",
+    "semantic_hash": "b17b7441cf0ad8e837e06603adce2c03"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\tech_detail_panel.dart": {
+    "mtime": 1780313839.598385,
+    "ast_hash": "6db0e55dcd012ea465e9a3316e4b9e15",
+    "semantic_hash": "6db0e55dcd012ea465e9a3316e4b9e15"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\tech_list_panel.dart": {
+    "mtime": 1775638617.0829422,
+    "ast_hash": "0227cb03725a8c7f78bc0f97d7aa924b",
+    "semantic_hash": "0227cb03725a8c7f78bc0f97d7aa924b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\tracking_dashboard\\widgets\\timeline_panel.dart": {
+    "mtime": 1780313839.5859733,
+    "ast_hash": "dfef559fce732cf95db80f6a52394793",
+    "semantic_hash": "dfef559fce732cf95db80f6a52394793"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\data\\user_model.dart": {
+    "mtime": 1772520484.477202,
+    "ast_hash": "fe1a140e3f36f04625f7f45b6d5edc02",
+    "semantic_hash": "fe1a140e3f36f04625f7f45b6d5edc02"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\data\\users_repository.dart": {
+    "mtime": 1765726949.0172946,
+    "ast_hash": "d6bf6c9915b045d787098f5fc5514907",
+    "semantic_hash": "d6bf6c9915b045d787098f5fc5514907"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\domain\\users_service.dart": {
+    "mtime": 1765726410.9112258,
+    "ast_hash": "e93d50586e94617d4fe6161b235f3229",
+    "semantic_hash": "e93d50586e94617d4fe6161b235f3229"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\providers\\users_providers.dart": {
+    "mtime": 1772520977.2434084,
+    "ast_hash": "7be575cfb0c50c26cf91cbb917a3fc6a",
+    "semantic_hash": "7be575cfb0c50c26cf91cbb917a3fc6a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\screens\\Users.dart": {
+    "mtime": 1767868613.3722293,
+    "ast_hash": "e849200849b6b6918f92b5b684314a17",
+    "semantic_hash": "e849200849b6b6918f92b5b684314a17"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\screens\\addEditUser.dart": {
+    "mtime": 1767776813.7493706,
+    "ast_hash": "6a3b8788b1098238e8d43171e77dcc96",
+    "semantic_hash": "6a3b8788b1098238e8d43171e77dcc96"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\allocated_areas_table.dart": {
+    "mtime": 1769488179.803191,
+    "ast_hash": "112c598dd97442fc8f749558e0af093c",
+    "semantic_hash": "112c598dd97442fc8f749558e0af093c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\delete_user_dialog.dart": {
+    "mtime": 1769488179.8021872,
+    "ast_hash": "82ba9b4d60c1138635c3352c28046f2d",
+    "semantic_hash": "82ba9b4d60c1138635c3352c28046f2d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\user_actions.dart": {
+    "mtime": 1770802186.9668944,
+    "ast_hash": "40df3b675f7c1f9830856be29d4cb0c5",
+    "semantic_hash": "40df3b675f7c1f9830856be29d4cb0c5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\user_mobile_card.dart": {
+    "mtime": 1779782632.886392,
+    "ast_hash": "f74d7eb9a25357c5c67293516ad6e320",
+    "semantic_hash": "f74d7eb9a25357c5c67293516ad6e320"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\users_desktop_table.dart": {
+    "mtime": 1769488179.8021872,
+    "ast_hash": "d81b58eec07b633a703ddea2fdca053c",
+    "semantic_hash": "d81b58eec07b633a703ddea2fdca053c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\users_header.dart": {
+    "mtime": 1769488179.78046,
+    "ast_hash": "2dd7a7f5440c40bfd6dc3f86bd6984b3",
+    "semantic_hash": "2dd7a7f5440c40bfd6dc3f86bd6984b3"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\users_mobile_list.dart": {
+    "mtime": 1779782641.9860468,
+    "ast_hash": "539be30fe0c88d90731652a6cc25ec0b",
+    "semantic_hash": "539be30fe0c88d90731652a6cc25ec0b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\users_pagination.dart": {
+    "mtime": 1767780910.1531,
+    "ast_hash": "c6078a8d391d33421b6e6d2bccb89b04",
+    "semantic_hash": "c6078a8d391d33421b6e6d2bccb89b04"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\users_table_row.dart": {
+    "mtime": 1769488179.7672687,
+    "ast_hash": "d8547cb80698ff2083ef29d0aacb4f69",
+    "semantic_hash": "d8547cb80698ff2083ef29d0aacb4f69"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\features\\users\\widgets\\users_widgets.dart": {
+    "mtime": 1769488179.7626438,
+    "ast_hash": "dd9b0fabdf31a325916505ec4d6975f8",
+    "semantic_hash": "dd9b0fabdf31a325916505ec4d6975f8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\main.dart": {
+    "mtime": 1780645446.8300767,
+    "ast_hash": "cbace35f2457e6e5017aa23e08239c83",
+    "semantic_hash": "cbace35f2457e6e5017aa23e08239c83"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\models\\new_work_order.dart": {
+    "mtime": 1771326186.4557314,
+    "ast_hash": "504ee5d73410712b34637f05b0a57c63",
+    "semantic_hash": "504ee5d73410712b34637f05b0a57c63"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\models\\schema.dart": {
+    "mtime": 1770369415.7512033,
+    "ast_hash": "26cce32358f0e4d16242bbcb94f756e7",
+    "semantic_hash": "26cce32358f0e4d16242bbcb94f756e7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\models\\technician_process_doc.dart": {
+    "mtime": 1779783089.1019404,
+    "ast_hash": "b3e53e5106669a84eee77f9618a9deee",
+    "semantic_hash": "b3e53e5106669a84eee77f9618a9deee"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\models\\temp_upload.dart": {
+    "mtime": 1767597938.7938087,
+    "ast_hash": "41a17cb6c671c2a01d15c0191c575d64",
+    "semantic_hash": "41a17cb6c671c2a01d15c0191c575d64"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\models\\work_order.dart": {
+    "mtime": 1776843658.1548326,
+    "ast_hash": "b853624faee8403b0a3181963c28d1af",
+    "semantic_hash": "b853624faee8403b0a3181963c28d1af"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\powersync\\backend_connector.dart": {
+    "mtime": 1780645432.1775057,
+    "ast_hash": "bdeb1525620812298302cc19a1c8428c",
+    "semantic_hash": "bdeb1525620812298302cc19a1c8428c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\powersync\\powersync_service.dart": {
+    "mtime": 1780638891.244529,
+    "ast_hash": "903ee8d6dad09df6d133e79cab0488bf",
+    "semantic_hash": "903ee8d6dad09df6d133e79cab0488bf"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\app_state.dart": {
+    "mtime": 1770197340.193518,
+    "ast_hash": "2edc171bc41db81baaedd1941eb61bce",
+    "semantic_hash": "2edc171bc41db81baaedd1941eb61bce"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\com_center_provider.dart": {
+    "mtime": 1769502055.5150473,
+    "ast_hash": "bdd872d160e63583c805eeed97848920",
+    "semantic_hash": "bdd872d160e63583c805eeed97848920"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\couch_db_provider.dart": {
+    "mtime": 1766478895.4067628,
+    "ast_hash": "4cdf852d5032f96db23fde16097714c4",
+    "semantic_hash": "4cdf852d5032f96db23fde16097714c4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\db_handler_provider.dart": {
+    "mtime": 1764748467.6864204,
+    "ast_hash": "d0d1bb7b67064b9956140ca0d230d158",
+    "semantic_hash": "d0d1bb7b67064b9956140ca0d230d158"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\manager_price_list_provider.dart": {
+    "mtime": 1772519158.864728,
+    "ast_hash": "b7dccdb5a5bd311caf6e28cc86fefcae",
+    "semantic_hash": "b7dccdb5a5bd311caf6e28cc86fefcae"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\notificationCenter_provider.dart": {
+    "mtime": 1769502055.5150473,
+    "ast_hash": "cef2021878e012ed6502785556316d4f",
+    "semantic_hash": "cef2021878e012ed6502785556316d4f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\notification_provider.dart": {
+    "mtime": 1772519158.8667781,
+    "ast_hash": "1209d53029dc2e1bea2795dc623f5655",
+    "semantic_hash": "1209d53029dc2e1bea2795dc623f5655"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\pincode_provider.dart": {
+    "mtime": 1767780354.5667307,
+    "ast_hash": "b6b80a85fa9efdbee0cad28c42565691",
+    "semantic_hash": "b6b80a85fa9efdbee0cad28c42565691"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\postgres_provider.dart": {
+    "mtime": 1764748583.2000742,
+    "ast_hash": "4f38bb1bfd0e2469b363a5fcad485608",
+    "semantic_hash": "4f38bb1bfd0e2469b363a5fcad485608"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\price_list_provider.dart": {
+    "mtime": 1764748366.038553,
+    "ast_hash": "cea41a4f882adea7fe1740794c742b79",
+    "semantic_hash": "cea41a4f882adea7fe1740794c742b79"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\role_menu_provider.dart": {
+    "mtime": 1758018021.787857,
+    "ast_hash": "8d527d2d008d0d02496232adbbba7aac",
+    "semantic_hash": "8d527d2d008d0d02496232adbbba7aac"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\storage_provider.dart": {
+    "mtime": 1769502055.5150473,
+    "ast_hash": "db9f6ed317b67478f70596308ee364b4",
+    "semantic_hash": "db9f6ed317b67478f70596308ee364b4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\tech_engagement_provider.dart": {
+    "mtime": 1769502055.5150473,
+    "ast_hash": "1950f42c2f8accaf72890320f16f7423",
+    "semantic_hash": "1950f42c2f8accaf72890320f16f7423"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\providers\\work_order_provider.dart": {
+    "mtime": 1771925494.947098,
+    "ast_hash": "a786c153bfe6cdeb906059758a6fe771",
+    "semantic_hash": "a786c153bfe6cdeb906059758a6fe771"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\repositories\\auth_repository.dart": {
+    "mtime": 1760410189.9975028,
+    "ast_hash": "111af5217a47116d23ef56695951e379",
+    "semantic_hash": "111af5217a47116d23ef56695951e379"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\repositories\\storage_repository.dart": {
+    "mtime": 1769502272.8811069,
+    "ast_hash": "758bb6562e7cdece404826e34b31412f",
+    "semantic_hash": "758bb6562e7cdece404826e34b31412f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\repositories\\temp_upload_repository.dart": {
+    "mtime": 1772527591.8109083,
+    "ast_hash": "6fb2726334e98dc16e46f6883c5148e4",
+    "semantic_hash": "6fb2726334e98dc16e46f6883c5148e4"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\repositories\\work_order_repository.dart": {
+    "mtime": 1771925495.8617976,
+    "ast_hash": "411c59e645eda331629da4ed1b792f87",
+    "semantic_hash": "411c59e645eda331629da4ed1b792f87"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\routes\\app_router.dart": {
+    "mtime": 1775541252.5309877,
+    "ast_hash": "55c03223e453f9885a981bc50853730e",
+    "semantic_hash": "55c03223e453f9885a981bc50853730e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\app_update_service.dart": {
+    "mtime": 1780478142.6413465,
+    "ast_hash": "b711e4eec7b8983e372924b7a5e1aa18",
+    "semantic_hash": "b711e4eec7b8983e372924b7a5e1aa18"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\cocuchDb_service.dart": {
+    "mtime": 1764748576.1394424,
+    "ast_hash": "bf0f678b5bd22a3f1235cde2b9dbb940",
+    "semantic_hash": "bf0f678b5bd22a3f1235cde2b9dbb940"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\com_center_service.dart": {
+    "mtime": 1769502723.5234475,
+    "ast_hash": "bd00db679ace01c25aea67c3050a42e7",
+    "semantic_hash": "bd00db679ace01c25aea67c3050a42e7"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\cronJob_service.dart": {
+    "mtime": 1764748666.2619228,
+    "ast_hash": "c304b4438675fe064646d980c60c6af5",
+    "semantic_hash": "c304b4438675fe064646d980c60c6af5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\dashboard_service.dart": {
+    "mtime": 1769502477.56004,
+    "ast_hash": "b5d76b08723d4e0bec9c744329dffa24",
+    "semantic_hash": "b5d76b08723d4e0bec9c744329dffa24"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\dbHandler_service.dart": {
+    "mtime": 1775287996.5693164,
+    "ast_hash": "0ddade62b2f908ddd00dc6a83f374363",
+    "semantic_hash": "0ddade62b2f908ddd00dc6a83f374363"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\notification_center_service.dart": {
+    "mtime": 1770199657.3624341,
+    "ast_hash": "054a51e2af7f8b4f3a9ce56eb93c5c48",
+    "semantic_hash": "054a51e2af7f8b4f3a9ce56eb93c5c48"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\notification_service.dart": {
+    "mtime": 1770280349.5996845,
+    "ast_hash": "9b43626ec34b3f6d11a2cd0d68c11f52",
+    "semantic_hash": "9b43626ec34b3f6d11a2cd0d68c11f52"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\pincode_service.dart": {
+    "mtime": 1767780354.5667307,
+    "ast_hash": "cdb303e4ed4a8d8c34fc433ce8d5bc63",
+    "semantic_hash": "cdb303e4ed4a8d8c34fc433ce8d5bc63"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\postgresService.dart": {
+    "mtime": 1771090957.982727,
+    "ast_hash": "90e4c62184ba61b01a5013ef39cb3bfc",
+    "semantic_hash": "90e4c62184ba61b01a5013ef39cb3bfc"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\s3_file_service.dart": {
+    "mtime": 1770796148.7676716,
+    "ast_hash": "0fd26c6294019e9deff2985629db7259",
+    "semantic_hash": "0fd26c6294019e9deff2985629db7259"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\storage_service.dart": {
+    "mtime": 1769502547.5346084,
+    "ast_hash": "9b5d8244edb29d51a22f110188f8edf6",
+    "semantic_hash": "9b5d8244edb29d51a22f110188f8edf6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\services\\workOrder_service.dart": {
+    "mtime": 1769145906.815856,
+    "ast_hash": "f2e50ea023b16e64109ade173fd49baa",
+    "semantic_hash": "f2e50ea023b16e64109ade173fd49baa"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\flutter\\generated_plugin_registrant.cc": {
+    "mtime": 1780639097.2096038,
+    "ast_hash": "c74f5e1a5f32575a4b26f639876ee827",
+    "semantic_hash": "c74f5e1a5f32575a4b26f639876ee827"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\flutter\\generated_plugin_registrant.h": {
+    "mtime": 1753332011.8949564,
+    "ast_hash": "d295462c9da9f7fef22dc86c34492318",
+    "semantic_hash": "d295462c9da9f7fef22dc86c34492318"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\runner\\main.cc": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "539395bcd63dba20afed0838d136189f",
+    "semantic_hash": "539395bcd63dba20afed0838d136189f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\runner\\my_application.cc": {
+    "mtime": 1753332010.512811,
+    "ast_hash": "c6a796f91b25f66fac088d4f45fae572",
+    "semantic_hash": "c6a796f91b25f66fac088d4f45fae572"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\runner\\my_application.h": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "f6b37d58752c8671078b6f660e33e8c1",
+    "semantic_hash": "f6b37d58752c8671078b6f660e33e8c1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Flutter\\GeneratedPluginRegistrant.swift": {
+    "mtime": 1780639097.2261577,
+    "ast_hash": "2145e0a0a4b941cd218a27e6a5784f74",
+    "semantic_hash": "2145e0a0a4b941cd218a27e6a5784f74"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Flutter\\ephemeral\\flutter_export_environment.sh": {
+    "mtime": 1780639096.6759064,
+    "ast_hash": "7f0e24d8e4ea0c1d8a9f20a7e19235ad",
+    "semantic_hash": "7f0e24d8e4ea0c1d8a9f20a7e19235ad"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\RunnerTests\\RunnerTests.swift": {
+    "mtime": 1753332010.617879,
+    "ast_hash": "8059f5d27a19c556eeafb49b3f9b7bdd",
+    "semantic_hash": "8059f5d27a19c556eeafb49b3f9b7bdd"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\AppDelegate.swift": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "4b52e0b89ebfef9baf45b04548c463d6",
+    "semantic_hash": "4b52e0b89ebfef9baf45b04548c463d6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Contents.json": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "1d48e925145d4b573a3b5d7960a1c585",
+    "semantic_hash": "1d48e925145d4b573a3b5d7960a1c585"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\MainFlutterWindow.swift": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "93c22dae2d93f3dc1402e121901f582b",
+    "semantic_hash": "93c22dae2d93f3dc1402e121901f582b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\scripts\\migrations\\add_sync_window_column.sql": {
+    "mtime": 1770269548.1867783,
+    "ast_hash": "b31855085d28ea537f719b0ea118533b",
+    "semantic_hash": "b31855085d28ea537f719b0ea118533b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\scripts\\setup_postgrest_roles.sql": {
+    "mtime": 1770229846.2699277,
+    "ast_hash": "dbd6bf11ba87001ba2b73eb4c856b706",
+    "semantic_hash": "dbd6bf11ba87001ba2b73eb4c856b706"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\test\\widget_test.dart": {
+    "mtime": 1764586364.2589183,
+    "ast_hash": "0ca95425a8c1882d2bb0fa74dfec2f4e",
+    "semantic_hash": "0ca95425a8c1882d2bb0fa74dfec2f4e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\manifest.json": {
+    "mtime": 1753332010.6420057,
+    "ast_hash": "fdbac9464c99708a61984a14df10b14e",
+    "semantic_hash": "fdbac9464c99708a61984a14df10b14e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\flutter\\generated_plugin_registrant.cc": {
+    "mtime": 1759206912.002306,
+    "ast_hash": "2babb9c9335a66f5f7b42bbe96eeead8",
+    "semantic_hash": "2babb9c9335a66f5f7b42bbe96eeead8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\flutter\\generated_plugin_registrant.h": {
+    "mtime": 1753332011.9105816,
+    "ast_hash": "0ea33875f9f8e118f9c2ded03e2e2835",
+    "semantic_hash": "0ea33875f9f8e118f9c2ded03e2e2835"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\flutter_window.cpp": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "2f463f9b7da67a2d692a012f9ea85e0c",
+    "semantic_hash": "2f463f9b7da67a2d692a012f9ea85e0c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\flutter_window.h": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "7defcc89d4a26d56e801241d624d48fb",
+    "semantic_hash": "7defcc89d4a26d56e801241d624d48fb"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\main.cpp": {
+    "mtime": 1753332010.6735027,
+    "ast_hash": "21c5c05ca9614f45140a883f30528afe",
+    "semantic_hash": "21c5c05ca9614f45140a883f30528afe"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\resource.h": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "1ade5dd15e613479a15e8832ed276f2b",
+    "semantic_hash": "1ade5dd15e613479a15e8832ed276f2b"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\utils.cpp": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "432461b09d862a2f8dadf380ff0e34e5",
+    "semantic_hash": "432461b09d862a2f8dadf380ff0e34e5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\utils.h": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "fd81e143f5614eb6fd75efe539002853",
+    "semantic_hash": "fd81e143f5614eb6fd75efe539002853"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\win32_window.cpp": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "571eb8234dbc2661be03aa5f2a4d2fca",
+    "semantic_hash": "571eb8234dbc2661be03aa5f2a4d2fca"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\win32_window.h": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "7569387d58711ab975940f4df3b4bcda",
+    "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\analysis_options.yaml": {
+    "mtime": 1753332010.2606184,
+    "ast_hash": "9e65f4b9beebb674c0dc252f70a5c177",
+    "semantic_hash": "9e65f4b9beebb674c0dc252f70a5c177"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\build_output.txt": {
+    "mtime": 1772691038.9012144,
+    "ast_hash": "6d40147641057b2b8856ab17189d108f",
+    "semantic_hash": "6d40147641057b2b8856ab17189d108f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\config\\powersync.yaml": {
+    "mtime": 1770899368.2945366,
+    "ast_hash": "b1bd3a774c083409820db66148e79c6c",
+    "semantic_hash": "b1bd3a774c083409820db66148e79c6c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\devtools_options.yaml": {
+    "mtime": 1755508839.800688,
+    "ast_hash": "d1ff5187b1b67653e7357395895e8449",
+    "semantic_hash": "d1ff5187b1b67653e7357395895e8449"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\docker-compose.yml": {
+    "mtime": 1777796443.7986019,
+    "ast_hash": "3ef85afb179f7bd91889f2b2b8e27542",
+    "semantic_hash": "3ef85afb179f7bd91889f2b2b8e27542"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\README.md": {
+    "mtime": 1751617026.5249054,
+    "ast_hash": "f7ee1b402881509d197f34963e569927",
+    "semantic_hash": "f7ee1b402881509d197f34963e569927"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\lib\\components\\add_work_order_old.dart.txt": {
+    "mtime": 1769599160.5738492,
+    "ast_hash": "b58c4525db008d5752504cd4cc54f2a8",
+    "semantic_hash": "b58c4525db008d5752504cd4cc54f2a8"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\CMakeLists.txt": {
+    "mtime": 1753332010.4966912,
+    "ast_hash": "c78910c0a776bb68ace94560b50e4394",
+    "semantic_hash": "c78910c0a776bb68ace94560b50e4394"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\flutter\\CMakeLists.txt": {
+    "mtime": 1751617026.5405436,
+    "ast_hash": "2195470ce31675d31db5a37590d011f6",
+    "semantic_hash": "2195470ce31675d31db5a37590d011f6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\linux\\runner\\CMakeLists.txt": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "30cc1614b16214b66c014af09ba699eb",
+    "semantic_hash": "30cc1614b16214b66c014af09ba699eb"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\project_context\\system.md": {
+    "mtime": 1774595430.206409,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\pubspec.yaml": {
+    "mtime": 1780638568.078948,
+    "ast_hash": "89d8c84f2e8f8c2fae8f00af0d57f773",
+    "semantic_hash": "89d8c84f2e8f8c2fae8f00af0d57f773"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\index.html": {
+    "mtime": 1770991495.902076,
+    "ast_hash": "bb07b26bfa95f5f15c11d45882703987",
+    "semantic_hash": "bb07b26bfa95f5f15c11d45882703987"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\CMakeLists.txt": {
+    "mtime": 1753332010.6576407,
+    "ast_hash": "af4ad225a2a37cf35d80148fc93d867f",
+    "semantic_hash": "af4ad225a2a37cf35d80148fc93d867f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\flutter\\CMakeLists.txt": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "bbf66fed5180bd9ae8198b8d7c4a0001",
+    "semantic_hash": "bbf66fed5180bd9ae8198b8d7c4a0001"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\windows\\runner\\CMakeLists.txt": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "028602ab9754bffe716659ada7590d29",
+    "semantic_hash": "028602ab9754bffe716659ada7590d29"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\drawable-hdpi\\ic_launcher_foreground.png": {
+    "mtime": 1779787163.5700395,
+    "ast_hash": "1337ea3ba6640747cc265ceece52c192",
+    "semantic_hash": "1337ea3ba6640747cc265ceece52c192"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\drawable-mdpi\\ic_launcher_foreground.png": {
+    "mtime": 1779787163.5690963,
+    "ast_hash": "b51d1f641b44a437834fad01697adf0c",
+    "semantic_hash": "b51d1f641b44a437834fad01697adf0c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\drawable-xhdpi\\ic_launcher_foreground.png": {
+    "mtime": 1779787163.5700395,
+    "ast_hash": "c8b3abf738bf770081a0b07754b1c92a",
+    "semantic_hash": "c8b3abf738bf770081a0b07754b1c92a"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\drawable-xxhdpi\\ic_launcher_foreground.png": {
+    "mtime": 1779787163.5700395,
+    "ast_hash": "0e0407307069fb426b294dcd0523b618",
+    "semantic_hash": "0e0407307069fb426b294dcd0523b618"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\drawable-xxxhdpi\\ic_launcher_foreground.png": {
+    "mtime": 1779787163.5710385,
+    "ast_hash": "0e2491179cebcf531d1e7f28d0cf8235",
+    "semantic_hash": "0e2491179cebcf531d1e7f28d0cf8235"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\mipmap-hdpi\\ic_launcher.png": {
+    "mtime": 1779787163.4369853,
+    "ast_hash": "2f96e9618a483ef72d10926fcd98ec89",
+    "semantic_hash": "2f96e9618a483ef72d10926fcd98ec89"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\mipmap-mdpi\\ic_launcher.png": {
+    "mtime": 1779787163.4369853,
+    "ast_hash": "f886ea0eec2086d5a5681c292ba8e890",
+    "semantic_hash": "f886ea0eec2086d5a5681c292ba8e890"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\mipmap-xhdpi\\ic_launcher.png": {
+    "mtime": 1779787163.4369853,
+    "ast_hash": "9ddebb4be2cb36bf41645ef6c7511e01",
+    "semantic_hash": "9ddebb4be2cb36bf41645ef6c7511e01"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\mipmap-xxhdpi\\ic_launcher.png": {
+    "mtime": 1779787163.4389842,
+    "ast_hash": "fae627b1de1c3abcc20c2fd7552be34f",
+    "semantic_hash": "fae627b1de1c3abcc20c2fd7552be34f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\android\\app\\src\\main\\res\\mipmap-xxxhdpi\\ic_launcher.png": {
+    "mtime": 1779787163.4379876,
+    "ast_hash": "092d3a5a8347a0fab9aae3df8f44f62d",
+    "semantic_hash": "092d3a5a8347a0fab9aae3df8f44f62d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\assets\\icon\\app_icon.webp": {
+    "mtime": 1779786997.3271718,
+    "ast_hash": "13a77e5b76ac05fbb22092f91b4a0e54",
+    "semantic_hash": "13a77e5b76ac05fbb22092f91b4a0e54"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\assets\\images\\login_bgg.webp": {
+    "mtime": 1772015759.6752577,
+    "ast_hash": "ead8ac89e60edce052e0c5fc75e478aa",
+    "semantic_hash": "ead8ac89e60edce052e0c5fc75e478aa"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-1024x1024@1x.png": {
+    "mtime": 1750141817.9791238,
+    "ast_hash": "c785f8932297af4acd5f5ccb7630f01c",
+    "semantic_hash": "c785f8932297af4acd5f5ccb7630f01c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-20x20@1x.png": {
+    "mtime": 1750141817.980126,
+    "ast_hash": "a2f8558fb1d42514111fbbb19fb67314",
+    "semantic_hash": "a2f8558fb1d42514111fbbb19fb67314"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-20x20@2x.png": {
+    "mtime": 1750141817.9756105,
+    "ast_hash": "2247a840b6ee72b8a069208af170e5b1",
+    "semantic_hash": "2247a840b6ee72b8a069208af170e5b1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-20x20@3x.png": {
+    "mtime": 1750141817.9821212,
+    "ast_hash": "1b3b1538136316263c7092951e923e9d",
+    "semantic_hash": "1b3b1538136316263c7092951e923e9d"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-29x29@1x.png": {
+    "mtime": 1750141817.9881563,
+    "ast_hash": "be8887071dd7ec39cb754d236aa9584f",
+    "semantic_hash": "be8887071dd7ec39cb754d236aa9584f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-29x29@2x.png": {
+    "mtime": 1750141817.9713817,
+    "ast_hash": "043119ef4faa026ff82bd03f241e5338",
+    "semantic_hash": "043119ef4faa026ff82bd03f241e5338"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-29x29@3x.png": {
+    "mtime": 1750141817.981123,
+    "ast_hash": "2b1452c4c1bda6177b4fbbb832df217f",
+    "semantic_hash": "2b1452c4c1bda6177b4fbbb832df217f"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-40x40@1x.png": {
+    "mtime": 1750141817.9723818,
+    "ast_hash": "2247a840b6ee72b8a069208af170e5b1",
+    "semantic_hash": "2247a840b6ee72b8a069208af170e5b1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-40x40@2x.png": {
+    "mtime": 1750141817.9856336,
+    "ast_hash": "8245359312aea1b0d2412f79a07b0ca5",
+    "semantic_hash": "8245359312aea1b0d2412f79a07b0ca5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-40x40@3x.png": {
+    "mtime": 1750141817.9736025,
+    "ast_hash": "5b3c0902200ce596e9848f22e1f0fe0e",
+    "semantic_hash": "5b3c0902200ce596e9848f22e1f0fe0e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-60x60@2x.png": {
+    "mtime": 1750141817.9771254,
+    "ast_hash": "5b3c0902200ce596e9848f22e1f0fe0e",
+    "semantic_hash": "5b3c0902200ce596e9848f22e1f0fe0e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-60x60@3x.png": {
+    "mtime": 1750141817.9703414,
+    "ast_hash": "e419d22a37bc40ba185aca1acb6d4ac6",
+    "semantic_hash": "e419d22a37bc40ba185aca1acb6d4ac6"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-76x76@1x.png": {
+    "mtime": 1750141817.97461,
+    "ast_hash": "36c0d7a7132bdde18898ffdfcfcdc4d2",
+    "semantic_hash": "36c0d7a7132bdde18898ffdfcfcdc4d2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-76x76@2x.png": {
+    "mtime": 1750141817.9901576,
+    "ast_hash": "643842917530acf4c5159ae851b0baf2",
+    "semantic_hash": "643842917530acf4c5159ae851b0baf2"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\AppIcon.appiconset\\Icon-App-83.5x83.5@2x.png": {
+    "mtime": 1750141817.9841268,
+    "ast_hash": "665cb5e3c5729da6d639d26eff47a503",
+    "semantic_hash": "665cb5e3c5729da6d639d26eff47a503"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\LaunchImage.png": {
+    "mtime": 1750141817.9703414,
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\LaunchImage@2x.png": {
+    "mtime": 1750141817.968343,
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\ios\\Runner\\Assets.xcassets\\LaunchImage.imageset\\LaunchImage@3x.png": {
+    "mtime": 1750141817.9658756,
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_1024.png": {
+    "mtime": 1750141817.9618745,
+    "ast_hash": "c9becc9105f8cabce934d20c7bfb6aac",
+    "semantic_hash": "c9becc9105f8cabce934d20c7bfb6aac"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_128.png": {
+    "mtime": 1750141817.956885,
+    "ast_hash": "3ded30823804caaa5ccc944067c54a36",
+    "semantic_hash": "3ded30823804caaa5ccc944067c54a36"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_16.png": {
+    "mtime": 1750141817.9588742,
+    "ast_hash": "8bf511604bc6ed0a6aeb380c5113fdcf",
+    "semantic_hash": "8bf511604bc6ed0a6aeb380c5113fdcf"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_256.png": {
+    "mtime": 1750141817.962874,
+    "ast_hash": "dfe2c93d1536ae02f085cc63faa3430e",
+    "semantic_hash": "dfe2c93d1536ae02f085cc63faa3430e"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_32.png": {
+    "mtime": 1750141817.9598746,
+    "ast_hash": "8e0ae58e362a6636bdfccbc04da2c58c",
+    "semantic_hash": "8e0ae58e362a6636bdfccbc04da2c58c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_512.png": {
+    "mtime": 1750141817.9588742,
+    "ast_hash": "0ad44039155424738917502c69667699",
+    "semantic_hash": "0ad44039155424738917502c69667699"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\macos\\Runner\\Assets.xcassets\\AppIcon.appiconset\\app_icon_64.png": {
+    "mtime": 1750141817.955794,
+    "ast_hash": "04e7b6ef05346c70b663ca1d97de3ad5",
+    "semantic_hash": "04e7b6ef05346c70b663ca1d97de3ad5"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\favicon.png": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "5dcef449791fa27946b3d35ad8803796",
+    "semantic_hash": "5dcef449791fa27946b3d35ad8803796"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\icons\\Icon-192.png": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "ac9a721a12bbc803b44f645561ecb1e1",
+    "semantic_hash": "ac9a721a12bbc803b44f645561ecb1e1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\icons\\Icon-512.png": {
+    "mtime": 1751617026.541055,
+    "ast_hash": "96e752610906ba2a93c65f8abe1645f1",
+    "semantic_hash": "96e752610906ba2a93c65f8abe1645f1"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\icons\\Icon-maskable-192.png": {
+    "mtime": 1750141818.0568922,
+    "ast_hash": "c457ef57daa1d16f64b27b786ec2ea3c",
+    "semantic_hash": "c457ef57daa1d16f64b27b786ec2ea3c"
+  },
+  "C:\\Users\\anderson\\OneDrive\\Documents\\anderson_crm\\anderson_crm_flutter\\web\\icons\\Icon-maskable-512.png": {
+    "mtime": 1750141818.0543811,
+    "ast_hash": "301a7604d45b3e739efc881eb04896ea",
+    "semantic_hash": "301a7604d45b3e739efc881eb04896ea"
+  }
+}

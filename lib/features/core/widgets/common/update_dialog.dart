@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/app_update_service.dart';
 
-/// Shows a blocking update dialog on the login screen.
-/// If [isForced], the dialog cannot be dismissed — user MUST update.
 Future<void> showUpdateDialog(BuildContext context, UpdateInfo info) async {
   await showDialog(
     context: context,

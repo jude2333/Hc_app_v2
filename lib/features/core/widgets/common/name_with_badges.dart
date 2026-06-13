@@ -5,8 +5,6 @@ import 'copyable_text.dart';
 /// Layout options for NameWithBadges widget.
 enum BadgeLayout { row, column }
 
-/// Displays patient name with badge flags (Urgent, VIP, Credit, Trial, B2B).
-/// Used by both Manager and Technician work order pages.
 class NameWithBadges extends StatelessWidget {
   final WorkOrder workOrder;
   final BadgeLayout layout;

@@ -63,12 +63,7 @@ class PowerSyncService {
         onRefreshToken: onRefreshToken,
       );
       // await db.connect(connector: _connector);
-      await db.connect(
-        connector: _connector,
-        options: const SyncOptions(
-          syncImplementation: SyncClientImplementation.rust,
-        ),
-      );
+      await db.connect(connector: _connector);
 
       // Monitor sync status and auto-reconnect on stalls
       _setupSyncRecovery();
@@ -188,12 +183,7 @@ class PowerSyncService {
       debugPrint('[PowerSync] Reconnecting...');
       await db.disconnect();
       await Future.delayed(const Duration(milliseconds: 500));
-      await db.connect(
-        connector: _connector,
-        options: const SyncOptions(
-          syncImplementation: SyncClientImplementation.rust,
-        ),
-      );
+      await db.connect(connector: _connector);
       debugPrint('[PowerSync] Reconnected successfully ');
     } catch (e) {
       debugPrint('[PowerSync] Reconnect failed: $e');

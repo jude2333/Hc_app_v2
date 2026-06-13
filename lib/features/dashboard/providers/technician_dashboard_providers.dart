@@ -6,9 +6,7 @@ import 'package:anderson_crm_flutter/features/session/storage_provider.dart';
 import '../models/technician_metrics.dart';
 import '../repositories/technician_analytics_repository.dart';
 
-// ---------------------------------------------------------------------------
 // State
-// ---------------------------------------------------------------------------
 
 @immutable
 sealed class TechDashboardState {
@@ -50,10 +48,7 @@ extension TechDashboardStateX on TechDashboardState {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Daily Notifier
-// ---------------------------------------------------------------------------
-
 class TechDailyNotifier extends StateNotifier<TechDashboardState> {
   final TechnicianAnalyticsRepository _repo;
   final String _techId;
@@ -111,10 +106,7 @@ class TechDailyNotifier extends StateNotifier<TechDashboardState> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Weekly Notifier
-// ---------------------------------------------------------------------------
-
 class TechWeeklyNotifier extends StateNotifier<TechDashboardState> {
   final TechnicianAnalyticsRepository _repo;
   final String _techId;
@@ -187,9 +179,7 @@ class TechWeeklyNotifier extends StateNotifier<TechDashboardState> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Providers
-// ---------------------------------------------------------------------------
 
 final techDailyProvider =
     StateNotifierProvider<TechDailyNotifier, TechDashboardState>((ref) {

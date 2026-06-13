@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Flex-based data cell for table rows (uses Expanded widget).
-/// Used in virtual table rows where fixed column widths are needed.
 class FlexDataCell extends StatelessWidget {
   final String text;
   final int flex;
@@ -36,8 +34,6 @@ class FlexDataCell extends StatelessWidget {
   }
 }
 
-/// Flex-based header cell for table headers (uses Expanded widget).
-/// Used in virtual table headers where fixed column widths are needed.
 class FlexHeaderCell extends StatelessWidget {
   final String text;
   final int flex;

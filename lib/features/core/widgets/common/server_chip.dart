@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-/// Server status chip for work order billing status display (filled style).
-/// Used by both Manager and Technician work order pages.
 class ServerChip extends StatelessWidget {
   final String status;
   final bool showBorder;

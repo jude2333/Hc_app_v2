@@ -6,17 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './routes/app_router.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
-// import 'database/db_handler.dart';
-// import 'util.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Disable browser's native right-click menu on web so Flutter's
   // popup menus (copy/call/sms) aren't blocked by Chrome's overlay.
-  // if (kIsWeb) {
-  //   BrowserContextMenu.disableContextMenu();
-  // }
+  if (kIsWeb) {
+    BrowserContextMenu.disableContextMenu();
+  }
   try {
     // Initialize Hive
     // await Hive.initFlutter();
@@ -50,4 +47,3 @@ class AndersonCRMApp extends ConsumerWidget {
     );
   }
 }
-
