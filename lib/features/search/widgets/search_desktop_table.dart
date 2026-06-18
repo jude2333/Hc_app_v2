@@ -4,7 +4,7 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import '../providers/search_provider.dart';
-import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
+import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 import 'package:anderson_crm_flutter/features/manager_work_order/widgets/manager_expanded_content.dart';
 
 class SearchDesktopTable extends ConsumerWidget {
@@ -55,32 +55,35 @@ class SearchDesktopTable extends ConsumerWidget {
       }
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: AppSizes.cardElevation,
-      color: AppColors.surface,
+      color: colorScheme.surface,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.xs,
-            ),
+            padding: AppPadding.customTable,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: isDark ? AppColors.darkSurfaceAlt : AppColors.primaryLight,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
               border: Border(
-                bottom: BorderSide(color: AppColors.tableBorder, width: 1),
+                bottom: BorderSide(
+                    color:
+                        isDark ? AppColors.darkBorder : AppColors.tableBorder,
+                    width: 1),
               ),
             ),
             child: Row(
               children: [
-                const _HeaderCell('No', flex: 1),
-                _SortableHeader(
+                const HeaderCell('No', flex: 1),
+                SortableHeader(
                   label: 'Name',
                   sortKey: 'name',
                   flex: 4,
@@ -88,10 +91,10 @@ class SearchDesktopTable extends ConsumerWidget {
                   isAscending: sortAsc,
                   onSort: handleSort,
                 ),
-                const _HeaderCell('Gender', flex: 2),
-                const _HeaderCell('Age', flex: 1),
-                const _HeaderCell('Mobile', flex: 3),
-                _SortableHeader(
+                const HeaderCell('Gender', flex: 2),
+                const HeaderCell('Age', flex: 1),
+                const HeaderCell('Mobile', flex: 3),
+                SortableHeader(
                   label: 'Date',
                   sortKey: 'date',
                   flex: 3,
@@ -99,8 +102,8 @@ class SearchDesktopTable extends ConsumerWidget {
                   isAscending: sortAsc,
                   onSort: handleSort,
                 ),
-                const _HeaderCell('Time', flex: 2),
-                _SortableHeader(
+                const HeaderCell('Time', flex: 2),
+                SortableHeader(
                   label: 'Status',
                   sortKey: 'status',
                   flex: 3,
@@ -108,26 +111,46 @@ class SearchDesktopTable extends ConsumerWidget {
                   isAscending: sortAsc,
                   onSort: handleSort,
                 ),
-                const _HeaderCell('Server Status', flex: 3),
-                const _HeaderCell('Assigned To', flex: 4),
-                const _HeaderCell('Actions', flex: 2),
+                const HeaderCell('Server Status', flex: 3),
+                const HeaderCell('Assigned To', flex: 4),
+                const HeaderCell('Actions', flex: 2),
                 const SizedBox(width: 40),
               ],
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              itemCount: sorted.length,
-              separatorBuilder: (ctx, i) =>
-                  Divider(height: 1, color: AppColors.divider),
-              itemBuilder: (context, index) {
-                final item = sorted[index];
-                return RepaintBoundary(
-                  key: ValueKey(item['_id'] ?? index),
-                  child: _SearchTableRow(item: item, index: index + 1),
-                );
-              },
-            ),
+            child: sorted.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.assignment_outlined,
+                            size: 40, color: AppColors.textHint),
+                        const SizedBox(height: 12),
+                        Text('No Results Found',
+                            style: TextStyle(
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                                fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: sorted.length,
+                    separatorBuilder: (ctx, i) => Divider(
+                      height: 1,
+                      color: isDark ? AppColors.darkBorder : AppColors.divider,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = sorted[index];
+                      return RepaintBoundary(
+                        key: ValueKey(item['_id'] ?? index),
+                        child:
+                            _SearchTableRow(item: item, index: index + 1),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -151,48 +174,53 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
-          hoverColor: AppColors.surfaceAlt,
+          hoverColor: isDark ? AppColors.darkSurfaceAlt : AppColors.surfaceAlt,
           child: Container(
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.tableBorder)),
+              border: Border(
+                  bottom: BorderSide(
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : AppColors.tableBorder)),
             ),
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
-                vertical: AppSpacing.xs,
+                vertical: 2,
               ),
               child: Row(
                 children: [
                   _buildCell('${widget.index}', flex: 1),
                   Expanded(
                     flex: 4,
-                    child: _NameWithBadges(item: item),
+                    child: NameWithBadges.raw(
+                      name: item['name']?.toString() ?? '',
+                      flags: NameWithBadges.extractFlagsFromMap(item),
+                      layout: BadgeLayout.row,
+                    ),
                   ),
                   _buildCell('${item['gender'] ?? ''}', flex: 2),
                   _buildCell('${item['age'] ?? ''}', flex: 1),
-                  _buildCell('${item['mobile'] ?? ''}', flex: 3, isPhoneNumber: true),
+                  _buildCell('${item['mobile'] ?? ''}', flex: 3,
+                      isPhoneNumber: true),
                   _buildCell('${item['appointment_date'] ?? ''}', flex: 3),
                   _buildCell('${item['appointment_time'] ?? ''}', flex: 2),
                   Expanded(
                     flex: 3,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _StatusChip(status: '${item['status'] ?? ''}'),
-                    ),
+                    child: StatusChip(
+                        status: item['status']?.toString() ?? ''),
                   ),
                   Expanded(
                     flex: 3,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child:
-                          _ServerChip(status: '${item['server_status'] ?? ''}'),
-                    ),
+                    child: ServerChip(
+                        status: item['server_status']?.toString() ?? ''),
                   ),
                   _buildCell('${item['assigned_to'] ?? ''}', flex: 4),
                   Expanded(
@@ -233,17 +261,14 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
     );
   }
 
-  Widget _buildCell(String text, {required int flex, bool isPhoneNumber = false}) {
+  Widget _buildCell(String text,
+      {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
       flex: flex,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.xs,
-        ),
+        padding: AppPadding.sm,
         child: CopyableText(text,
-            overflow: TextOverflow.ellipsis,
-            isPhoneNumber: isPhoneNumber),
+            overflow: TextOverflow.ellipsis, isPhoneNumber: isPhoneNumber),
       ),
     );
   }
@@ -266,180 +291,5 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
         ),
       );
     }
-  }
-}
-
-class _NameWithBadges extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const _NameWithBadges({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final badges = <String>[];
-    final urgentVal = item['urgent'];
-    if (urgentVal == true || urgentVal == 1) badges.add('Urgent');
-    final vipVal = item['vip_client'];
-    if (vipVal == true || vipVal == 1) badges.add('VIP');
-    if (item['credit'] == 1) badges.add('Credit');
-    if (item['credit'] == 2) badges.add('Trial');
-    final b2bId = int.tryParse(item['b2b_client_id']?.toString() ?? '0') ?? 0;
-    if (b2bId > 0) badges.add('B2B');
-    final cghsVal = item['cghs_client'];
-    if (cghsVal == true || cghsVal == 1) badges.add('CGHS');
-
-    return Row(
-      children: [
-        Flexible(
-          child: CopyableText(
-            '${item['name'] ?? ''}',
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        if (badges.isNotEmpty) ...[
-          SizedBox(width: AppSpacing.xs),
-          ...badges.map((b) {
-            final isCghs = b == 'CGHS';
-            final color = isCghs ? Colors.blue : AppColors.error;
-            return Container(
-              margin: EdgeInsets.only(right: 2),
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                border: Border.all(color: color, width: 1),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Text(b,
-                  style: AppTextStyles.nameBadges.copyWith(color: color)),
-            );
-          }),
-        ],
-      ],
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  Color _getColor() {
-    final s = status.toLowerCase();
-    if (s.startsWith('un')) return AppColors.error;
-    if (s == 'assigned') return AppColors.secondary;
-    if (s == 'cancelled') return AppColors.textHint;
-    if (s == 'finished') return AppColors.success;
-    return AppColors.primary;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: AppPadding.custom,
-      decoration: BoxDecoration(
-        border: Border.all(color: _getColor()),
-        borderRadius: AppRadius.smAll,
-      ),
-      child: Text(
-        status.isEmpty ? 'N/A' : status,
-        style: TextStyle(fontSize: 11, color: _getColor()),
-      ),
-    );
-  }
-}
-
-class _ServerChip extends StatelessWidget {
-  final String status;
-  const _ServerChip({required this.status});
-
-  Color _getColor() {
-    final s = status.toLowerCase();
-    if (s == 'billed') return AppColors.success;
-    if (s == 'unbilled' || s == 'received') return AppColors.error;
-    return AppColors.primary;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final displayStatus = status == 'Received' ? 'Unbilled' : status;
-    return Container(
-      padding: AppPadding.custom,
-      decoration: BoxDecoration(
-        color: _getColor().withOpacity(0.15),
-        borderRadius: AppRadius.smAll,
-      ),
-      child: Text(
-        displayStatus.isEmpty ? 'N/A' : displayStatus,
-        style: TextStyle(fontSize: 12, color: _getColor()),
-      ),
-    );
-  }
-}
-
-class _HeaderCell extends StatelessWidget {
-  final String text;
-  final int flex;
-  const _HeaderCell(this.text, {required this.flex});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 4),
-        child: Text(
-          text,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        ),
-      ),
-    );
-  }
-}
-
-class _SortableHeader extends StatelessWidget {
-  final String label;
-  final String sortKey;
-  final int flex;
-  final String currentSortColumn;
-  final bool isAscending;
-  final void Function(String) onSort;
-
-  const _SortableHeader({
-    required this.label,
-    required this.sortKey,
-    required this.flex,
-    required this.currentSortColumn,
-    required this.isAscending,
-    required this.onSort,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = currentSortColumn == sortKey;
-    return Expanded(
-      flex: flex,
-      child: InkWell(
-        onTap: () => onSort(sortKey),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: isActive ? AppColors.primary : AppColors.textPrimary,
-                ),
-              ),
-              if (isActive)
-                Icon(
-                  isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                  size: 14,
-                  color: AppColors.primary,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

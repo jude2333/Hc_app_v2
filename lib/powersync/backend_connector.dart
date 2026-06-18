@@ -621,7 +621,7 @@ class BackendConnector extends PowerSyncBackendConnector {
             headers: headers,
             body: jsonEncode(dataWithId),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         debugPrint('[BackendConnector] Temp upload synced: $id');
@@ -655,7 +655,7 @@ class BackendConnector extends PowerSyncBackendConnector {
           headers: headers,
           body: jsonEncode(data),
         )
-        .timeout(const Duration(seconds: 15));
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       debugPrint(
@@ -682,7 +682,7 @@ class BackendConnector extends PowerSyncBackendConnector {
           Uri.parse(url),
           headers: headers,
         )
-        .timeout(const Duration(seconds: 15));
+        .timeout(const Duration(seconds: 30));
 
     // 200/204 = success (row deleted or already gone — both are fine).
     // PostgREST returns 200 with empty body if the WHERE matched 0 rows,

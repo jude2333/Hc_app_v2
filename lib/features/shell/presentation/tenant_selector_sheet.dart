@@ -8,6 +8,8 @@ import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import 'package:anderson_crm_flutter/services/dbHandler_service.dart';
+import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
+import 'package:anderson_crm_flutter/services/storage_service.dart';
 import '../providers/shell_providers.dart';
 
 final _debounceTimerProvider = StateProvider<DateTime?>((ref) => null);
@@ -114,15 +116,37 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
         });
 
         if (result == 200) {
+          // PostgresDB writes to StorageRepository (SharedPreferences) directly,
+          // but StorageService has its own in-memory cache that is now stale.
+          await storage.reloadCaches();
+
           final newTenantName = storage.getFromSession('logged_in_tenant_name');
 
           _showSnackbar('Successfully switched to $newTenantName');
 
+          // Capture all provider references BEFORE pop() disposes the widget.
+          // After pop(), ref is dead — using it throws "ref after dispose".
+          final tracking = ref.read(trackingProvider.notifier);
+          final notifications = ref.read(liveNotificationProvider.notifier);
+          final dbHandler = ref.read(dbHandlerProvider);
+          final couchDb = ref.read(couchDbClientProvider);
+          final initNotifier = ref.read(initializingProvider.notifier);
+          final dbHandlerService = ref.read(dbHandlerServiceProvider);
+          final router = GoRouter.of(context);
+
           Navigator.of(context).pop();
 
-          // Reset app state for new tenant context
-          // (equivalent of Vue's location.reload())
-          _resetAppStateForTenantChange();
+          // Fire-and-forget: reset app state with captured references
+          _resetAppState(
+            storage: storage,
+            tracking: tracking,
+            notifications: notifications,
+            dbHandler: dbHandler,
+            couchDb: couchDb,
+            initNotifier: initNotifier,
+            dbHandlerService: dbHandlerService,
+            router: router,
+          );
         } else {
           _showSnackbar('Failed to change tenant: $result');
         }
@@ -139,43 +163,47 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
   }
 
   /// Resets all tenant-scoped app state after a successful tenant switch.
-  /// Mirrors the Vue legacy behavior of `location.reload()` which
-  /// re-initializes CouchDB sync, notifications, tracking, and UI.
-  void _resetAppStateForTenantChange() {
-    // Shutdown tracking (GPS + WebSocket)
+  /// All provider references are pre-captured so this method is safe to
+  /// call after the widget is disposed (no ref usage).
+  static Future<void> _resetAppState({
+    required StorageService storage,
+    required dynamic tracking,
+    required dynamic notifications,
+    required dynamic dbHandler,
+    required dynamic couchDb,
+    required StateController<bool> initNotifier,
+    required dynamic dbHandlerService,
+    required GoRouter router,
+  }) async {
+    // Synchronous teardown
+    try { tracking.shutdown(); } catch (_) {}
+    notifications.reset();
+    dbHandler.stopSync();
+    couchDb.clearCache();
+
+    // Reconnect PowerSync with new tenant credentials.
+    // This purges old tenant's work orders from local SQLite
+    // and re-syncs with the new tenant's data.
     try {
-      ref.read(trackingProvider.notifier).shutdown();
-    } catch (_) {}
-
-    // Cancel notification streams while auth is still valid
-    ref.read(liveNotificationProvider.notifier).reset();
-
-    // Stop CouchDB sync and clear cached Dio instances
-    // so they reconnect with the new tenant's doc_dbs
-    ref.read(dbHandlerProvider).stopSync();
-    ref.read(couchDbClientProvider).clearCache();
-
-    // Invalidate notification provider for fresh state
-    ref.invalidate(liveNotificationProvider);
+      await PowerSyncService.instance.reconnectForTenantChange(storage);
+    } catch (e) {
+      debugPrint('[TenantSelector] PowerSync reconnect failed: $e');
+    }
 
     // Re-initialize: sync new tenant DBs, restart notifications & tracking
-    // This mirrors what _initializeInBackground() does in MainShell
-    ref.read(initializingProvider.notifier).state = true;
-    ref.read(dbHandlerServiceProvider).init().then((_) {
-      ref.read(liveNotificationProvider.notifier).loadNotifications();
-      try {
-        ref.read(trackingProvider.notifier).initialize();
-      } catch (_) {}
-      ref.read(initializingProvider.notifier).state = false;
-    }).catchError((e) {
+    initNotifier.state = true;
+    try {
+      await dbHandlerService.init();
+      notifications.loadNotifications();
+      try { tracking.initialize(); } catch (_) {}
+    } catch (e) {
       debugPrint('[TenantSelector] Re-init after tenant change failed: $e');
-      ref.read(initializingProvider.notifier).state = false;
-    });
+    } finally {
+      initNotifier.state = false;
+    }
 
     // Navigate to dashboard for fresh data
-    if (mounted) {
-      context.go('/dashboard');
-    }
+    router.go('/dashboard');
   }
 
   void _showSnackbar(String message) {

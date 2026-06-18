@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+import 'package:anderson_crm_flutter/services/s3_file_cache.dart';
 
 import 'pdf_web_stub.dart' if (dart.library.html) 'pdf_web_impl.dart'
     as pdf_web;
@@ -80,6 +81,10 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
     super.dispose();
   }
 
+  /// Max auto-retries at the UI layer for transient failures.
+  static const _uiMaxRetries = 2;
+  static const _uiRetryDelay = Duration(seconds: 2);
+
   Future<void> _loadPdf() async {
     if (!mounted) return;
     setState(() {
@@ -91,14 +96,15 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       Uint8List? bytes = widget.preloadedBytes;
 
       if (bytes == null) {
-        final s3Service = ref.read(s3FileServiceProvider);
-        bytes = await s3Service.downloadFile(filePath: widget.s3Path);
+        bytes = await _downloadWithAutoRetry();
       }
 
       // Validate PDF content
       if (!S3FileService.isValidPdf(bytes)) {
         debugPrint(
             '[PdfViewer] Invalid PDF data: ${bytes.length} bytes, header: ${bytes.take(4).toList()}');
+        // Evict bad cache entry
+        ref.read(s3FileCacheProvider).invalidate(widget.s3Path);
         throw S3DownloadException(
           'The downloaded file is not a valid PDF.',
           isNotFound: true,
@@ -156,6 +162,33 @@ class _PdfViewerPageState extends ConsumerState<PdfViewerPage> {
       }
       debugPrint('[PdfViewer] Load error: $e');
     }
+  }
+
+  /// Auto-retry transient download failures before showing error UI.
+  Future<Uint8List> _downloadWithAutoRetry() async {
+    final cache = ref.read(s3FileCacheProvider);
+    Exception? lastError;
+
+    for (int attempt = 0; attempt <= _uiMaxRetries; attempt++) {
+      if (attempt > 0) {
+        debugPrint('[PdfViewer] UI retry $attempt/$_uiMaxRetries');
+        await Future.delayed(_uiRetryDelay);
+        if (!mounted) break;
+      }
+
+      try {
+        return await cache.getFile(widget.s3Path);
+      } on S3DownloadException catch (e) {
+        if (!e.isRetryable) rethrow;
+        lastError = e;
+        // Invalidate cache entry so next attempt re-downloads
+        cache.invalidate(widget.s3Path);
+      } catch (e) {
+        lastError = e is Exception ? e : Exception('$e');
+      }
+    }
+
+    throw lastError ?? S3DownloadException('Download failed after retries.');
   }
 
   /// Creates a blob URL containing an HTML page with PDF.js that renders

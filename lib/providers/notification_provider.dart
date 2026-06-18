@@ -120,9 +120,11 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     _isRealtimeSetup = true;
 
     final dbHandler = ref.read(dbHandlerProvider);
+    final notificationsDbName =
+        dbHandler.resolveName('hc_notifications') ?? 'hc_notifications';
+    debugPrint("Notification db name >>>:$notificationsDbName");
 
-    final stream =
-        dbHandler.startContinuousStream('chennai11_hc_notifications');
+    final stream = dbHandler.startContinuousStream(notificationsDbName);
 
     _subscription = stream.listen(
       (Map<String, dynamic> event) {

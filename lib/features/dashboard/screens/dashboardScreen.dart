@@ -52,6 +52,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     }
   }
 
+  /// Re-reads tenant/role from storage on each build so that
+  /// navigating here after a tenant switch picks up fresh values.
+  void _refreshUserData() {
+    final storage = ref.read(storageServiceProvider);
+    _roleName = storage.getFromSession("role_name");
+    _tenantId = storage.getFromSession("logged_in_tenant_id");
+  }
+
   /// Ensures the TabController length matches the current role.
   /// Self-heals on hot reload, navigation reuse, and login/logout flows.
   void _ensureTabController() {
@@ -80,6 +88,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     if (_isLoading) {
       return const _SkeletonDashboard();
     }
+
+    // Re-read tenant/role so post-tenant-switch navigation is fresh
+    _refreshUserData();
 
     // Ensure controller matches current role before rendering tabs
     _ensureTabController();
@@ -454,7 +465,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               child: Icon(
                 Icons.close_rounded,
                 size: 18,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
               ),
             ),
           ),
@@ -475,7 +488,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+        border:
+            Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
@@ -520,10 +534,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               width: double.infinity,
               padding: AppPadding.md,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkInfoBackground : AppColors.infoBackground,
+                color: isDark
+                    ? AppColors.darkInfoBackground
+                    : AppColors.infoBackground,
                 borderRadius: AppRadius.lgAll,
                 border: Border.all(
-                  color: isDark ? AppColors.darkInfoBorder : AppColors.infoBorder,
+                  color:
+                      isDark ? AppColors.darkInfoBorder : AppColors.infoBorder,
                 ),
               ),
               child: Text(
@@ -671,7 +688,8 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
       height: 120,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(bottom: BorderSide(
+        border: Border(
+            bottom: BorderSide(
           color: Theme.of(context).brightness == Brightness.dark
               ? AppColors.darkBorder
               : AppColors.border,
@@ -707,7 +725,8 @@ class _SkeletonDashboardState extends State<_SkeletonDashboard>
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(bottom: BorderSide(
+        border: Border(
+            bottom: BorderSide(
           color: isDark ? AppColors.darkBorder : AppColors.border,
           width: 0.2,
         )),

@@ -92,6 +92,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         _showOtpDialog(next.mobile);
       }
 
+      // Sync controller when remembered mobile loads asynchronously
+      if (previous != null &&
+          next.mobile != previous.mobile &&
+          next.mobile != _mobileController.text) {
+        _mobileController.text = next.mobile;
+        _mobileController.selection = TextSelection.fromPosition(
+          TextPosition(offset: next.mobile.length),
+        );
+      }
+
       if (next.selectedRoleId != null &&
           next.currentStep != LoginStep.selectRole &&
           !next.isLoading) {

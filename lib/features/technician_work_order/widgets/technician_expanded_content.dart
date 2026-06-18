@@ -9,6 +9,7 @@ import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.
 import '../../theme/theme.dart';
 import '../providers/technician_work_order_provider.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+import 'package:anderson_crm_flutter/services/s3_file_cache.dart';
 
 class TechnicianExpandedContent extends ConsumerStatefulWidget {
   final WorkOrder workOrder;
@@ -466,8 +467,8 @@ class _TechnicianExpandedContentState
     final fileName = FileService.getFileName(path);
 
     try {
-      final s3Service = ref.read(s3FileServiceProvider);
-      final Uint8List bytes = await s3Service.downloadFile(filePath: path);
+      final cache = ref.read(s3FileCacheProvider);
+      final Uint8List bytes = await cache.getFile(path);
       final ext = FileService.getExtension(path).replaceAll('.', '');
       final mimeType =
           FileService.isPdf(path) ? 'application/pdf' : 'image/$ext';

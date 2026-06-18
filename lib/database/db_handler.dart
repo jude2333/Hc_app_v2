@@ -57,6 +57,8 @@ class DBHandler {
     try {
       debugPrint("DB Handler init starting...");
 
+      final centerBasedDB = await _storage.getSessionItem("doc_dbs");
+
       _dbNames = [
         "last_updated_at",
         "price_list",
@@ -65,14 +67,13 @@ class DBHandler {
         "login_log",
         "dashboard",
         "pin_codes",
-        "chennai11_hc_notifications", // Hardcoded - doc_dbs session has wrong DB name
       ];
 
-      // debugPrint(
-      //     "/////////////////////   /////////////    centerBasedDB: $centerBasedDB");
-      // if (centerBasedDB != null && centerBasedDB.isNotEmpty) {
-      //   _dbNames!.addAll(centerBasedDB.split(","));
-      // }
+      if (centerBasedDB != null && centerBasedDB.isNotEmpty) {
+        _dbNames!.addAll(centerBasedDB.split(","));
+      }
+
+      debugPrint("dbnames list >>>>>$_dbNames");
 
       // String token = await _getToken();
       // await _setUp(token);

@@ -1,38 +1,14 @@
-# PowerSync Self-Hosted Configuration
-# official PowerSync docs: https://docs.powersync.com/self-hosting
-
-# Database Replication Settings
 replication:
   connections:
     - type: postgresql
-      uri: postgres://postgres:root@postgres:5432/live_db2
-      sslmode: disable
+      uri: postgres://postgres:8248445802@database-1.cka0t20iwlxf.ap-south-1.rds.amazonaws.com:5432/live_db?sslmode=require
       publication_name: powersync
 
-# Sync Bucket Storage mongodb
 storage:
   type: mongodb
   uri: mongodb://mongo:27017/powersync_anderson?replicaSet=rs0
 
-# API Port
 port: 8080
-
-# Sync Rules
-# sync_rules:
-#   content: |
-#     bucket_definitions:
-#       manager_work_orders:
-#         data:
-#           - SELECT * FROM data.hc_patient_visit_detail 
-#             WHERE tenant_id = 1
-#             AND visible = true
-#             AND visit_date >= '2022-12-10'
-#             AND visit_date <= '2022-12-23'
-
-#       price_list:
-#         data:
-#           - SELECT * FROM data.price_list
-#             WHERE visible = true        
 
 sync_rules:
   content: |
@@ -51,7 +27,7 @@ sync_rules:
               received_amount, discount_amount, doc, bill_number, lab_number,
               visible, created_by, created_at, last_updated_by, last_updated_at,
               sync_window
-            FROM data.hc_patient_visit_detail 
+            FROM data.hc_patient_visit_detail
             WHERE assigned_id = bucket.emp_id
               AND visible = true
 
@@ -65,7 +41,7 @@ sync_rules:
               received_amount, discount_amount, doc, bill_number, lab_number,
               visible, created_by, created_at, last_updated_by, last_updated_at,
               sync_window
-            FROM data.hc_patient_visit_detail 
+            FROM data.hc_patient_visit_detail
             WHERE tenant_id::text = bucket.tenant_id
               AND visible = true
               AND sync_window = true
@@ -80,64 +56,14 @@ sync_rules:
               received_amount, discount_amount, doc, bill_number, lab_number,
               visible, created_by, created_at, last_updated_by, last_updated_at,
               sync_window
-            FROM data.hc_patient_visit_detail 
+            FROM data.hc_patient_visit_detail
             WHERE tenant_id::text = bucket.tenant_id
               AND visible = true
               AND status = 'Finished'
               AND server_status = 'Received'
               AND sync_window = true
 
-# sync_rules:
-#   content: |
-#     bucket_definitions:
-#       global:
-#         data:
-#           - SELECT * FROM data.price_list WHERE visible = true
 
-#       # ---------------------------------------------------------
-#       # 1. TECHNICIAN BUCKET
-#       # ---------------------------------------------------------
-#       technician_work_orders:
-#         # TRICK: Select the WHOLE token as one parameter. 
-#         # The parser is happy because it's just one function call.
-#         parameters: SELECT request.jwt() AS token_data
-#         data:
-#           - SELECT * FROM data.hc_patient_visit_detail 
-#             # Now we extract the fields using Postgres JSON operators
-#             WHERE assigned_id::text = (bucket.token_data::json ->> 'emp_id')
-#               AND visible = true
-#               AND visit_date >= (bucket.token_data::json ->> 'min_date')::date
-#               AND visit_date <= (bucket.token_data::json ->> 'max_date')::date
-
-#       # ---------------------------------------------------------
-#       # 2. MANAGER BUCKET
-#       # ---------------------------------------------------------
-#       manager_work_orders:
-#         parameters: SELECT request.jwt() AS token_data
-#         data:
-#           - SELECT * FROM data.hc_patient_visit_detail 
-#             WHERE tenant_id::text = (bucket.token_data::json ->> 'tenant_id')
-#               AND visible = true
-#               AND visit_date >= (bucket.token_data::json ->> 'min_date')::date
-#               AND visit_date <= (bucket.token_data::json ->> 'max_date')::date
-
-#       # ---------------------------------------------------------
-#       # 3. BILLING BUCKET
-#       # ---------------------------------------------------------
-#       billing_work_orders:
-#         parameters: SELECT request.jwt() AS token_data
-#         data:
-#           - SELECT * FROM data.hc_patient_visit_detail 
-#             WHERE tenant_id::text = (bucket.token_data::json ->> 'tenant_id')
-#               AND visible = true
-#               AND status = 'Finished'
-#               AND server_status = 'Received'
-#               AND visit_date >= (bucket.token_data::json ->> 'min_date')::date
-#               AND visit_date <= (bucket.token_data::json ->> 'max_date')::date
-        
-
-
-# Client Authentication - Inline JWKS
 client_auth:
   jwks:
     keys:
@@ -146,8 +72,7 @@ client_auth:
         e: 'AQAB'
         alg: 'RS256'
         kid: 'powersync-963d4c3800'
-  audience: ['http://localhost:8181', 'powersync-dev', 'anderson-crm-flutter', 'https://devsync.andrsn.click']
+  audience: ['https://livesync.andrsn.in']
 
-# Telemetry (disabled for privacy)
 telemetry:
   disable_telemetry_sharing: true

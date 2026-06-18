@@ -305,10 +305,10 @@ class PostgresDB {
         await _storage.saveSessionItem("default_state", tenant['state']);
         await _storage.saveSessionItem("doc_dbs", tenant['doc_dbs']);
 
-        if (!Settings.production) {
-          await _storage.saveSessionItem(
-              "doc_dbs", "chennai99_work_orders,chennai8_hc_notifications");
-        }
+        // if (!Settings.production) {
+        //   await _storage.saveSessionItem(
+        //       "doc_dbs", "chennai99_work_orders,chennai8_hc_notifications");
+        // }
 
         await _storage.saveSessionItem("del_doc_dbs", tenant['del_doc_dbs']);
 

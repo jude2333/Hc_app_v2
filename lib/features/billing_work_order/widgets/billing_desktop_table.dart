@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 
-import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
-import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/work_order_chips.dart';
+import 'package:anderson_crm_flutter/services/s3_file_cache.dart';
 import '../../theme/theme.dart';
 import '../providers/billing_work_order_provider.dart';
 
@@ -297,7 +295,6 @@ class _ExpandedContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final storage = ref.read(storageRepositoryProvider);
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
@@ -312,19 +309,19 @@ class _ExpandedContent extends ConsumerWidget {
             _FileRow(
               label: 'Prescription',
               filePath: order.prescriptionPhoto,
-              storage: storage,
+              ref: ref,
             ),
           if (order.prescriptionPath.isNotEmpty)
             _FileRow(
               label: 'Prescription Photo',
               filePath: order.prescriptionPath,
-              storage: storage,
+              ref: ref,
             ),
           if (order.proformaPath.isNotEmpty)
             _FileRow(
               label: 'Proforma Invoice',
               filePath: order.proformaPath,
-              storage: storage,
+              ref: ref,
             ),
           if (order.billNumber.isNotEmpty)
             _DetailRow('Bill Number', order.billNumber),
@@ -376,12 +373,12 @@ class _DetailRow extends StatelessWidget {
 class _FileRow extends StatelessWidget {
   final String label;
   final String filePath;
-  final StorageRepository storage;
+  final WidgetRef ref;
 
   const _FileRow({
     required this.label,
     required this.filePath,
-    required this.storage,
+    required this.ref,
   });
 
   @override
@@ -430,13 +427,39 @@ class _FileRow extends StatelessWidget {
           if (action == 'view') {
             FileViewer.view(context, s3Path: selectedPath);
           } else {
-            final fileService = FileService(
-              dio: Dio(),
-              storage: storage,
-            );
-            fileService.downloadAndOpen(context, selectedPath);
+            _downloadFile(context, selectedPath);
           }
         },
+      );
+    }
+  }
+
+  Future<void> _downloadFile(BuildContext context, String path) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final fileName = FileService.getFileName(path);
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('Downloading: $fileName')),
+    );
+
+    try {
+      final cache = ref.read(s3FileCacheProvider);
+      final bytes = await cache.getFile(path);
+      await FileService.saveOrOpenFile(
+        context,
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: FileService.isPdf(path)
+            ? 'application/pdf'
+            : 'image/${FileService.getExtension(path).replaceAll('.', '')}',
+      );
+    } catch (e) {
+      debugPrint('[BillingDesktop] Download error: $e');
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

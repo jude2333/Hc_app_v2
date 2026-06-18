@@ -17,8 +17,8 @@ class S3FileService {
   /// Number of retry attempts for transient failures
   static const _maxRetries = 2;
 
-  /// Delay between retries
-  static const _retryDelay = Duration(seconds: 1);
+  /// Base delay between retries (doubles each attempt: 2s, 4s)
+  static const _baseRetryDelay = Duration(seconds: 2);
 
   S3FileService(this._ref);
 
@@ -127,8 +127,9 @@ class S3FileService {
 
     for (int attempt = 0; attempt <= _maxRetries; attempt++) {
       if (attempt > 0) {
-        debugPrint('[S3] Retry attempt $attempt/$_maxRetries for: $key');
-        await Future.delayed(_retryDelay);
+        final delay = _baseRetryDelay * (1 << (attempt - 1));
+        debugPrint('[S3] Retry attempt $attempt/$_maxRetries for: $key (delay: ${delay.inSeconds}s)');
+        await Future.delayed(delay);
       }
 
       try {

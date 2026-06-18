@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:anderson_crm_flutter/features/core/services/file_service.dart';
 import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+import 'package:anderson_crm_flutter/services/s3_file_cache.dart';
 
 class ImageViewerPage extends ConsumerStatefulWidget {
   final String s3Path;
@@ -54,6 +55,10 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
     _loadImage();
   }
 
+  /// Max auto-retries at the UI layer for transient failures.
+  static const _uiMaxRetries = 2;
+  static const _uiRetryDelay = Duration(seconds: 2);
+
   Future<void> _loadImage() async {
     if (!mounted) return;
     setState(() {
@@ -80,15 +85,16 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       return;
     }
 
-    // Download from S3
+    // Download from S3 with auto-retry
     try {
-      final s3Service = ref.read(s3FileServiceProvider);
-      final bytes = await s3Service.downloadFile(filePath: widget.s3Path);
+      final bytes = await _downloadWithAutoRetry();
 
       // Validate image content
       if (!S3FileService.isValidImage(bytes)) {
         debugPrint(
             '[ImageViewer] Invalid image data: ${bytes.length} bytes, header: ${bytes.take(4).toList()}');
+        // Evict bad cache entry
+        ref.read(s3FileCacheProvider).invalidate(widget.s3Path);
         throw S3DownloadException(
           'The downloaded file is not a valid image.',
           isNotFound: true,
@@ -117,6 +123,32 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       }
       debugPrint('[ImageViewer] Load error: $e');
     }
+  }
+
+  /// Auto-retry transient download failures before showing error UI.
+  Future<Uint8List> _downloadWithAutoRetry() async {
+    final cache = ref.read(s3FileCacheProvider);
+    Exception? lastError;
+
+    for (int attempt = 0; attempt <= _uiMaxRetries; attempt++) {
+      if (attempt > 0) {
+        debugPrint('[ImageViewer] UI retry $attempt/$_uiMaxRetries');
+        await Future.delayed(_uiRetryDelay);
+        if (!mounted) break;
+      }
+
+      try {
+        return await cache.getFile(widget.s3Path);
+      } on S3DownloadException catch (e) {
+        if (!e.isRetryable) rethrow;
+        lastError = e;
+        cache.invalidate(widget.s3Path);
+      } catch (e) {
+        lastError = e is Exception ? e : Exception('$e');
+      }
+    }
+
+    throw lastError ?? S3DownloadException('Download failed after retries.');
   }
 
   @override

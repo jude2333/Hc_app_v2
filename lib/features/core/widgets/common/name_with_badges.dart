@@ -6,24 +6,66 @@ import 'copyable_text.dart';
 enum BadgeLayout { row, column }
 
 class NameWithBadges extends StatelessWidget {
-  final WorkOrder workOrder;
+  final WorkOrder? _workOrder;
+  final String? _rawName;
+  final List<String>? _rawFlags;
   final BadgeLayout layout;
+  final TextStyle? nameStyle;
 
+  /// Create from a [WorkOrder] (used by manager views).
   const NameWithBadges({
     super.key,
-    required this.workOrder,
+    required WorkOrder workOrder,
     this.layout = BadgeLayout.row,
-  });
+    this.nameStyle,
+  })  : _workOrder = workOrder,
+        _rawName = null,
+        _rawFlags = null;
+
+  /// Create from raw name + precomputed flags (used by search views).
+  const NameWithBadges.raw({
+    super.key,
+    required String name,
+    required List<String> flags,
+    this.layout = BadgeLayout.row,
+    this.nameStyle,
+  })  : _workOrder = null,
+        _rawName = name,
+        _rawFlags = flags;
+
+  /// Extract badge flags from a raw CouchDB/PostgreSQL doc map.
+  static List<String> extractFlagsFromMap(Map<String, dynamic> data) {
+    final flags = <String>[];
+    final urgentVal = data['urgent'];
+    if (urgentVal == true || urgentVal == 1) flags.add('Urgent');
+    final vipVal = data['vip_client'];
+    if (vipVal == true || vipVal == 1) flags.add('VIP');
+    final credit = data['credit'];
+    if (credit == 1) flags.add('Credit');
+    if (credit == 2) flags.add('Trial');
+    final b2bId = int.tryParse(data['b2b_client_id']?.toString() ?? '0') ?? 0;
+    if (b2bId > 0) flags.add('B2B');
+    final cghsVal = data['cghs_client'];
+    if (cghsVal == true || cghsVal == 1) flags.add('CGHS');
+    return flags;
+  }
+
+  String get _displayName {
+    if (_rawName != null) return _rawName!;
+    return _workOrder!.patientName;
+  }
 
   List<String> _getFlags() {
+    if (_rawFlags != null) return _rawFlags!;
+    final wo = _workOrder!;
     final flags = <String>[];
-    if (workOrder.urgent) flags.add('Urgent');
-    if (workOrder.vip) flags.add('VIP');
-    if (workOrder.credit > 0) {
-      flags.add(workOrder.credit == 1 ? 'Credit' : 'Trial');
+    if (wo.urgent) flags.add('Urgent');
+    if (wo.vip) flags.add('VIP');
+    if (wo.credit > 0) {
+      flags.add(wo.credit == 1 ? 'Credit' : 'Trial');
     }
-    if ((workOrder.b2bClientId ?? 0) > 0) flags.add('B2B');
-    if (workOrder.cghsClient) flags.add('CGHS');
+    if ((wo.b2bClientId ?? 0) > 0) flags.add('B2B');
+    if (wo.cghsClient) flags.add('CGHS');
     return flags;
   }
 
@@ -58,8 +100,8 @@ class NameWithBadges extends StatelessWidget {
   Widget build(BuildContext context) {
     final flags = _getFlags();
     final nameWidget = CopyableText(
-      workOrder.patientName,
-      style: const TextStyle(fontWeight: FontWeight.bold),
+      _displayName,
+      style: nameStyle ?? const TextStyle(fontWeight: FontWeight.bold),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );

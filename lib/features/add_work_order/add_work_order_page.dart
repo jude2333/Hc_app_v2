@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../features/core/util.dart';
 import '../../../../features/theme/theme.dart';
 
 import '../../../../models/work_order.dart';
@@ -332,7 +333,7 @@ class _AddWorkOrderPageState extends ConsumerState<AddWorkOrderPage> {
     List<String> prescriptionPaths = List.from(_prescriptionPaths);
     List<XFile> newImages = [];
     if (_prescriptionImages.isNotEmpty) {
-      final todayFolder = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final todayFolder = Util.getTodayStringForFolderCreation();
       for (final image in _prescriptionImages) {
         final timestampedName =
             '${DateTime.now().millisecondsSinceEpoch}_${image.name}';

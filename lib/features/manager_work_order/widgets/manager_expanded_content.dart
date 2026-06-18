@@ -7,7 +7,7 @@ import 'package:anderson_crm_flutter/components/time_line_page.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/common_widgets.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/copyable_text.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/file_viewer/file_viewer_exports.dart';
-import 'package:anderson_crm_flutter/services/s3_file_service.dart';
+import 'package:anderson_crm_flutter/services/s3_file_cache.dart';
 import '../../theme/theme.dart';
 
 class ManagerExpandedContent extends ConsumerWidget {
@@ -529,8 +529,8 @@ class ManagerExpandedContent extends ConsumerWidget {
     );
 
     try {
-      final s3Service = ref.read(s3FileServiceProvider);
-      final Uint8List bytes = await s3Service.downloadFile(filePath: path);
+      final cache = ref.read(s3FileCacheProvider);
+      final Uint8List bytes = await cache.getFile(path);
       final ext = FileService.getExtension(path).replaceAll('.', '');
       final mimeType =
           FileService.isPdf(path) ? 'application/pdf' : 'image/$ext';

@@ -190,6 +190,37 @@ class PowerSyncService {
     }
   }
 
+  /// Full reconnect for tenant switch: disconnect, purge old tenant data
+  /// from local SQLite, re-create the connector with fresh credentials
+  /// (new tenant_id from StorageService), and reconnect.
+  Future<void> reconnectForTenantChange(StorageService storage) async {
+    if (!_initialized) return;
+
+    try {
+      debugPrint('[PowerSync] Tenant change — disconnecting...');
+      await db.disconnect();
+
+      // Purge all local data so old tenant's work orders don't linger.
+      // PowerSync will re-sync the new tenant's data on reconnect.
+      await db.execute('DELETE FROM hc_patient_visit_detail');
+      await db.execute('DELETE FROM price_list');
+      await db.execute('DELETE FROM temp_uploads');
+      debugPrint('[PowerSync] Local data purged for tenant switch');
+
+      // Re-create connector so fetchCredentials reads the new tenant_id
+      _connector = BackendConnector(
+        storage: storage,
+        onRefreshToken: _connector.onRefreshToken,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      await db.connect(connector: _connector);
+      debugPrint('[PowerSync] Reconnected with new tenant credentials ✅');
+    } catch (e) {
+      debugPrint('[PowerSync] Tenant change reconnect failed: $e');
+    }
+  }
+
   /// Actively wait for the checkpoint to apply after CRUD drain.
   /// If the checkpoint doesn't advance within [timeout], force a reconnect.
   /// This is faster than waiting for the passive watchdog (5s detection).

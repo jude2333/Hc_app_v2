@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../../../../features/core/util.dart';
 import '../../../../models/work_order.dart';
 import '../../../../providers/storage_provider.dart';
@@ -159,7 +160,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
           customDoc['cancel_reason'] = cancelReason;
         }
 
-        // Save new prescription images to temp_uploads for S3 upload
+        // Upload new prescription images directly to S3
         // prescriptionPaths = [old1, old2, ..., new1, new2]
         // prescriptionImages = [XFile(new1), XFile(new2)]
         // New paths start at offset = total paths - new images count
@@ -168,8 +169,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
           for (int i = 0; i < prescriptionImages.length; i++) {
             final pathIndex = offset + i;
             if (pathIndex >= 0 && pathIndex < prescriptionPaths.length) {
-              await _savePrescriptionToTempUploads(
-                workOrderDocId: existingWorkOrder.docId,
+              await _uploadPrescriptionToS3(
                 prescriptionImage: prescriptionImages[i],
                 prescriptionPath: prescriptionPaths[pathIndex],
               );
@@ -234,12 +234,11 @@ class AddWorkOrderController extends StateNotifier<bool> {
           sendEmail: sendEmail,
         );
 
-        // Save prescription images to temp_uploads for S3 upload via hc_app_local
+        // Upload prescription images directly to S3
         if (prescriptionImages.isNotEmpty && prescriptionPaths.isNotEmpty) {
           for (int i = 0; i < prescriptionImages.length; i++) {
             if (i < prescriptionPaths.length) {
-              await _savePrescriptionToTempUploads(
-                workOrderDocId: workOrder.docId,
+              await _uploadPrescriptionToS3(
                 prescriptionImage: prescriptionImages[i],
                 prescriptionPath: prescriptionPaths[i],
               );
@@ -466,33 +465,76 @@ class AddWorkOrderController extends StateNotifier<bool> {
     }
   }
 
-  /// Save prescription image to temp_uploads for S3 upload via hc_app_local
-  Future<void> _savePrescriptionToTempUploads({
-    required String workOrderDocId,
+  // Commented out to use direct S3 upload via Node API
+  // /// Save prescription image to temp_uploads for S3 upload via hc_app_local
+  // Future<void> _savePrescriptionToTempUploads({
+  //   required String workOrderDocId,
+  //   required XFile prescriptionImage,
+  //   required String prescriptionPath,
+  // }) async {
+  //   try {
+  //     final storage = ref.read(storageServiceProvider);
+  //     final tempUploadRepo = ref.read(tempUploadRepositoryProvider);
+  // 
+  //     final bytes = await prescriptionImage.readAsBytes();
+  //     final fileName = prescriptionImage.name;
+  // 
+  //     debugPrint('Saving prescription to temp_uploads: $fileName');
+  // 
+  //     await tempUploadRepo.saveOfflinePhoto(
+  //       workOrderId: workOrderDocId,
+  //       fileName: fileName,
+  //       fileLocation: prescriptionPath,
+  //       fileBytes: bytes,
+  //       tenantId: int.tryParse(storage.getFromSession('logged_in_tenant_id')),
+  //       createdBy: int.tryParse(storage.getFromSession('logged_in_emp_id')),
+  //     );
+  // 
+  //     debugPrint(' Prescription saved to temp_uploads: $workOrderDocId');
+  //   } catch (e) {
+  //     debugPrint(' Failed to save prescription to temp_uploads: $e');
+  //     // Don't throw - allow work order creation to continue
+  //   }
+  // }
+
+  /// Upload prescription image directly to S3 via Node API
+  Future<void> _uploadPrescriptionToS3({
     required XFile prescriptionImage,
     required String prescriptionPath,
   }) async {
     try {
-      final storage = ref.read(storageServiceProvider);
-      final tempUploadRepo = ref.read(tempUploadRepositoryProvider);
-
       final bytes = await prescriptionImage.readAsBytes();
       final fileName = prescriptionImage.name;
+      final storage = ref.read(storageServiceProvider);
+      String jwtToken = storage.getFromSession('pg_admin');
 
-      debugPrint('Saving prescription to temp_uploads: $fileName');
+      debugPrint('Uploading prescription directly to S3: $fileName');
 
-      await tempUploadRepo.saveOfflinePhoto(
-        workOrderId: workOrderDocId,
-        fileName: fileName,
-        fileLocation: prescriptionPath,
-        fileBytes: bytes,
-        tenantId: int.tryParse(storage.getFromSession('logged_in_tenant_id')),
-        createdBy: int.tryParse(storage.getFromSession('logged_in_emp_id')),
+      final filePart = MultipartFile.fromBytes(bytes, filename: fileName);
+      FormData formData = FormData.fromMap({
+        'upload_file': filePart,
+        'key': prescriptionPath,
+        'bucket_name': 'homecollection',
+        'jwt_token': jwtToken,
+      });
+
+      Dio dio = Dio();
+      Response response = await dio.post(
+        '${Settings.nodeUrl}/s3/upload_file_v3',
+        data: formData,
+        options: Options(
+          headers: {'Content-Type': 'multipart/form-data'},
+          validateStatus: (status) => status! < 600,
+        ),
       );
 
-      debugPrint(' Prescription saved to temp_uploads: $workOrderDocId');
+      if (response.statusCode != 200) {
+        throw Exception('S3 upload failed: ${response.statusCode}');
+      }
+
+      debugPrint('Prescription uploaded successfully to S3: $prescriptionPath');
     } catch (e) {
-      debugPrint(' Failed to save prescription to temp_uploads: $e');
+      debugPrint('Failed to upload prescription to S3: $e');
       // Don't throw - allow work order creation to continue
     }
   }

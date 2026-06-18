@@ -12,7 +12,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _loadRememberedMobile() async {
-    final mobile = _repository.getRememberedMobile();
+    final mobile = await _repository.getRememberedMobileAsync();
     if (mobile.isNotEmpty) {
       state = state.copyWith(
         mobile: mobile,

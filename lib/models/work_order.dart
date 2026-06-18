@@ -619,7 +619,11 @@ class WorkOrder {
         tenantId: _parseNullableInt(row, 'tenant_id'),
         hcpmId: _parseNullableInt(row, 'hcpm_id'),
         docId: _parseString(row, 'doc_id'),
-        patientName: _parseString(row, 'patient_name'),
+        // Prefer doc 'name' (has salutation e.g. "Mr. John") over row-level
+        // patient_name (backup service strips titles via cleanUpName)
+        patientName: (parsedMap['name']?.toString().isNotEmpty == true)
+            ? parsedMap['name'].toString()
+            : _parseString(row, 'patient_name'),
         visitDate: _parseDateTime(row, 'visit_date'),
         visitTime: _parseString(row, 'visit_time'),
         doctorName: _parseString(row, 'doctor_name'),

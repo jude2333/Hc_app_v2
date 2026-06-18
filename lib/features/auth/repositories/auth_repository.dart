@@ -112,6 +112,11 @@ class AuthRepository {
     return storage.getFromLocalStorage("LOGGED_IN_MOBILE");
   }
 
+  Future<String> getRememberedMobileAsync() async {
+    final storage = _ref.read(storageServiceProvider);
+    return storage.getFromLocalStorageAsync("LOGGED_IN_MOBILE");
+  }
+
   Future<void> setRememberMobile(String mobile, bool remember) async {
     final storage = _ref.read(storageServiceProvider);
     await storage.setLocalStorage("LOGGED_IN_MOBILE", remember ? mobile : "");
