@@ -39,30 +39,6 @@ List<User> parseUsers(List<dynamic> rawData) {
       }
     }
 
-    // Role logic - this part is tricky because it might require async calls which compute can't easily do if it depends on other services.
-    // However, we can process what we have. If we need to fetch role names, we might need to do that BEFORE or AFTER compute,
-    // or pass the role map into compute.
-    // Looking at the original controller, it calls `_dbService.getRoleNamesByIds(roleId)`.
-    // We CANNOT do async DB calls inside `compute` easily without passing the DB service or a callback, which is complex.
-    // So we will parse the basic structure here, and handle the async role fetching in the service layer *outside* compute,
-    // OR we fetch all roles beforehand and pass a map.
-    // For now, let's map what we can.
-
-    // We will store the raw role data in the User object or a temporary DTO and resolve it later?
-    // Or better: The original code awaited `getRoleNamesByIds` inside the loop. This is bad for performance.
-    // We should probably fetch the raw data, then loop.
-
-    // Let's try to replicate the logic but optimize.
-    // Since `compute` runs in isolation, it can't call the DB.
-    // So we will just parse the JSON to a simpler structure, and let the main thread handle the async DB calls if needed.
-    // BUT, the goal is to offload heavy parsing.
-
-    // Actually, `getRoleNamesByIds` is an async call. We can't put that in `compute` unless we pass the data it needs.
-    // If `getRoleNamesByIds` just does a DB lookup, we can't do it in isolate easily.
-    // So we will have to keep the async part in the main isolate or refactor how roles are fetched.
-
-    // Let's parse the basic fields.
-
     dynamic roleId;
     String roleName = '';
 
@@ -126,38 +102,36 @@ class UsersService {
     );
 
     if (response is List) {
-      // Offload parsing to isolate
       List<User> users = await compute(parseUsers, response);
 
-      // Post-processing for roles that need async fetching
-      // This is still on the main thread but at least the JSON parsing is offloaded.
-      // To optimize, we could fetch all unique role IDs and do a batch fetch?
-      // The original code did it one by one.
-
-      for (var i = 0; i < users.length; i++) {
-        final user = users[i];
-        if (user.roleName.isEmpty &&
-            user.roleId != null &&
-            user.roleId is List) {
-          final name = await _repository.getRoleNameByIds(user.roleId);
-          // We need to update the user object. Since User is immutable, we replace it.
-          users[i] = User(
-            empId: user.empId,
-            id: user.id,
-            name: user.name,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            mobile: user.mobile,
-            roleName: name,
-            roleId: user.roleId,
-            departmentId: user.departmentId,
-            departmentName: user.departmentName,
-            photoIdCard: user.photoIdCard,
-            idCardLocation: user.idCardLocation,
-            allocatedAreas: user.allocatedAreas,
-          );
+      // Collect all unique role IDs that need name resolution (single pass)
+      final Set<String> allRoleIds = {};
+      for (final user in users) {
+        if (user.roleName.isEmpty && user.roleId is List) {
+          for (final id in user.roleId) {
+            allRoleIds.add(id.toString());
+          }
         }
       }
+
+      // Single batch HTTP request instead of N sequential requests
+      if (allRoleIds.isNotEmpty) {
+        final roleMap = await _repository.getRoleNamesMap(allRoleIds);
+
+        for (var i = 0; i < users.length; i++) {
+          final user = users[i];
+          if (user.roleName.isEmpty && user.roleId is List) {
+            final resolvedNames = (user.roleId as List)
+                .map((id) => roleMap[id.toString()])
+                .where((name) => name != null)
+                .join(', ');
+            if (resolvedNames.isNotEmpty) {
+              users[i] = user.copyWith(roleName: resolvedNames);
+            }
+          }
+        }
+      }
+
       return users;
     }
     return [];

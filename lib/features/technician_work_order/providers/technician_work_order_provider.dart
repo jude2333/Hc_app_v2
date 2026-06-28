@@ -86,7 +86,12 @@ class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
 
       _ordersSubscription = _repo.watchTechnicianWorkOrders(techId).listen(
         (orders) {
-          state = state.copyWith(workOrders: orders, clearError: true);
+          // Safety net: technician should never see unassigned work orders.
+          // If upstream bugs or sync races produce them, filter here.
+          final filtered = orders
+              .where((wo) => wo.status.toLowerCase() != 'unassigned')
+              .toList();
+          state = state.copyWith(workOrders: filtered, clearError: true);
         },
         onError: (error) {
           debugPrint('[Tech] Stream Error: $error');

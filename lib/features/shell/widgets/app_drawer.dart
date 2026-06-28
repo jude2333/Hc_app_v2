@@ -9,7 +9,9 @@ import 'package:anderson_crm_flutter/providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/services/background_notification_service.dart';
 import '../providers/shell_providers.dart';
+import '../../../config/settings.dart';
 
 class AppDrawer extends ConsumerWidget {
   final String currentPath;
@@ -35,8 +37,8 @@ class AppDrawer extends ConsumerWidget {
                 _buildSectionTitle('General', colorScheme),
                 _buildNavTile(context, 'Dashboard', Icons.dashboard_rounded,
                     '/dashboard', colorScheme),
-                _buildNavTile(
-                    context, 'Search', Icons.search_rounded, '/search', colorScheme),
+                _buildNavTile(context, 'Search', Icons.search_rounded,
+                    '/search', colorScheme),
                 _buildNavTile(context, 'Notifications',
                     Icons.notifications_rounded, '/notifications', colorScheme),
                 const SizedBox(height: 16),
@@ -151,8 +153,9 @@ class AppDrawer extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
         borderRadius: AppRadius.xlAll,
-        color:
-            isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: 0.15)
+            : Colors.transparent,
       ),
       child: ListTile(
         leading: Icon(icon, color: isSelected ? activeColor : inactiveColor),
@@ -187,22 +190,24 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildUserActions(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildUserActions(
+      BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     return Column(
       children: [
-        _buildNavTile(context, 'Change Password', Icons.lock_reset,
-            '/changepassword', colorScheme),
+        // _buildNavTile(context, 'Change Password', Icons.lock_reset,
+        //     '/changepassword', colorScheme),
         ListTile(
           leading: const Icon(Icons.logout_rounded, color: AppColors.error),
           title: const Text('Logout',
-              style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w500)),
+              style: TextStyle(
+                  color: AppColors.error, fontWeight: FontWeight.w500)),
           dense: true,
           onTap: () => _handleLogout(context, ref),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('v1.0.0',
-              style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 10)),
+          child: Text('v${Settings.version}',
+              style: TextStyle(color: Colors.red, fontSize: 12)),
         ),
       ],
     );
@@ -254,6 +259,11 @@ class AppDrawer extends ConsumerWidget {
                 ref.read(trackingProvider.notifier).shutdown();
               } catch (_) {}
 
+              // Stop background notification service
+              try {
+                BackgroundNotificationService.stopService();
+              } catch (_) {}
+
               // IMPORTANT: Reset notification provider FIRST (before clearing session)
               // This cancels streams while auth tokens are still valid
               ref.read(liveNotificationProvider.notifier).reset();
@@ -268,13 +278,19 @@ class AppDrawer extends ConsumerWidget {
               // Clear session AFTER resetting providers
               ref.read(storageServiceProvider).clearSession();
 
+              // Clear last active timestamp to prevent stale check on next login
+              ref
+                  .read(storageServiceProvider)
+                  .removeFromLocalStorage("last_active_timestamp");
+
               // Invalidate the provider to ensure fresh state on next login
               ref.invalidate(liveNotificationProvider);
               ref.read(signedInProvider.notifier).state = false;
 
               context.go('/login');
             },
-            child: const Text('Logout', style: TextStyle(color: AppColors.error)),
+            child:
+                const Text('Logout', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),

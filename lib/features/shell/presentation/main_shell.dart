@@ -12,6 +12,9 @@ import '../../../providers/notification_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/gps_monitor_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/services/background_notification_service.dart';
+import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
+import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import '../providers/shell_providers.dart';
 import '../widgets/main_app_bar.dart';
 import '../widgets/app_drawer.dart';
@@ -26,7 +29,7 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
   bool _isInitialized = false;
   String _currentPath = '/';
@@ -34,6 +37,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _realtimeSubscription?.cancel();
     super.dispose();
   }
@@ -41,9 +45,23 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthAndInitialize();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    final storage = ref.read(storageServiceProvider);
+
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      final nowMs = DateTime.now().millisecondsSinceEpoch.toString();
+      storage.setLocalStorage("last_active_timestamp", nowMs);
+      debugPrint('[Lifecycle] App backgrounded. Saved last_active_timestamp = $nowMs');
+    }
   }
 
   @override
@@ -90,6 +108,30 @@ class _MainShellState extends ConsumerState<MainShell> {
       await dbHandler.init();
       _loadNotificationsSafely();
       _setupRealtimeListener();
+
+      // Start background notification service for technicians
+      final storage = ref.read(storageServiceProvider);
+      final roleName = storage.getFromSession('role_name');
+      final notificationsDbName = dbHandler.resolveName('hc_notifications');
+      final token = storage.getFromSession('pg_admin');
+      final empId = storage.getFromSession('logged_in_emp_id');
+
+      if (roleName == 'TECHNICIAN' &&
+          notificationsDbName != null &&
+          token.isNotEmpty &&
+          empId.isNotEmpty) {
+        await BackgroundNotificationService.startService(
+          token: token,
+          dbName: notificationsDbName,
+          empId: empId,
+        );
+      }
+
+      // Update last active timestamp to now upon mounting/initializing main shell
+      await storage.setLocalStorage(
+        "last_active_timestamp",
+        DateTime.now().millisecondsSinceEpoch.toString(),
+      );
 
       // Initialize tracking for technicians (auto-starts GPS + WS)
       _initializeTracking();

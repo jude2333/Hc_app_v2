@@ -43,7 +43,10 @@ abstract class BaseDashboardNotifier extends StateNotifier<DashboardState> {
 }
 
 class DailyReportNotifier extends BaseDashboardNotifier {
-  DateTime _selectedDate = DateTime.now().subtract(const Duration(days: 1));
+  // Default to TODAY — the cron only calculates today's data.
+  // Yesterday has no data on go-live day and the user always wants
+  // the most current view first.
+  DateTime _selectedDate = DateTime.now();
 
   DailyReportNotifier(super.service);
 
@@ -100,10 +103,10 @@ class WeeklyReportNotifier extends BaseDashboardNotifier {
 
   WeeklyReportNotifier(super.service) {
     final now = DateTime.now();
-    // Previous full week logic
-    final lastWeek = now.subtract(const Duration(days: 7));
-    // Assume Monday is start of week
-    final monday = lastWeek.subtract(Duration(days: lastWeek.weekday - 1));
+    // Default to the CURRENT week (Monday → Sunday of this week).
+    // Showing last week by default meant no data on go-live day since
+    // the system only started collecting from today.
+    final monday = now.subtract(Duration(days: now.weekday - 1));
     final sunday = monday.add(const Duration(days: 6));
 
     _startDate = monday;
@@ -193,23 +196,28 @@ class WeeklyReportNotifier extends BaseDashboardNotifier {
 }
 
 class MonthlyReportNotifier extends BaseDashboardNotifier {
-  DateTime _selectedMonth = DateTime.now().subtract(const Duration(days: 30));
+  // Default to current month so the tab opens with fresh data immediately
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
 
   MonthlyReportNotifier(super.service);
 
   DateTime get selectedMonth => _selectedMonth;
 
-  int _getWeekNumber(DateTime date) {
-    final firstDayOfYear = DateTime(date.year, 1, 1);
-    final daysDifference = date.difference(firstDayOfYear).inDays;
-    return ((daysDifference + firstDayOfYear.weekday - 1) / 7).ceil();
+  /// Returns the ISO 8601 week number for [date], matching PostgreSQL's
+  /// EXTRACT(WEEK FROM date) which uses Monday as start-of-week.
+  int _getISOWeekNumber(DateTime date) {
+    // Shift to Thursday of the same week (ISO weeks are defined by Thursday)
+    final thursday = date.add(Duration(days: 4 - (date.weekday == 7 ? 7 : date.weekday)));
+    final firstDayOfYear = DateTime(thursday.year, 1, 1);
+    return ((thursday.difference(firstDayOfYear).inDays) / 7).floor() + 1;
   }
 
   @override
   Future<void> loadData() async {
     await loadWithState(() async {
       final year = _selectedMonth.year.toString();
-      final docId = 'weekly_$year';
+      // Backend stores monthly aggregates in 'yearly_month' report, keyed by month number
+      final docId = 'yearly_$year';
 
       final doc = await service.getOne(docId);
       if (doc == null || doc['data'] == null) return null;
@@ -229,21 +237,18 @@ class MonthlyReportNotifier extends BaseDashboardNotifier {
       final trial = <int>[];
       var totals = const DashboardMetrics();
 
-      final firstDay = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-      final lastDay =
-          DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
-      final startWeek = _getWeekNumber(firstDay);
-      final endWeek = _getWeekNumber(lastDay);
-      final adjustedEndWeek = endWeek < startWeek ? endWeek + 52 : endWeek;
+      // The backend keys monthly data by calendar month number (1=Jan .. 12=Dec).
+      // Show all months in the selected year that have data.
+      for (int month = 1; month <= 12; month++) {
+        final monthData = data[month.toString()];
+        if (monthData == null) continue; // skip months with no data yet
 
-      for (int i = startWeek; i <= adjustedEndWeek; i++) {
-        final weekNum = i > 52 ? i - 52 : i;
-        final weekKey = weekNum.toString();
-        final weekData = data[weekKey];
-        final metrics = DashboardMetrics.fromMap(weekData);
+        final metrics = DashboardMetrics.fromMap(monthData);
+        final monthName =
+            DateFormat('MMMM').format(DateTime(_selectedMonth.year, month, 1));
 
-        rows.add(ReportRow(label: 'Week-$weekNum', metrics: metrics));
-        labels.add('W$weekNum');
+        rows.add(ReportRow(label: monthName, metrics: metrics));
+        labels.add(DateFormat('MMM').format(DateTime(_selectedMonth.year, month, 1)));
         assigned.add(metrics.assigned);
         finished.add(metrics.finished);
         cancelled.add(metrics.cancelled);
@@ -256,6 +261,7 @@ class MonthlyReportNotifier extends BaseDashboardNotifier {
         totals = totals + metrics;
       }
 
+      if (rows.isEmpty) return null;
       rows.add(ReportRow(label: 'Total', metrics: totals, isTotal: true));
 
       return DashboardReport(
@@ -464,23 +470,31 @@ class YearlyReportNotifier extends BaseDashboardNotifier {
 final dailyReportProvider =
     StateNotifierProvider<DailyReportNotifier, DashboardState>((ref) {
   final service = ref.read(dashboardServiceProvider);
-  return DailyReportNotifier(service);
+  final notifier = DailyReportNotifier(service);
+  Future.microtask(() => notifier.loadData());
+  return notifier;
 });
 
 final weeklyReportProvider =
     StateNotifierProvider<WeeklyReportNotifier, DashboardState>((ref) {
   final service = ref.read(dashboardServiceProvider);
-  return WeeklyReportNotifier(service);
+  final notifier = WeeklyReportNotifier(service);
+  Future.microtask(() => notifier.loadData());
+  return notifier;
 });
 
 final monthlyReportProvider =
     StateNotifierProvider<MonthlyReportNotifier, DashboardState>((ref) {
   final service = ref.read(dashboardServiceProvider);
-  return MonthlyReportNotifier(service);
+  final notifier = MonthlyReportNotifier(service);
+  Future.microtask(() => notifier.loadData());
+  return notifier;
 });
 
 final yearlyReportProvider =
     StateNotifierProvider<YearlyReportNotifier, DashboardState>((ref) {
   final service = ref.read(dashboardServiceProvider);
-  return YearlyReportNotifier(service);
+  final notifier = YearlyReportNotifier(service);
+  Future.microtask(() => notifier.loadData());
+  return notifier;
 });

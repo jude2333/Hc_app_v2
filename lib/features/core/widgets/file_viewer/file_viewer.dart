@@ -160,13 +160,15 @@ class _FileItem extends StatelessWidget {
     final fileName = FileService.getFileName(path);
     final isPdf = FileService.isPdf(path);
     final isImage = FileService.isImage(path);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: isDark ? AppColors.darkSurfaceAlt : AppColors.primaryLight,
         borderRadius: BorderRadius.circular(12),
+        border: isDark ? Border.all(color: AppColors.darkBorder) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,8 +188,13 @@ class _FileItem extends StatelessWidget {
               Expanded(
                 child: Text(
                   fileName,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

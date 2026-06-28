@@ -13,6 +13,9 @@ class TechnicianProcessDoc {
   // Financial fields
   final double? total;
   final double? discount;
+  final bool discountIsFlat;
+  final double? amountAfterDiscount;
+  final double? netTotal;
   final double? hcCharges;
   final double? disposableCharges;
   final String? amountReceived;
@@ -44,6 +47,9 @@ class TechnicianProcessDoc {
     List<String>? timeLine,
     this.total,
     this.discount,
+    this.discountIsFlat = false,
+    this.amountAfterDiscount,
+    this.netTotal,
     this.hcCharges,
     this.disposableCharges,
     this.amountReceived,
@@ -79,6 +85,13 @@ class TechnicianProcessDoc {
       discount: json['discount'] != null
           ? double.tryParse(json['discount'].toString())
           : null,
+      discountIsFlat: json['discount_is_flat'] == 1 || json['discount_is_flat'] == true,
+      amountAfterDiscount: json['amount_after_discount'] != null
+          ? double.tryParse(json['amount_after_discount'].toString())
+          : null,
+      netTotal: json['net_total'] != null
+          ? double.tryParse(json['net_total'].toString())
+          : null,
       hcCharges: json['hc_charges'] != null
           ? double.tryParse(json['hc_charges'].toString())
           : null,
@@ -108,6 +121,9 @@ class TechnicianProcessDoc {
       'time_line': timeLine,
       'total': total,
       'discount': discount,
+      'discount_is_flat': discountIsFlat ? 1 : 0,
+      'amount_after_discount': amountAfterDiscount,
+      'net_total': netTotal,
       'hc_charges': hcCharges,
       'disposable_charges': disposableCharges,
       'amount_received': amountReceived,
@@ -132,6 +148,9 @@ class TechnicianProcessDoc {
     List<String>? timeLine,
     double? total,
     double? discount,
+    bool? discountIsFlat,
+    double? amountAfterDiscount,
+    double? netTotal,
     double? hcCharges,
     double? disposableCharges,
     String? amountReceived,
@@ -154,6 +173,9 @@ class TechnicianProcessDoc {
       timeLine: timeLine ?? this.timeLine,
       total: total ?? this.total,
       discount: discount ?? this.discount,
+      discountIsFlat: discountIsFlat ?? this.discountIsFlat,
+      amountAfterDiscount: amountAfterDiscount ?? this.amountAfterDiscount,
+      netTotal: netTotal ?? this.netTotal,
       hcCharges: hcCharges ?? this.hcCharges,
       disposableCharges: disposableCharges ?? this.disposableCharges,
       amountReceived: amountReceived ?? this.amountReceived,

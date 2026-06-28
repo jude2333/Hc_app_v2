@@ -160,6 +160,8 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
         title: Text(fileName, style: const TextStyle(fontSize: 16)),
         actions: [
           if (_imageBytes != null)
@@ -170,11 +172,12 @@ class _ImageViewerPageState extends ConsumerState<ImageViewerPage> {
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
+                          color: Colors.orange, strokeWidth: 2),
                     ),
                   )
                 : IconButton(
                     icon: const Icon(Icons.download),
+                    color: Colors.white,
                     tooltip: 'Download',
                     onPressed: () => _downloadFile(context),
                   ),

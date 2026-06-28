@@ -5,6 +5,8 @@ class FlexDataCell extends StatelessWidget {
   final int flex;
   final Color? color;
   final FontWeight? fontWeight;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   const FlexDataCell(
     this.text, {
@@ -12,6 +14,8 @@ class FlexDataCell extends StatelessWidget {
     required this.flex,
     this.color,
     this.fontWeight,
+    this.maxLines = 1,
+    this.overflow = TextOverflow.ellipsis,
   });
 
   @override
@@ -27,7 +31,8 @@ class FlexDataCell extends StatelessWidget {
             fontWeight: fontWeight ??
                 (color != null ? FontWeight.bold : FontWeight.normal),
           ),
-          overflow: TextOverflow.ellipsis,
+          maxLines: maxLines,
+          overflow: overflow,
         ),
       ),
     );
@@ -38,12 +43,16 @@ class FlexHeaderCell extends StatelessWidget {
   final String text;
   final int flex;
   final Color? color;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   const FlexHeaderCell(
     this.text, {
     super.key,
     this.flex = 1,
     this.color,
+    this.maxLines = 1,
+    this.overflow = TextOverflow.ellipsis,
   });
 
   @override
@@ -56,7 +65,8 @@ class FlexHeaderCell extends StatelessWidget {
           fontWeight: FontWeight.bold,
           color: color ?? Theme.of(context).colorScheme.onSurface,
         ),
-        overflow: TextOverflow.ellipsis,
+        maxLines: maxLines,
+        overflow: overflow,
       ),
     );
   }

@@ -2,7 +2,7 @@ name: anderson_crm_flutter
 description: "flutter crm"
 publish_to: "none"
 
-version: 1.1.0+1
+version: 1.2.0+2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -52,7 +52,7 @@ dependencies:
   path: ^1.9.0
   url_launcher: ^6.2.2
   share_plus: ^7.2.1
-  syncfusion_flutter_xlsio: ^27.2.5  # Excel export for analytics
+  syncfusion_flutter_xlsio: ^27.2.5 # Excel export for analytics
   jose: ^0.3.4
 
   # File viewing

@@ -5,6 +5,8 @@ import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page
 import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
 import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import '../providers/technician_work_order_provider.dart';
 import 'add_tests_post_completion_page.dart';
 import '../../theme/theme.dart';
 
@@ -52,14 +54,17 @@ class TechnicianActions extends ConsumerWidget {
           IconButton(
             icon: Icon(Icons.play_circle_outline,
                 size: AppSizes.iconSm, color: AppColors.success),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
                       HCProcessPage(workOrderId: workOrder.docId),
                 ),
               );
+              if (context.mounted) {
+                _checkSugarTestOnReturn(context, ref);
+              }
             },
             tooltip: 'Start',
           ),
@@ -77,6 +82,61 @@ class TechnicianActions extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+
+  /// After HC process completes, check if a Glucose Fasting test was present
+  /// and prompt the technician to book Glucose (PP).
+  void _checkSugarTestOnReturn(BuildContext context, WidgetRef ref) {
+    final storage = ref.read(storageServiceProvider);
+    final sugarDocId = storage.getFromSession('sugar_tests');
+
+    if (sugarDocId.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Glucose (PP) Test',
+            style: TextStyle(color: AppColors.primary)),
+        content:
+            const Text('Do you want to book Glucose(PP) for this patient?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              storage.setSession('sugar_tests', '');
+              Navigator.pop(ctx);
+            },
+            child:
+                Text('No', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              storage.setSession('sugar_tests', '');
+
+              final notifier =
+                  ref.read(technicianWONotifierProvider.notifier);
+              final wo = notifier.getWorkOrderById(sugarDocId);
+              if (wo != null && context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddWorkOrderPage(
+                      copyFrom: wo.copyWith(visitTime: ''),
+                    ),
+                    fullscreenDialog: true,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
     );
   }
 

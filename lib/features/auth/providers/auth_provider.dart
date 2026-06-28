@@ -57,18 +57,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (loginResult == "200") {
         debugPrint("[AuthNotifier] User found, sending OTP");
         await _repository.reloadStorageCaches();
-
-        final rememberedMobile = _repository.getRememberedMobile();
-        if (rememberedMobile.isNotEmpty && state.mobile == rememberedMobile) {
-          await _handleRoleSelection();
-        } else {
-          await _repository.sendOtp(state.mobile);
-          state = state.copyWith(
-            showOtpDialog: true,
-            currentStep: LoginStep.verifyOtp,
-            isLoading: false,
-          );
-        }
+        await _repository.sendOtp(state.mobile);
+        state = state.copyWith(
+          showOtpDialog: true,
+          currentStep: LoginStep.verifyOtp,
+          isLoading: false,
+        );
       } else if (loginResult.contains("Error") ||
           loginResult.contains("NO_MATCHES")) {
         state = state.copyWith(
@@ -116,8 +110,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
         if (loginResult == "200") {
           await _repository.reloadStorageCaches();
-          await _handleRoleSelection();
           await _repository.writeLoginLog();
+          await _handleRoleSelection();
           state = state.copyWith(showOtpDialog: false, isOtpLoading: false);
           return true;
         } else {

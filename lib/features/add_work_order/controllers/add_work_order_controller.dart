@@ -14,7 +14,7 @@ import '../../../../features/manager_work_order/providers/manager_work_order_pro
 import '../../../../providers/com_center_provider.dart';
 import '../../../../providers/notificationCenter_provider.dart';
 import '../../../../config/settings.dart';
-import '../../../../repositories/temp_upload_repository.dart';
+// import '../../../../repositories/temp_upload_repository.dart';
 
 import '../../../../database/sms_template.dart';
 
@@ -97,10 +97,12 @@ class AddWorkOrderController extends StateNotifier<bool> {
           assignedId = existingWorkOrder.assignedId;
           assignedTo = existingWorkOrder.assignedTo;
         } else {
-          status = 'unassigned';
-          serverStatus = 'waiting';
-          assignedId = null;
-          assignedTo = '';
+          // Preserve existing workflow state — editing patient details
+          // must never reset assignment or status
+          status = existingWorkOrder.status;
+          serverStatus = existingWorkOrder.serverStatus;
+          assignedId = existingWorkOrder.assignedId;
+          assignedTo = existingWorkOrder.assignedTo;
         }
 
         final updatedOrder = existingWorkOrder.copyWith(
@@ -475,12 +477,12 @@ class AddWorkOrderController extends StateNotifier<bool> {
   //   try {
   //     final storage = ref.read(storageServiceProvider);
   //     final tempUploadRepo = ref.read(tempUploadRepositoryProvider);
-  // 
+  //
   //     final bytes = await prescriptionImage.readAsBytes();
   //     final fileName = prescriptionImage.name;
-  // 
+  //
   //     debugPrint('Saving prescription to temp_uploads: $fileName');
-  // 
+  //
   //     await tempUploadRepo.saveOfflinePhoto(
   //       workOrderId: workOrderDocId,
   //       fileName: fileName,
@@ -489,7 +491,7 @@ class AddWorkOrderController extends StateNotifier<bool> {
   //       tenantId: int.tryParse(storage.getFromSession('logged_in_tenant_id')),
   //       createdBy: int.tryParse(storage.getFromSession('logged_in_emp_id')),
   //     );
-  // 
+  //
   //     debugPrint(' Prescription saved to temp_uploads: $workOrderDocId');
   //   } catch (e) {
   //     debugPrint(' Failed to save prescription to temp_uploads: $e');

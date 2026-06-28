@@ -266,6 +266,8 @@ pdfjsLib.getDocument({data: uint8}).promise.then(function(pdf) {
       appBar: AppBar(
         backgroundColor: Colors.grey.shade900,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -286,11 +288,12 @@ pdfjsLib.getDocument({data: uint8}).promise.then(function(pdf) {
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
+                          color: Colors.orange, strokeWidth: 2),
                     ),
                   )
                 : IconButton(
                     icon: const Icon(Icons.download),
+                    color: Colors.white,
                     tooltip: 'Download',
                     onPressed: () => _downloadFile(context),
                   ),

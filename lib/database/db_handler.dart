@@ -65,7 +65,6 @@ class DBHandler {
         "com_center",
         "temp_db",
         "login_log",
-        "dashboard",
         "pin_codes",
       ];
 

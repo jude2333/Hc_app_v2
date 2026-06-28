@@ -65,4 +65,36 @@ class User {
       'allocated_areas': allocatedAreas,
     };
   }
+
+  User copyWith({
+    String? empId,
+    String? id,
+    String? name,
+    String? firstName,
+    String? lastName,
+    String? mobile,
+    String? roleName,
+    dynamic roleId,
+    String? departmentId,
+    String? departmentName,
+    String? photoIdCard,
+    String? idCardLocation,
+    List<dynamic>? allocatedAreas,
+  }) {
+    return User(
+      empId: empId ?? this.empId,
+      id: id ?? this.id,
+      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      mobile: mobile ?? this.mobile,
+      roleName: roleName ?? this.roleName,
+      roleId: roleId ?? this.roleId,
+      departmentId: departmentId ?? this.departmentId,
+      departmentName: departmentName ?? this.departmentName,
+      photoIdCard: photoIdCard ?? this.photoIdCard,
+      idCardLocation: idCardLocation ?? this.idCardLocation,
+      allocatedAreas: allocatedAreas ?? this.allocatedAreas,
+    );
+  }
 }

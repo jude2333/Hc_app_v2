@@ -60,6 +60,10 @@ class PostgresService {
     return await _db.getRoleNamesByIds(roleIds);
   }
 
+  Future<Map<String, String>> getRoleNamesMap(Set<String> roleIds) async {
+    return await _db.getRoleNamesMap(roleIds);
+  }
+
   Future<dynamic> getDeptList([String? search]) async {
     return await _db.getDeptList(search);
   }
@@ -124,6 +128,12 @@ class PostgresService {
 
   String? getDashboardTenantName(String? str) {
     return _db.getDashboardTenantName(str);
+  }
+
+  /// Get a technician's active work orders for a specific date — for conflict validation
+  Future<List<Map<String, dynamic>>> getTechnicianScheduleForDate(
+      String techId, String dateStr) async {
+    return await _db.getTechnicianScheduleForDate(techId, dateStr);
   }
 
   /// Get all work orders for a specific date - queries PostgreSQL directly

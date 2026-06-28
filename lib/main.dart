@@ -1,13 +1,23 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
 import './routes/app_router.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
+import 'package:anderson_crm_flutter/services/background_notification_service.dart';
+import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await BackgroundNotificationService.initializeService();
+
+  final container = ProviderContainer();
+  try {
+    await container.read(storageServiceProvider).init();
+  } catch (e) {
+    debugPrint('Failed to initialize StorageService: $e');
+  }
 
   // Disable browser's native right-click menu on web so Flutter's
   // popup menus (copy/call/sms) aren't blocked by Chrome's overlay.
@@ -20,14 +30,14 @@ void main() async {
 
     // Initialize encryption (if needed)
     // await Util.initEncryption();
-
     debugPrint('Anderson CRM Flutter app initialized successfully');
   } catch (e) {
     debugPrint('Initialization error: $e');
   }
 
   runApp(
-    ProviderScope(
+    UncontrolledProviderScope(
+      container: container,
       child: AndersonCRMApp(),
     ),
   );
@@ -43,7 +53,7 @@ class AndersonCRMApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      routerConfig: appRouter,
+      routerConfig: ref.watch(goRouterProvider),
     );
   }
 }

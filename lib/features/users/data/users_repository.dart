@@ -31,6 +31,11 @@ class UsersRepository {
     return await _dbService.getRoleNamesByIds(roleIds) ?? '';
   }
 
+  /// Batch-fetches role names for all unique role IDs in one request.
+  Future<Map<String, String>> getRoleNamesMap(Set<String> roleIds) async {
+    return await _dbService.getRoleNamesMap(roleIds);
+  }
+
   Future<bool> deleteUser(String empId) async {
     // await _dbService.deleteUser(empId); // Uncomment when API is available
     await Future.delayed(const Duration(milliseconds: 500));

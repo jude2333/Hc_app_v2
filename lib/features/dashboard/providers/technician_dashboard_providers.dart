@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/features/session/storage_provider.dart';
+import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import '../models/technician_metrics.dart';
 import '../repositories/technician_analytics_repository.dart';
 
@@ -52,10 +53,11 @@ extension TechDashboardStateX on TechDashboardState {
 class TechDailyNotifier extends StateNotifier<TechDashboardState> {
   final TechnicianAnalyticsRepository _repo;
   final String _techId;
+  final PowerSyncService _ps;
   DateTime _selectedDate = DateTime.now();
   StreamSubscription? _subscription;
 
-  TechDailyNotifier(this._repo, this._techId)
+  TechDailyNotifier(this._repo, this._techId, this._ps)
       : super(const TechDashboardInitial());
 
   DateTime get selectedDate => _selectedDate;
@@ -67,6 +69,13 @@ class TechDailyNotifier extends StateNotifier<TechDashboardState> {
 
   Future<void> loadData() async {
     if (state is TechDashboardLoading) return;
+
+    if (!_ps.isInitialized) {
+      debugPrint('[TechDaily] PowerSync not initialized yet, skipping');
+      state = const TechDashboardError('Initializing...');
+      return;
+    }
+
     final isFirst = state is TechDashboardInitial;
     state = TechDashboardLoading(isFirstLoad: isFirst);
 
@@ -110,13 +119,21 @@ class TechDailyNotifier extends StateNotifier<TechDashboardState> {
 class TechWeeklyNotifier extends StateNotifier<TechDashboardState> {
   final TechnicianAnalyticsRepository _repo;
   final String _techId;
+  final PowerSyncService _ps;
   bool _hasLoadedOnce = false;
 
-  TechWeeklyNotifier(this._repo, this._techId)
+  TechWeeklyNotifier(this._repo, this._techId, this._ps)
       : super(const TechDashboardInitial());
 
   Future<void> loadData() async {
     if (state is TechDashboardLoading) return;
+
+    if (!_ps.isInitialized) {
+      debugPrint('[TechWeekly] PowerSync not initialized yet, skipping');
+      state = const TechDashboardError('Initializing...');
+      return;
+    }
+
     state = TechDashboardLoading(isFirstLoad: !_hasLoadedOnce);
 
     try {
@@ -184,15 +201,17 @@ class TechWeeklyNotifier extends StateNotifier<TechDashboardState> {
 final techDailyProvider =
     StateNotifierProvider<TechDailyNotifier, TechDashboardState>((ref) {
   final repo = ref.watch(techAnalyticsRepositoryProvider);
+  final ps = ref.read(powerSyncServiceProvider);
   final storage = ref.read(storageServiceProvider);
   final techId = storage.getFromSession('logged_in_emp_id');
-  return TechDailyNotifier(repo, techId);
+  return TechDailyNotifier(repo, techId, ps);
 });
 
 final techWeeklyProvider =
     StateNotifierProvider<TechWeeklyNotifier, TechDashboardState>((ref) {
   final repo = ref.watch(techAnalyticsRepositoryProvider);
+  final ps = ref.read(powerSyncServiceProvider);
   final storage = ref.read(storageServiceProvider);
   final techId = storage.getFromSession('logged_in_emp_id');
-  return TechWeeklyNotifier(repo, techId);
+  return TechWeeklyNotifier(repo, techId, ps);
 });

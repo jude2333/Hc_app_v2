@@ -12,6 +12,10 @@ final NumberFormat _currencyFormat = NumberFormat.currency(
   decimalDigits: 0,
 );
 
+// Sentinel value to distinguish "not provided" from "intentionally null"
+// in copyWith. Dart's null can't serve both purposes for nullable fields.
+const _sentinel = Object();
+
 @immutable
 class WorkOrder {
   final String id;
@@ -350,7 +354,7 @@ class WorkOrder {
     int? proId,
     int? managerId,
     String? managerName,
-    int? assignedId,
+    Object? assignedId = _sentinel,
     String? assignedTo,
     int? b2bClientId,
     String? b2bClientName,
@@ -401,6 +405,11 @@ class WorkOrder {
     String? clientCode,
     String? doctorCode,
   }) {
+    // Resolve sentinel for assignedId: _sentinel means "keep existing"
+    final int? resolvedAssignedId = identical(assignedId, _sentinel)
+        ? this.assignedId
+        : assignedId as int?;
+
     //  OPTIMIZATION 5: Deep Copy to break references
     final updatedDoc = _deepCopyMap(parsedDocMap);
 
@@ -427,7 +436,7 @@ class WorkOrder {
     if (doctorCode != null) updatedDoc['doctor_code'] = doctorCode;
     if (status != null) updatedDoc['status'] = status;
     if (serverStatus != null) updatedDoc['server_status'] = serverStatus;
-    if (assignedId != null) updatedDoc['assigned_id'] = assignedId;
+    if (!identical(assignedId, _sentinel)) updatedDoc['assigned_id'] = resolvedAssignedId;
     if (assignedTo != null) updatedDoc['assigned_to'] = assignedTo;
     if (managerId != null) updatedDoc['manager_id'] = managerId.toString();
     if (managerName != null) updatedDoc['manager_name'] = managerName;
@@ -481,7 +490,7 @@ class WorkOrder {
       proId: proId ?? this.proId,
       managerId: managerId ?? this.managerId,
       managerName: managerName ?? this.managerName,
-      assignedId: assignedId ?? this.assignedId,
+      assignedId: resolvedAssignedId,
       assignedTo: assignedTo ?? this.assignedTo,
       b2bClientId: b2bClientId ?? this.b2bClientId,
       b2bClientName: b2bClientName ?? this.b2bClientName,

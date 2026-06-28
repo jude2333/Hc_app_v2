@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
 import 'package:anderson_crm_flutter/features/core/util.dart';
-import 'package:anderson_crm_flutter/features/manager_work_order/providers/manager_work_order_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 final techniciansProvider =
@@ -35,6 +34,7 @@ class _AssignTechnicianDialogState
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _isAssigning = false;
 
   @override
   void dispose() {
@@ -86,74 +86,133 @@ class _AssignTechnicianDialogState
     return [...matchFound, ...matchNotFound];
   }
 
-  bool _validateAssignment(
-      String techId, String techName, List<WorkOrder> allWorkOrders) {
+  /// Minimum gap (minutes) between two appointments for the same technician.
+  static const int _conflictBufferMinutes = 30;
+
+  /// Validates that the technician has no conflicting appointments on the
+  /// same date within the buffer window. Queries PostgreSQL directly so the
+  /// check is authoritative regardless of the manager's local view.
+  Future<bool> _validateAssignment(String techId, String techName) async {
     final workOrder = widget.workOrder;
     final appointmentDate = workOrder.visitDate;
     final appointmentTime = workOrder.visitTime;
+    final dateStr = appointmentDate.toIso8601String().split('T')[0];
 
-    for (var wo in allWorkOrders) {
-      if (wo.status.toLowerCase() == 'assigned' &&
-          wo.assignedId.toString() == techId &&
-          wo.visitDate.year == appointmentDate.year &&
-          wo.visitDate.month == appointmentDate.month &&
-          wo.visitDate.day == appointmentDate.day) {
-        try {
-          final currentTimeStr =
-              "${DateFormat('dd-MM-yyyy').format(appointmentDate)} $appointmentTime";
-          final woTimeStr =
-              "${DateFormat('dd-MM-yyyy').format(wo.visitDate)} ${wo.visitTime}";
+    try {
+      final dbService = ref.read(postgresServiceProvider);
+      final schedule =
+          await dbService.getTechnicianScheduleForDate(techId, dateStr);
 
-          final currentDateTime = _parseAppTime(currentTimeStr);
-          final woDateTime = _parseAppTime(woTimeStr);
+      if (schedule.isEmpty) return true;
 
-          if (currentDateTime != null && woDateTime != null) {
-            final diffMinutes =
-                woDateTime.difference(currentDateTime).inMinutes.abs();
-
-            if (diffMinutes == 0) {
+      // Parse the new appointment time
+      final newDateTime = _parseVisitTime(appointmentDate, appointmentTime);
+      if (newDateTime == null) {
+        // Can't parse time — fall back to exact string match
+        for (var wo in schedule) {
+          final woTime = wo['visit_time']?.toString() ?? '';
+          if (woTime == appointmentTime) {
+            if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                      '$techName has already got appointment at the same time.'),
+                      '$techName already has an appointment at $appointmentTime.'),
                   backgroundColor: Colors.red,
                 ),
               );
-              return false;
             }
-
-            if (diffMinutes == 1) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      '$techName has already got appointment within $diffMinutes min from this time.'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              return false;
-            }
-          }
-        } catch (e) {
-          debugPrint('Error parsing time for validation: $e');
-
-          if (appointmentTime == wo.visitTime) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    '$techName has already got appointment at the same time.'),
-                backgroundColor: Colors.red,
-              ),
-            );
             return false;
           }
         }
+        return true;
       }
+
+      for (var wo in schedule) {
+        // Skip the same work order (reassignment case)
+        if (wo['doc_id']?.toString() == workOrder.docId ||
+            wo['id']?.toString() == workOrder.id) {
+          continue;
+        }
+
+        final woTime = wo['visit_time']?.toString() ?? '';
+        final woDate = wo['visit_date']?.toString() ?? '';
+
+        // Parse existing appointment time
+        DateTime? existingDateTime;
+        if (woDate.isNotEmpty) {
+          final parsedDate = DateTime.tryParse(woDate);
+          if (parsedDate != null) {
+            existingDateTime = _parseVisitTime(parsedDate, woTime);
+          }
+        }
+        existingDateTime ??= _parseVisitTime(appointmentDate, woTime);
+
+        if (existingDateTime == null) {
+          // Can't parse — exact string match as fallback
+          if (woTime == appointmentTime) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      '$techName already has an appointment at $appointmentTime.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return false;
+          }
+          continue;
+        }
+
+        final diffMinutes =
+            existingDateTime.difference(newDateTime).inMinutes.abs();
+
+        if (diffMinutes < _conflictBufferMinutes) {
+          final existingPatient =
+              wo['patient_name']?.toString() ?? 'another patient';
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  diffMinutes == 0
+                      ? '$techName already has an appointment at $woTime for $existingPatient.'
+                      : '$techName has an appointment at $woTime (${diffMinutes}min gap) for $existingPatient. '
+                        'Minimum ${_conflictBufferMinutes}min gap required.',
+                ),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+          return false;
+        }
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Error validating technician schedule: $e');
+      // On network/DB error, allow assignment but warn
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Could not verify schedule — please confirm manually.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return true;
     }
-    return true;
   }
 
-  DateTime? _parseAppTime(String timeStr) {
+  /// Parses visit_time (HH:mm, H:mm, or hh:mm a) combined with a date
+  /// into a full DateTime for accurate difference calculation.
+  DateTime? _parseVisitTime(DateTime date, String timeStr) {
+    if (timeStr.isEmpty) return null;
     try {
+      final datePrefix = DateFormat('dd-MM-yyyy').format(date);
+      final fullStr = '$datePrefix $timeStr';
+
       final formats = [
         DateFormat('dd-MM-yyyy HH:mm'),
         DateFormat('dd-MM-yyyy H:mm'),
@@ -162,7 +221,7 @@ class _AssignTechnicianDialogState
 
       for (var format in formats) {
         try {
-          return format.parse(timeStr);
+          return format.parse(fullStr);
         } catch (_) {}
       }
       return null;
@@ -175,10 +234,6 @@ class _AssignTechnicianDialogState
   Widget build(BuildContext context) {
     final techniciansAsync = ref
         .watch(techniciansProvider(_searchQuery.isEmpty ? null : _searchQuery));
-
-    final allWorkOrders = ref.watch(
-      managerWONotifierProvider.select((s) => s.workOrders),
-    );
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
@@ -272,19 +327,31 @@ class _AssignTechnicianDialogState
                               isMobile: isMobile,
                               matchesPincode: _isPincodeMatch(
                                   tech, widget.workOrder.pincode),
-                              onTap: () {
+                              isAssigning: _isAssigning,
+                              onTap: () async {
+                                if (_isAssigning) return;
+
                                 final techId = tech['_id'].toString();
                                 final techName = tech['name'].toString();
 
-                                if (!_validateAssignment(
-                                    techId, techName, allWorkOrders)) {
-                                  return;
-                                }
+                                setState(() => _isAssigning = true);
 
-                                Navigator.of(context).pop();
-                                Future.microtask(() {
-                                  widget.onAssign(techId, techName);
-                                });
+                                try {
+                                  final isValid = await _validateAssignment(
+                                      techId, techName);
+                                  if (!isValid) return;
+
+                                  if (mounted) {
+                                    Navigator.of(context).pop();
+                                    Future.microtask(() {
+                                      widget.onAssign(techId, techName);
+                                    });
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isAssigning = false);
+                                  }
+                                }
                               },
                             );
                           },
@@ -414,12 +481,14 @@ class _TechnicianListItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool isMobile;
   final bool matchesPincode;
+  final bool isAssigning;
 
   const _TechnicianListItem({
     required this.technician,
     required this.onTap,
     required this.isMobile,
     this.matchesPincode = false,
+    this.isAssigning = false,
   });
 
   @override
@@ -428,26 +497,32 @@ class _TechnicianListItem extends StatelessWidget {
         technician['allocated_areas'] as List<dynamic>? ?? [];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: onTap,
-      splashColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
-      highlightColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 16,
-          vertical: isMobile ? 10 : 12,
+    return IgnorePointer(
+      ignoring: isAssigning,
+      child: Opacity(
+        opacity: isAssigning ? 0.5 : 1.0,
+        child: InkWell(
+          onTap: onTap,
+          splashColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
+          highlightColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 12 : 16,
+              vertical: isMobile ? 10 : 12,
+            ),
+            decoration: matchesPincode
+                ? BoxDecoration(
+                    color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight.withValues(alpha: 0.5),
+                    border: Border(
+                      left: BorderSide(color: AppColors.primary, width: 3),
+                    ),
+                  )
+                : null,
+            child: isMobile
+                ? _buildMobileLayout(context, allocatedAreas)
+                : _buildDesktopLayout(context, allocatedAreas),
+          ),
         ),
-        decoration: matchesPincode
-            ? BoxDecoration(
-                color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight.withValues(alpha: 0.5),
-                border: Border(
-                  left: BorderSide(color: AppColors.primary, width: 3),
-                ),
-              )
-            : null,
-        child: isMobile
-            ? _buildMobileLayout(context, allocatedAreas)
-            : _buildDesktopLayout(context, allocatedAreas),
       ),
     );
   }

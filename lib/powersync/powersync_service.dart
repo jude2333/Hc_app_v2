@@ -263,14 +263,23 @@ class PowerSyncService {
     String sql,
     List<Object?> parameters,
   ) {
+    if (!_initialized) return const Stream.empty();
+
     StreamController<List<Map<String, dynamic>>>? controller;
     StreamSubscription? subscription;
     bool isCancelled = false;
 
     void startListening() {
-      if (isCancelled) return;
+      if (isCancelled || !_initialized) return;
 
-      subscription = db.watch(sql, parameters: parameters).listen(
+      // Wrap with handleError to catch LegacyJavaScriptObject interop
+      // cast failures (e.g. UpdateNotification?) at the stream pipe level,
+      // before they reach the subscription's onError handler.
+      subscription = db
+          .watch(sql, parameters: parameters)
+          .handleError((error) {
+        debugPrint('[PowerSync Watch] Stream pipe error (caught): $error');
+      }).listen(
         (rows) {
           if (!isCancelled) {
             controller
@@ -278,9 +287,8 @@ class PowerSyncService {
           }
         },
         onError: (error) {
-          if (_debugSync)
-            debugPrint(
-                '[PowerSync Watch] Error: $error — restarting stream...');
+          debugPrint(
+              '[PowerSync Watch] Error: $error — restarting stream...');
           subscription?.cancel();
           if (!isCancelled) {
             Future.delayed(const Duration(seconds: 1), startListening);

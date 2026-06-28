@@ -413,8 +413,13 @@ class _DesktopExpandableRowState extends State<_DesktopExpandableRow> {
               child: Row(
                 children: [
                   FlexDataCell(item.deptName, flex: 2),
-                  FlexDataCell(item.investName,
-                      flex: 3, fontWeight: FontWeight.w500),
+                  FlexDataCell(
+                    item.investName,
+                    flex: 3,
+                    fontWeight: FontWeight.w500,
+                    maxLines: null,
+                    overflow: null,
+                  ),
                   FlexDataCell(widget.formatter.format(price),
                       flex: 1,
                       color: Colors.green,

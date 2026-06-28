@@ -371,8 +371,21 @@ class HCProcessController {
   }
 
   Future<void> _skipToFifthStep(String paymentNote, String otpNote) async {
+    // Rebuild testItems from current state to capture per-test discounts
+    final updatedTestItems =
+        _state.selectedTests.map((t) => TestItem.fromJson(t)).toList();
+
     var processDoc = _state.processDoc!
-        .copyWith(amountReceived: '0', discount: 0, status: 'Fifth Step')
+        .copyWith(
+          testItems: updatedTestItems,
+          amountReceived: '0',
+          discount: 0,
+          discountIsFlat: false,
+          amountAfterDiscount: _state.billAmount,
+          netTotal: 0,
+          total: _state.billAmount,
+          status: 'Fifth Step',
+        )
         .updateProcessStep(
             'third_step', 'Rs. ${_state.billAmount} $paymentNote')
         .updateProcessStep('fourth_step', otpNote);
@@ -383,11 +396,22 @@ class HCProcessController {
 
   Future<void> afterThirdStep() async {
     if (_state.creditClient && _state.cghsPrice) {
+      // Rebuild testItems from current state to capture per-test discounts
+      final updatedTestItems =
+          _state.selectedTests.map((t) => TestItem.fromJson(t)).toList();
+
       var processDoc = _state.processDoc!.copyWith(
+        testItems: updatedTestItems,
         credit: 1,
         cghs: 1,
         amountReceived: _state.amountReceived.toString(),
         discount: 0,
+        discountIsFlat: false,
+        amountAfterDiscount: 0,
+        netTotal: _state.amountReceived,
+        total: _state.billAmount,
+        hcCharges: _state.hcCharges,
+        disposableCharges: _state.disposableCharges,
         status: 'Fifth Step',
       );
       processDoc = processDoc
@@ -404,10 +428,19 @@ class HCProcessController {
     }
 
     if (_state.creditClient) {
+      // Rebuild testItems from current state to capture per-test discounts
+      final updatedTestItems =
+          _state.selectedTests.map((t) => TestItem.fromJson(t)).toList();
+
       var processDoc = _state.processDoc!.copyWith(
+        testItems: updatedTestItems,
         credit: 1,
         amountReceived: '0',
         discount: 0,
+        discountIsFlat: false,
+        amountAfterDiscount: 0,
+        netTotal: 0,
+        total: _state.billAmount,
         status: 'Fifth Step',
       );
       processDoc = processDoc
@@ -434,12 +467,20 @@ class HCProcessController {
     String step3Summary =
         'Rs. ${_state.billAmount}. Received Rs. ${_state.amountReceived} with $discountLabel.$testDiscountNote';
 
+    // Rebuild testItems from current state to capture per-test discounts
+    final updatedTestItems =
+        _state.selectedTests.map((t) => TestItem.fromJson(t)).toList();
+
     var processDoc = _state.processDoc!.copyWith(
+      testItems: updatedTestItems,
       discount: _state.discount,
+      discountIsFlat: _state.isDiscountFlat,
+      amountAfterDiscount: _state.amountAfterDiscount,
+      netTotal: _state.amountReceived,
       hcCharges: _state.hcCharges,
       disposableCharges: _state.disposableCharges,
       amountReceived: _state.amountReceived.toString(),
-      total: _state.billAmount + _state.hcCharges + _state.disposableCharges,
+      total: _state.billAmount,
       status: 'Third Step',
     );
     processDoc = processDoc.updateProcessStep('third_step', step3Summary);
@@ -797,14 +838,14 @@ class HCProcessController {
     final processDoc = _state.processDoc;
     if (processDoc == null) return;
 
-    final hasSugar = processDoc.testItems.any((test) =>
-        (test.investId == 177) ||
-        (test.investName?.toLowerCase().contains('glucose') == true) ||
-        (test.investName?.toLowerCase().contains('sugar') == true));
+    // Only trigger for Glucose Fasting (invest_id 177).
+    // Must NOT match Glucose PP (178) or other variants to avoid infinite loop.
+    final hasFastingGlucose =
+        processDoc.testItems.any((test) => test.investId == '177');
 
-    if (hasSugar) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('sugar_test_doc_id', workOrderId);
+    if (hasFastingGlucose) {
+      final storage = _ref.read(storageServiceProvider);
+      await storage.setSession('sugar_tests', workOrderId);
     }
   }
 }

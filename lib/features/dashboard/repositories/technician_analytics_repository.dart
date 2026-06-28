@@ -34,6 +34,7 @@ class TechnicianAnalyticsRepository {
   /// Fetch metrics for a single date.
   Future<TechnicianMetrics> getDailyMetrics(
       String techId, DateTime date) async {
+    if (!_ps.isInitialized) return const TechnicianMetrics();
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
     try {
       final rows = await _ps.db.getAll(
@@ -56,6 +57,7 @@ class TechnicianAnalyticsRepository {
   /// Returns a map of date string → metrics.
   Future<Map<String, TechnicianMetrics>> getRangeMetrics(
       String techId, DateTime start, DateTime end) async {
+    if (!_ps.isInitialized) return {};
     final startStr = DateFormat('yyyy-MM-dd').format(start);
     final endStr = DateFormat('yyyy-MM-dd').format(end);
     try {
@@ -86,6 +88,7 @@ class TechnicianAnalyticsRepository {
 
   /// Reactive stream for daily metrics — rebuilds when any work order changes.
   Stream<TechnicianMetrics> watchDailyMetrics(String techId, DateTime date) {
+    if (!_ps.isInitialized) return const Stream.empty();
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
     return _ps.createRecoverableWatch(
       '''

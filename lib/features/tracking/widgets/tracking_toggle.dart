@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/tracking_provider.dart';
 
-/// A toggle switch widget for the app bar that lets technicians
-/// start/stop location tracking.
-///
-/// Shows a switch with status indicator:
-/// 🟢 Green  = tracking active + WS connected
-/// 🟡 Yellow = tracking active + WS disconnected (caching)
-/// 🔴 Red    = tracking stopped
 class TrackingToggle extends ConsumerWidget {
   const TrackingToggle({super.key});
 
@@ -18,7 +11,7 @@ class TrackingToggle extends ConsumerWidget {
 
     final Color statusColor;
     final String tooltip;
-    
+
     if (trackingState.isTracking && trackingState.isConnected) {
       statusColor = Colors.green;
       tooltip = 'Tracking active';

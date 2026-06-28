@@ -36,7 +36,9 @@ class Authorize {
             'link': "lab_sample_receiving",
           },
         ];
-      } else if (roleName == "MANAGER" || roleName == "RECEPTIONIST" || roleName == "ADMIN") {
+      } else if (roleName == "MANAGER" ||
+          roleName == "RECEPTIONIST" ||
+          roleName == "ADMIN") {
         return [
           {
             'icon': "mdi-point-of-sale",

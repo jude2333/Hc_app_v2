@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 
 class PostgresDB {
+  static const List<String> validRoles = ['10', '170', '120', '240', '250', '280', '270'];
   final StorageRepository _storage;
   final void Function(String)? onStatusChange;
   final void Function(String)? onWorkOrderChange;
@@ -237,20 +238,11 @@ class PostgresDB {
 
           await _storage.saveSessionItem("role_list", roleListStr.join(','));
 
-          const checkRoleList = [
-            '10',
-            '170',
-            '120',
-            '240',
-            '250',
-            '280',
-            '270'
-          ];
           await _storage.saveSessionItem(
-              "check_role_list", checkRoleList.join(','));
+              "check_role_list", validRoles.join(','));
 
           List<String> finalRole = roleListStr
-              .where((role) => checkRoleList.contains(role))
+              .where((role) => validRoles.contains(role))
               .toList();
 
           if (finalRole.contains('170') && finalRole.contains('120')) {
@@ -258,7 +250,7 @@ class PostgresDB {
           }
 
           if (finalRole.isEmpty) {
-            if (checkRoleList.contains(userDetails['role_id'].toString())) {
+            if (validRoles.contains(userDetails['role_id'].toString())) {
               finalRole = [userDetails['role_id'].toString()];
             } else {
               return "NO_MATCHES";
@@ -267,18 +259,9 @@ class PostgresDB {
 
           await _storage.saveSessionItem("final_role", finalRole.join(','));
         } else {
-          const checkRoleList = [
-            '10',
-            '170',
-            '120',
-            '240',
-            '250',
-            '280',
-            '270'
-          ];
           await _storage.saveSessionItem("role_list", "");
 
-          if (checkRoleList.contains(userDetails['role_id'].toString())) {
+          if (validRoles.contains(userDetails['role_id'].toString())) {
             await _storage.saveSessionItem(
                 "final_role", userDetails['role_id'].toString());
           } else {
@@ -520,6 +503,7 @@ class PostgresDB {
 
   Future<dynamic> getAssignedTenantList([
     String? search,
+    int retryCount = 0,
   ]) async {
     if (_client == null) await _setup();
     final empId = await _storage.getSessionItem("logged_in_emp_id");
@@ -549,8 +533,9 @@ class PostgresDB {
         }
         return retArray;
       } else if (response.statusCode == 401) {
+        if (retryCount >= 2) return "Error";
         await _setup();
-        return getAssignedTenantList(search);
+        return getAssignedTenantList(search, retryCount + 1);
       } else {
         return "Error";
       }
@@ -927,6 +912,35 @@ class PostgresDB {
     }
   }
 
+  /// Batch-fetches role names for a set of role IDs in a single HTTP request.
+  /// Returns a map of roleId → roleName for efficient lookup.
+  Future<Map<String, String>> getRoleNamesMap(Set<String> roleIds) async {
+    if (roleIds.isEmpty) return {};
+
+    if (_client == null) {
+      await _setup();
+    }
+
+    try {
+      final query =
+          "/role_master?select=role_id,role_name&role_id=in.(${roleIds.join(',')})";
+
+      final response = await _client!.get(query);
+
+      if (response.statusCode == 200 || response.statusCode == 206) {
+        final Map<String, String> roleMap = {};
+        for (final item in response.data) {
+          roleMap[item['role_id'].toString()] = item['role_name'].toString();
+        }
+        return roleMap;
+      }
+    } catch (e) {
+      debugPrint('Error batch-fetching role names: $e');
+    }
+
+    return {};
+  }
+
   Future<List<Map<String, dynamic>>> searchPatients(
       String str, String mode) async {
     if (_client == null ||
@@ -934,22 +948,24 @@ class PostgresDB {
       await _setup();
     }
 
+    final tenantId = await _storage.getSessionItem("logged_in_tenant_id") ?? "";
+
     String query;
     switch (mode) {
       case 'Mobile':
         // Uses idx_visit_detail_mobile_json - queries mobile from JSON doc
         query =
-            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&doc->>mobile=eq.$str&visible=is.true&order=visit_date.desc,visit_time.desc';
+            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&tenant_id=eq.$tenantId&doc->>mobile=eq.$str&visible=is.true&order=visit_date.desc,visit_time.desc';
         break;
       case 'Date':
         // Uses idx_visit_detail_date_visible - queries top-level visit_date
         query =
-            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&visit_date=eq.$str&visible=is.true&order=visit_time.asc';
+            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&tenant_id=eq.$tenantId&visit_date=eq.$str&visible=is.true&order=visit_time.asc';
         break;
       case 'Name':
         // Uses idx_visit_detail_name_trgm - trigram index on patient_name
         query =
-            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&patient_name=ilike.*${str.toLowerCase().trim()}*&visible=is.true&order=visit_date.desc,visit_time.desc&limit=100';
+            '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&tenant_id=eq.$tenantId&patient_name=ilike.*${str.toLowerCase().trim()}*&visible=is.true&order=visit_date.desc,visit_time.desc&limit=100';
         break;
       default:
         return [];
@@ -1016,6 +1032,54 @@ class PostgresDB {
       return processedResults;
     } catch (e) {
       debugPrint('searchPatients error: $e');
+      return [];
+    }
+  }
+
+  /// Get a technician's active schedule for a date — used for conflict checking
+  /// before assignment. Queries PostgreSQL directly for authoritative data.
+  Future<List<Map<String, dynamic>>> getTechnicianScheduleForDate(
+      String techId, String dateStr) async {
+    if (_client == null ||
+        _client!.options.baseUrl != Settings.currentPostgresUrl) {
+      await _setup();
+    }
+
+    try {
+      // Fetch active work orders (not cancelled, not finished, not unassigned)
+      // for this technician on the given date
+      final query =
+          '/hc_patient_visit_detail'
+          '?select=id,doc_id,patient_name,visit_date,visit_time,status,assigned_id'
+          '&assigned_id=eq.$techId'
+          '&visit_date=eq.$dateStr'
+          '&visible=is.true'
+          '&status=not.in.(cancelled,finished,unassigned)';
+
+      var res = await _client!.get(query);
+
+      // Auto-refresh on expired JWT
+      if (res.statusCode == 401) {
+        debugPrint('[PostgreSQL] Token expired — refreshing and retrying...');
+        await refreshToken();
+        res = await _client!.get(query);
+      }
+
+      if (res.statusCode != 200 && res.statusCode != 206) return [];
+
+      List<dynamic> dataList = [];
+      final body = res.data;
+      if (body is Map && body['data'] is List) {
+        dataList = body['data'] as List;
+      } else if (body is List) {
+        dataList = body;
+      }
+
+      debugPrint(
+          '[PostgreSQL] Tech $techId schedule for $dateStr: ${dataList.length} active orders');
+      return dataList.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      debugPrint('getTechnicianScheduleForDate error: $e');
       return [];
     }
   }

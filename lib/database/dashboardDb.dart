@@ -1,309 +1,126 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/storage_repository.dart';
-import 'db_handler.dart';
-import 'couch_db.dart';
-import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
-import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
+import '../config/settings.dart';
 
 class DashboardDB {
-  final DBHandler _dbHandler;
-  final CouchDBClient _couchDB;
   final StorageRepository _storage;
+  Dio? _client;
 
-  DashboardDB(this._dbHandler, this._couchDB, this._storage);
+  DashboardDB(this._storage);
+
+  Future<Dio> _getClient() async {
+    if (_client != null) return _client!;
+
+    final String? token = await _storage.getSessionItem("pg_admin");
+
+    _client = Dio(BaseOptions(
+      baseUrl: Settings.currentPostgresUrl,
+      // connectTimeout maps to sendTimeout on web (unsupported for GET without body)
+      connectTimeout: kIsWeb ? null : const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+      },
+    ));
+    return _client!;
+  }
 
   Future<Map<String, dynamic>?> getOne(String docId) async {
     try {
-      String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
-      if (tenant == null || tenant.isEmpty) {
-        debugPrint(" Dashboard tenant name not found in session");
+      final String? tenantId =
+          await _storage.getSessionItem("logged_in_tenant_id");
+      if (tenantId == null) {
+        debugPrint(" Dashboard tenant ID not found in session");
         return null;
       }
 
-      String fullDocId = "${tenant}_$docId";
-      debugPrint(" Fetching dashboard document: $fullDocId");
+      String reportType;
+      String reportKey;
 
-      String? dbName = _dbHandler.resolveName("dashboard");
-      if (dbName == null) {
-        debugPrint(" Could not resolve dashboard database name");
-        return null;
-      }
-
-      Dio remoteDb = await _couchDB.getDB(dbName);
-
-      Response response = await remoteDb.get("/$fullDocId");
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> doc = Map<String, dynamic>.from(response.data);
-        debugPrint(" Successfully fetched dashboard document: $fullDocId");
-        return doc;
+      if (docId == 'yearly') {
+        reportType = 'yearly_summary';
+        reportKey = 'all';
+      } else if (docId.startsWith('yearly_')) {
+        reportType = 'yearly_month';
+        reportKey = docId.substring(7);
       } else {
-        debugPrint(" Failed to fetch document: ${response.statusCode}");
-        return null;
+        final idx = docId.indexOf('_');
+        if (idx == -1) return null;
+        reportType = docId.substring(0, idx);
+        reportKey = docId.substring(idx + 1);
       }
+
+      debugPrint(
+          " Fetching Postgres dashboard: type=$reportType key=$reportKey tenant=$tenantId");
+
+      final client = await _getClient();
+
+      final response = await client.get("/hc_dashboard", queryParameters: {
+        "select": "data",
+        "tenant_id": "eq.$tenantId",
+        "report_type": "eq.$reportType",
+        "report_key": "eq.$reportKey"
+      });
+
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          (response.data as List).isNotEmpty) {
+        debugPrint(" Successfully fetched Postgres dashboard document");
+        return {'data': response.data[0]['data']};
+      }
+      return null;
     } catch (e) {
       debugPrint(" Error fetching dashboard document '$docId': $e");
-      if (e is DioException) {
-        if (e.response?.statusCode == 404) {
-          debugPrint(" Document not found: $docId");
-        } else {
-          debugPrint("Response: ${e.response?.data}");
-        }
+      // Reset client on auth errors so next call re-creates with fresh token
+      if (e is DioException && e.response?.statusCode == 401) {
+        _client = null;
       }
       return null;
     }
   }
 
+  // The following methods are required by the DashboardService interface
+  // but are not actually used by the current dashboard providers (which only use getOne).
+  // They are stubbed out to avoid breaking the interface if called.
+
   Future<List<Map<String, dynamic>>> getMultiple(List<String> docIds) async {
-    try {
-      String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
-      if (tenant == null || tenant.isEmpty) {
-        debugPrint(" Dashboard tenant name not found in session");
-        return [];
-      }
-
-      List<String> fullDocIds = docIds.map((id) => "${tenant}_$id").toList();
-      debugPrint(" Fetching ${fullDocIds.length} dashboard documents");
-
-      String? dbName = _dbHandler.resolveName("dashboard");
-      if (dbName == null) {
-        debugPrint(" Could not resolve dashboard database name");
-        return [];
-      }
-
-      Dio remoteDb = await _couchDB.getDB(dbName);
-
-      Response response = await remoteDb.post(
-        "/_all_docs",
-        data: {
-          "keys": fullDocIds,
-          "include_docs": true,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        List<Map<String, dynamic>> docs = [];
-        List<dynamic> rows = response.data['rows'] ?? [];
-
-        for (var row in rows) {
-          if (row['doc'] != null && row['error'] == null) {
-            docs.add(Map<String, dynamic>.from(row['doc']));
-          }
-        }
-
-        debugPrint(" Successfully fetched ${docs.length} dashboard documents");
-        return docs;
-      } else {
-        debugPrint(" Failed to fetch documents: ${response.statusCode}");
-        return [];
-      }
-    } catch (e) {
-      debugPrint(" Error fetching multiple dashboard documents: $e");
-      return [];
-    }
+    debugPrint("DashboardDB.getMultiple not supported in Postgres migration");
+    return [];
   }
 
   Future<List<Map<String, dynamic>>> getAll() async {
-    try {
-      String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
-      if (tenant == null || tenant.isEmpty) {
-        debugPrint(" Dashboard tenant name not found in session");
-        return [];
-      }
+    debugPrint("DashboardDB.getAll not supported in Postgres migration");
+    return [];
+  }
 
-      debugPrint(" Fetching all dashboard documents for tenant: $tenant");
-
-      String? dbName = _dbHandler.resolveName("dashboard");
-      if (dbName == null) {
-        debugPrint("❌ Could not resolve dashboard database name");
-        return [];
-      }
-
-      Dio remoteDb = await _couchDB.getDB(dbName);
-
-      Response response = await remoteDb.get(
-        "/_all_docs",
-        queryParameters: {
-          "include_docs": true,
-          "startkey": jsonEncode("${tenant}_"),
-          "endkey": jsonEncode("${tenant}_\ufff0"),
-        },
-      );
-
-      if (response.statusCode == 200) {
-        List<Map<String, dynamic>> docs = [];
-        List<dynamic> rows = response.data['rows'] ?? [];
-
-        for (var row in rows) {
-          if (row['doc'] != null) {
-            docs.add(Map<String, dynamic>.from(row['doc']));
-          }
-        }
-
-        debugPrint(" Successfully fetched ${docs.length} dashboard documents");
-        return docs;
-      } else {
-        debugPrint(" Failed to fetch all documents: ${response.statusCode}");
-        return [];
-      }
-    } catch (e) {
-      debugPrint(" Error fetching all dashboard documents: $e");
-      return [];
-    }
+  Future<List<Map<String, dynamic>>> query(
+      {bool Function(Map<String, dynamic>)? filter}) async {
+    debugPrint("DashboardDB.query not supported in Postgres migration");
+    return [];
   }
 
   Future<String> put(String docId, Map<String, dynamic> doc) async {
-    try {
-      String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
-      if (tenant == null || tenant.isEmpty) {
-        debugPrint(" Dashboard tenant name not found in session");
-        return "ERROR: Tenant name not found";
-      }
-
-      String fullDocId = "${tenant}_$docId";
-      doc['_id'] = fullDocId;
-
-      debugPrint(" Updating dashboard document: $fullDocId");
-
-      String? dbName = _dbHandler.resolveName("dashboard");
-      if (dbName == null) {
-        debugPrint(" Could not resolve dashboard database name");
-        return "ERROR: Database name not resolved";
-      }
-
-      Dio remoteDb = await _couchDB.getDB(dbName);
-
-      try {
-        Response getResponse = await remoteDb.get("/$fullDocId");
-        if (getResponse.statusCode == 200) {
-          doc['_rev'] = getResponse.data['_rev'];
-          debugPrint(" Got current rev: ${doc['_rev']}");
-        }
-      } catch (e) {
-        debugPrint(" Document doesn't exist yet, creating new one");
-      }
-
-      Response response = await remoteDb.put(
-        "/$fullDocId",
-        data: doc,
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint(" Successfully updated dashboard document: $fullDocId");
-        return "OK";
-      } else {
-        debugPrint(" Failed to update document: ${response.statusCode}");
-        return "ERROR: ${response.statusMessage ?? 'Update failed'}";
-      }
-    } catch (e) {
-      debugPrint(" Error updating dashboard document '$docId': $e");
-      if (e is DioException) {
-        debugPrint("Response: ${e.response?.data}");
-        if (e.response?.statusCode == 409) {
-          return "ERROR: Conflict - Document was modified by another user";
-        }
-      }
-      return "ERROR: $e";
-    }
+    debugPrint("DashboardDB.put not supported in Postgres migration");
+    return "";
   }
 
   Future<String> delete(String docId) async {
-    try {
-      String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
-      if (tenant == null || tenant.isEmpty) {
-        debugPrint(" Dashboard tenant name not found in session");
-        return "ERROR: Tenant name not found";
-      }
-
-      String fullDocId = "${tenant}_$docId";
-      debugPrint(" Deleting dashboard document: $fullDocId");
-
-      String? dbName = _dbHandler.resolveName("dashboard");
-      if (dbName == null) {
-        debugPrint(" Could not resolve dashboard database name");
-        return "ERROR: Database name not resolved";
-      }
-
-      Dio remoteDb = await _couchDB.getDB(dbName);
-
-      Response getResponse = await remoteDb.get("/$fullDocId");
-      if (getResponse.statusCode != 200) {
-        debugPrint(" Document not found: $fullDocId");
-        return "ERROR: Document not found";
-      }
-
-      String rev = getResponse.data['_rev'];
-
-      Response response = await remoteDb.delete(
-        "/$fullDocId",
-        queryParameters: {"rev": rev},
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        debugPrint(" Successfully deleted dashboard document: $fullDocId");
-        return "OK";
-      } else {
-        debugPrint(" Failed to delete document: ${response.statusCode}");
-        return "ERROR: ${response.statusMessage ?? 'Delete failed'}";
-      }
-    } catch (e) {
-      debugPrint(" Error deleting dashboard document '$docId': $e");
-      if (e is DioException) {
-        debugPrint("Response: ${e.response?.data}");
-      }
-      return "ERROR: $e";
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> query({
-    bool Function(Map<String, dynamic>)? filter,
-  }) async {
-    try {
-      List<Map<String, dynamic>> allDocs = await getAll();
-
-      if (filter != null) {
-        return allDocs.where(filter).toList();
-      }
-
-      return allDocs;
-    } catch (e) {
-      debugPrint(" Error querying dashboard documents: $e");
-      return [];
-    }
+    debugPrint("DashboardDB.delete not supported in Postgres migration");
+    return "";
   }
 
   Future<bool> exists(String docId) async {
-    try {
-      String? tenant = await _storage.getSessionItem("dashboard_tenant_name");
-      if (tenant == null || tenant.isEmpty) {
-        return false;
-      }
-
-      String fullDocId = "${tenant}_$docId";
-
-      String? dbName = _dbHandler.resolveName("dashboard");
-      if (dbName == null) {
-        return false;
-      }
-
-      Dio remoteDb = await _couchDB.getDB(dbName);
-
-      Response response = await remoteDb.head("/$fullDocId");
-
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
+    final doc = await getOne(docId);
+    return doc != null;
   }
 }
 
 final dashboardDbProvider = Provider<DashboardDB>((ref) {
-  final dbHandler = ref.watch(dbHandlerProvider);
-  final couchDb = ref.watch(couchDbClientProvider);
   final storage = ref.watch(storageRepositoryProvider);
-  return DashboardDB(dbHandler, couchDb, storage);
+  return DashboardDB(storage);
 });

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'copyable_text.dart';
 
-/// Layout options for NameWithBadges widget.
 enum BadgeLayout { row, column }
 
 class NameWithBadges extends StatelessWidget {
@@ -12,7 +11,6 @@ class NameWithBadges extends StatelessWidget {
   final BadgeLayout layout;
   final TextStyle? nameStyle;
 
-  /// Create from a [WorkOrder] (used by manager views).
   const NameWithBadges({
     super.key,
     required WorkOrder workOrder,
@@ -22,7 +20,6 @@ class NameWithBadges extends StatelessWidget {
         _rawName = null,
         _rawFlags = null;
 
-  /// Create from raw name + precomputed flags (used by search views).
   const NameWithBadges.raw({
     super.key,
     required String name,
@@ -33,7 +30,6 @@ class NameWithBadges extends StatelessWidget {
         _rawName = name,
         _rawFlags = flags;
 
-  /// Extract badge flags from a raw CouchDB/PostgreSQL doc map.
   static List<String> extractFlagsFromMap(Map<String, dynamic> data) {
     final flags = <String>[];
     final urgentVal = data['urgent'];

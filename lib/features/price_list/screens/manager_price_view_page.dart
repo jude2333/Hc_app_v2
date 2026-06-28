@@ -141,7 +141,8 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                 height: 40,
                 child: TextField(
                   controller: _searchController,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Search (Name, Dept, >500)',
                     prefixIcon:
@@ -151,7 +152,11 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBorder : Colors.grey.shade100)),
+                        borderSide: BorderSide(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.darkBorder
+                                    : Colors.grey.shade100)),
                   ),
                   onChanged: _onSearchChanged,
                 ),
@@ -195,7 +200,8 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     final skeletonColor = isDark ? AppColors.darkBorder : Colors.grey.shade200;
-    final skeletonColorAlt = isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100;
+    final skeletonColorAlt =
+        isDark ? AppColors.darkSurfaceAlt : Colors.grey.shade100;
 
     if (isMobile) {
       return ListView.builder(
@@ -207,7 +213,8 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isDark ? AppColors.darkBorder : Colors.grey.shade200),
+            border: Border.all(
+                color: isDark ? AppColors.darkBorder : Colors.grey.shade200),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,8 +241,7 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(children: [
-                    Container(
-                        width: 40, height: 10, color: skeletonColorAlt),
+                    Container(width: 40, height: 10, color: skeletonColorAlt),
                     const SizedBox(height: 4),
                     Container(
                         width: 60,
@@ -245,8 +251,7 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                             borderRadius: BorderRadius.circular(4))),
                   ]),
                   Column(children: [
-                    Container(
-                        width: 30, height: 10, color: skeletonColorAlt),
+                    Container(width: 30, height: 10, color: skeletonColorAlt),
                     const SizedBox(height: 4),
                     Container(
                         width: 50,
@@ -256,8 +261,7 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                             borderRadius: BorderRadius.circular(4))),
                   ]),
                   Column(children: [
-                    Container(
-                        width: 35, height: 10, color: skeletonColorAlt),
+                    Container(width: 35, height: 10, color: skeletonColorAlt),
                     const SizedBox(height: 4),
                     Container(
                         width: 50,
@@ -266,7 +270,9 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                             color: skeletonColor,
                             borderRadius: BorderRadius.circular(4))),
                   ]),
-                  Icon(Icons.keyboard_arrow_down, color: isDark ? AppColors.darkBorder : Colors.grey.shade300),
+                  Icon(Icons.keyboard_arrow_down,
+                      color:
+                          isDark ? AppColors.darkBorder : Colors.grey.shade300),
                 ],
               ),
             ],
@@ -286,7 +292,8 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
+                color:
+                    isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12)),
@@ -313,7 +320,10 @@ class _ManagerPriceViewPageState extends ConsumerState<ManagerPriceViewPage> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                       border: Border(
-                          bottom: BorderSide(color: isDark ? AppColors.darkDivider : Colors.grey.shade200))),
+                          bottom: BorderSide(
+                              color: isDark
+                                  ? AppColors.darkDivider
+                                  : Colors.grey.shade200))),
                   child: Row(
                     children: List.generate(
                         6,
@@ -373,7 +383,8 @@ class _VirtualPriceTable extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
+                color:
+                    isDark ? AppColors.darkSurfaceAlt : Colors.orange.shade50,
                 borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12)),
@@ -480,8 +491,13 @@ class _ManagerExpandableRowState extends State<_ManagerExpandableRow>
             child: Row(
               children: [
                 FlexDataCell(item.deptName, flex: 2),
-                FlexDataCell(item.investName,
-                    flex: 3, fontWeight: FontWeight.w600),
+                FlexDataCell(
+                  item.investName,
+                  flex: 3,
+                  fontWeight: FontWeight.w600,
+                  maxLines: null,
+                  overflow: null,
+                ),
                 FlexDataCell(widget.formatter.format(price),
                     flex: 1, color: Colors.green, fontWeight: FontWeight.bold),
                 FlexDataCell(widget.formatter.format(minPrice), flex: 1),
@@ -518,7 +534,8 @@ class _ManagerExpandableRowState extends State<_ManagerExpandableRow>
         ),
         if (_isExpanded)
           _ExpandedDetails(history: history, itemId: item.investId),
-        Divider(height: 1, color: isDark ? AppColors.darkDivider : Colors.black12),
+        Divider(
+            height: 1, color: isDark ? AppColors.darkDivider : Colors.black12),
       ],
     );
   }
@@ -567,7 +584,10 @@ class _ExpandedDetails extends StatelessWidget {
                         children: [
                           Text(h['summary'] ?? '',
                               style: TextStyle(
-                                  color: isDark ? AppColors.darkTextPrimary : Colors.grey.shade800, fontSize: 13)),
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : Colors.grey.shade800,
+                                  fontSize: 13)),
                           Text('${h['emp_name']} • ${h['time_stamp']}',
                               style: const TextStyle(
                                   fontSize: 11, color: Colors.grey)),
@@ -710,7 +730,9 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.mdAll,
         side: BorderSide(
-          color: _isExpanded ? Colors.orange : (isDark ? AppColors.darkBorder : AppColors.divider),
+          color: _isExpanded
+              ? Colors.orange
+              : (isDark ? AppColors.darkBorder : AppColors.divider),
           width: _isExpanded ? 1.5 : 1,
         ),
       ),
@@ -732,16 +754,23 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.primary.withValues(alpha: 0.15) : Colors.orange.shade50,
+                          color: isDark
+                              ? AppColors.primary.withValues(alpha: 0.15)
+                              : Colors.orange.shade50,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: isDark ? AppColors.primary.withValues(alpha: 0.3) : Colors.orange.shade100),
+                          border: Border.all(
+                              color: isDark
+                                  ? AppColors.primary.withValues(alpha: 0.3)
+                                  : Colors.orange.shade100),
                         ),
                         child: Text(
                           item.deptName,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.gradientEnd : Colors.orange.shade800,
+                            color: isDark
+                                ? AppColors.gradientEnd
+                                : Colors.orange.shade800,
                           ),
                         ),
                       ),
@@ -797,7 +826,8 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -817,7 +847,8 @@ class _MobilePriceCardState extends State<_MobilePriceCard>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],

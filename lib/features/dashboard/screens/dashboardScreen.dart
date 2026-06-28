@@ -20,7 +20,9 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+    // TickerProviderStateMixin (not Single) because the controller is disposed
+    // and recreated when the role changes (TECHNICIAN→MANAGER = 2→4 tabs).
+    with TickerProviderStateMixin {
   TabController? _tabController;
   String? _roleName;
   String? _tenantId;
@@ -42,14 +44,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   Future<void> _loadUserData() async {
     final storage = ref.read(storageServiceProvider);
+    if (!mounted) return;
 
-    if (mounted) {
-      setState(() {
-        _roleName = storage.getFromSession("role_name");
-        _tenantId = storage.getFromSession("logged_in_tenant_id");
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _roleName = storage.getFromSession("role_name");
+      _tenantId = storage.getFromSession("logged_in_tenant_id");
+      _isLoading = false;
+    });
+
+    // _roleName is set — safe to create the controller outside build().
+    // build() must remain pure; controller creation is a side effect.
+    _ensureTabController();
   }
 
   /// Re-reads tenant/role from storage on each build so that
@@ -77,26 +82,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     }
   }
 
-  bool _checkTenant(String? tenantId) {
-    if (tenantId == null) return false;
-    const tenantsAllowed = [1, 26, 70];
-    return tenantsAllowed.contains(int.tryParse(tenantId));
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (_isLoading || _tabController == null) {
       return const _SkeletonDashboard();
-    }
-
-    // Re-read tenant/role so post-tenant-switch navigation is fresh
-    _refreshUserData();
-
-    // Ensure controller matches current role before rendering tabs
-    _ensureTabController();
-
-    if (!_checkTenant(_tenantId)) {
-      return _buildComingSoonScreen('Dashboard Yet To Come');
     }
 
     if (_roleName == 'MANAGER' || _roleName == 'ADMIN') {

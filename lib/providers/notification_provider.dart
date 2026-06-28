@@ -120,8 +120,11 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     _isRealtimeSetup = true;
 
     final dbHandler = ref.read(dbHandlerProvider);
-    final notificationsDbName =
-        dbHandler.resolveName('hc_notifications') ?? 'hc_notifications';
+    final notificationsDbName = dbHandler.resolveName('hc_notifications');
+    if (notificationsDbName == null) {
+      debugPrint(" [Notifications] No notifications database configured for this tenant. Skipping real-time listener.");
+      return;
+    }
     debugPrint("Notification db name >>>:$notificationsDbName");
 
     final stream = dbHandler.startContinuousStream(notificationsDbName);

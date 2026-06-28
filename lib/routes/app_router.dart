@@ -16,9 +16,22 @@ import 'package:anderson_crm_flutter/features/manager_work_order/screens/manager
 import 'package:anderson_crm_flutter/features/search/screens/search_page.dart';
 import 'package:anderson_crm_flutter/features/tracking_dashboard/screens/tracking_dashboard_page.dart';
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/login',
-  routes: [
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:anderson_crm_flutter/features/shell/providers/shell_providers.dart';
+
+final goRouterProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: '/login',
+    redirect: (context, state) {
+      final signedIn = ref.read(signedInProvider);
+      final isLoginRoute = state.uri.toString() == '/login';
+      
+      if (!signedIn && !isLoginRoute) {
+        return '/login';
+      }
+      return null;
+    },
+    routes: [
     GoRoute(
       path: '/login',
       name: 'login',
@@ -99,5 +112,6 @@ final GoRouter appRouter = GoRouter(
         ],
       ),
     ),
-  ),
-);
+    ),
+  );
+});

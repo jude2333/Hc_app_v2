@@ -11,6 +11,10 @@ import 'package:anderson_crm_flutter/services/dbHandler_service.dart';
 import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import '../providers/shell_providers.dart';
+import 'package:anderson_crm_flutter/database/dashboardDb.dart';
+import 'package:anderson_crm_flutter/features/dashboard/providers/dashboard_providers.dart';
+import 'package:anderson_crm_flutter/features/dashboard/providers/technician_dashboard_providers.dart';
+import 'package:anderson_crm_flutter/features/search/providers/search_provider.dart';
 
 final _debounceTimerProvider = StateProvider<DateTime?>((ref) => null);
 
@@ -116,6 +120,10 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
         });
 
         if (result == 200) {
+          // Capture build context dependent objects before the async gap
+          final router = GoRouter.of(context);
+          final navigator = Navigator.of(context);
+
           // PostgresDB writes to StorageRepository (SharedPreferences) directly,
           // but StorageService has its own in-memory cache that is now stale.
           await storage.reloadCaches();
@@ -132,9 +140,18 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
           final couchDb = ref.read(couchDbClientProvider);
           final initNotifier = ref.read(initializingProvider.notifier);
           final dbHandlerService = ref.read(dbHandlerServiceProvider);
-          final router = GoRouter.of(context);
 
-          Navigator.of(context).pop();
+          // Invalidate all dashboard-related providers to clear caches and trigger reload for the new tenant
+          ref.invalidate(dashboardDbProvider);
+          ref.invalidate(dailyReportProvider);
+          ref.invalidate(weeklyReportProvider);
+          ref.invalidate(monthlyReportProvider);
+          ref.invalidate(yearlyReportProvider);
+          ref.invalidate(techDailyProvider);
+          ref.invalidate(techWeeklyProvider);
+          ref.invalidate(searchProvider);
+
+          navigator.pop();
 
           // Fire-and-forget: reset app state with captured references
           _resetAppState(
