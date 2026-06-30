@@ -1,15 +1,14 @@
-
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 
 class AppDecorations {
-  /// Glassmorphism panel for map overlays
   static BoxDecoration get glassPanel {
     return BoxDecoration(
       color: AppColors.glassBackground,
       borderRadius: AppRadius.lgAll,
-      border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+      border:
+          Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
       boxShadow: [
         BoxShadow(
           color: AppColors.shadowMedium,
@@ -20,7 +19,6 @@ class AppDecorations {
     );
   }
 
-  /// Branded card with subtle shadow for data lists
   static BoxDecoration get brandedCard {
     return BoxDecoration(
       color: AppColors.surface,
@@ -36,7 +34,6 @@ class AppDecorations {
     );
   }
 
-  /// Compact status pill badge
   static BoxDecoration pillBadge(Color color) {
     return BoxDecoration(
       color: color.withValues(alpha: 0.1),
@@ -45,7 +42,6 @@ class AppDecorations {
     );
   }
 
-  /// Active filter pill
   static BoxDecoration get activeFilterPill {
     return BoxDecoration(
       color: AppColors.primaryLight,
@@ -61,7 +57,6 @@ class AppDecorations {
     );
   }
 
-  /// Inactive filter pill
   static BoxDecoration get inactiveFilterPill {
     return BoxDecoration(
       color: AppColors.surface,
@@ -70,7 +65,6 @@ class AppDecorations {
     );
   }
 
-  /// Map marker container 
   static BoxDecoration get mapMarker {
     return BoxDecoration(
       color: AppColors.surface,
@@ -82,7 +76,6 @@ class AppDecorations {
     );
   }
 
-  /// Download card for APK download prompts
   static BoxDecoration get downloadCard {
     return BoxDecoration(
       color: AppColors.surface,
@@ -98,7 +91,6 @@ class AppDecorations {
     );
   }
 
-  /// Info/release notes container
   static BoxDecoration get infoPanel {
     return BoxDecoration(
       color: AppColors.infoBackground,

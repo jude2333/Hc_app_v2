@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/providers/work_order_provider.dart';
@@ -223,9 +224,10 @@ class _EditWorkOrderDialogState extends ConsumerState<EditWorkOrderDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _mobileController,
-                  decoration: _inputDecoration('Mobile', icon: Icons.phone),
+                  decoration: _inputDecoration('Mobile', icon: Icons.phone).copyWith(counterText: ""),
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Required';
                     if (v.length != 10) return 'Must be 10 digits';

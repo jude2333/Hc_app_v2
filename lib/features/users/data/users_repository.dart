@@ -26,29 +26,24 @@ class UsersRepository {
     return null;
   }
 
-  // Helper to get role name if not present in the main object
   Future<String> getRoleNameByIds(dynamic roleIds) async {
     return await _dbService.getRoleNamesByIds(roleIds) ?? '';
   }
 
-  /// Batch-fetches role names for all unique role IDs in one request.
   Future<Map<String, String>> getRoleNamesMap(Set<String> roleIds) async {
     return await _dbService.getRoleNamesMap(roleIds);
   }
 
   Future<bool> deleteUser(String empId) async {
-    // await _dbService.deleteUser(empId); // Uncomment when API is available
     await Future.delayed(const Duration(milliseconds: 500));
     return true;
   }
 
   Future<Map<String, dynamic>> addUser(Map<String, dynamic> doc) async {
     final response = await _dbService.insertUser(doc);
-    // insertUser returns a Dio Response object, extract statusCode
     if (response is Map) {
       return response as Map<String, dynamic>;
     }
-    // Handle Response object from Dio
     try {
       final statusCode = response.statusCode;
       return {'statusCode': statusCode, 'data': response.data};
@@ -69,11 +64,9 @@ class UsersRepository {
   Future<Map<String, dynamic>> updateUser(
       String empId, Map<String, dynamic> doc) async {
     final response = await _dbService.updateUser(empId, doc);
-    // updateUser returns a Dio Response object, extract statusCode
     if (response is Map) {
       return response as Map<String, dynamic>;
     }
-    // Handle Response object from Dio
     try {
       final statusCode = response.statusCode;
       return {'statusCode': statusCode, 'data': response.data};

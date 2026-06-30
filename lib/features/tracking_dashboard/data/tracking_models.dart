@@ -1,5 +1,3 @@
-// Data models for the tracking dashboard
-
 class TechnicianStatus {
   final int technicianId;
   final int tenantId;
@@ -65,8 +63,6 @@ class TechnicianStatus {
           : null,
     );
   }
-
-  /// Status label for display
   String get statusLabel {
     if (!isOnline) return 'Offline';
     if (lastActivity == 'stationary' || lastSpeed == null || lastSpeed! < 0.5) {
@@ -75,10 +71,7 @@ class TechnicianStatus {
     return 'Moving';
   }
 
-  /// Speed in km/h
   double get speedKmh => (lastSpeed ?? 0) * 3.6;
-
-  /// Has valid coordinates
   bool get hasLocation => lastLatitude != null && lastLongitude != null;
 
   static double? _toDouble(dynamic value) {
@@ -196,7 +189,9 @@ class TrackingAlert {
 
   factory TrackingAlert.fromJson(Map<String, dynamic> json) {
     return TrackingAlert(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       tenantId: json['tenant_id'] is int ? json['tenant_id'] : 0,
       technicianId: json['technician_id'] is int ? json['technician_id'] : 0,
       technicianName: json['technician_name'],
@@ -209,18 +204,24 @@ class TrackingAlert {
       createdAt: DateTime.parse(json['created_at'].toString()),
     );
   }
-
-  /// Icon for the alert type
   String get icon {
     switch (alertType) {
-      case 'offline_timeout': return '📡';
-      case 'battery_low': return '🔋';
-      case 'speed_exceeded': return '🏎️';
-      case 'fence_exit': return '🚧';
-      case 'idle_too_long': return '💤';
-      case 'gps_mock_detected': return '⚠️';
-      case 'tracking_disabled': return '📍';
-      default: return '🔔';
+      case 'offline_timeout':
+        return '📡';
+      case 'battery_low':
+        return '🔋';
+      case 'speed_exceeded':
+        return '🏎️';
+      case 'fence_exit':
+        return '🚧';
+      case 'idle_too_long':
+        return '💤';
+      case 'gps_mock_detected':
+        return '⚠️';
+      case 'tracking_disabled':
+        return '📍';
+      default:
+        return '🔔';
     }
   }
 

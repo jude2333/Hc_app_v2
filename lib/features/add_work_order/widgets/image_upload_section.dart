@@ -35,7 +35,8 @@ class ImageUploadSection extends StatelessWidget {
               children: <Widget>[
                 ListTile(
                   leading: Icon(Icons.photo_library,
-                      color: isDark ? AppColors.gradientEnd : AppColors.primary),
+                      color:
+                          isDark ? AppColors.gradientEnd : AppColors.primary),
                   title: Text('Gallery',
                       style: TextStyle(color: colorScheme.onSurface)),
                   onTap: () {
@@ -45,7 +46,8 @@ class ImageUploadSection extends StatelessWidget {
                 ),
                 ListTile(
                   leading: Icon(Icons.camera_alt,
-                      color: isDark ? AppColors.gradientEnd : AppColors.primary),
+                      color:
+                          isDark ? AppColors.gradientEnd : AppColors.primary),
                   title: Text('Camera',
                       style: TextStyle(color: colorScheme.onSurface)),
                   onTap: () {
@@ -70,7 +72,6 @@ class ImageUploadSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Existing (S3) prescription chips
         if (initialUrls.isNotEmpty)
           Wrap(
             spacing: 8,
@@ -82,7 +83,8 @@ class ImageUploadSection extends StatelessWidget {
                       size: 16, color: AppColors.success),
                   label: Text(
                     _extractFileName(initialUrls[i]),
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                    style:
+                        TextStyle(fontSize: 12, color: colorScheme.onSurface),
                     overflow: TextOverflow.ellipsis,
                   ),
                   deleteIcon:
@@ -96,8 +98,6 @@ class ImageUploadSection extends StatelessWidget {
                 ),
             ],
           ),
-
-        // Newly picked image chips
         if (images.isNotEmpty) ...[
           if (initialUrls.isNotEmpty) const SizedBox(height: 6),
           Wrap(
@@ -110,7 +110,8 @@ class ImageUploadSection extends StatelessWidget {
                       size: 16, color: AppColors.secondary),
                   label: Text(
                     images[i].name,
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                    style:
+                        TextStyle(fontSize: 12, color: colorScheme.onSurface),
                     overflow: TextOverflow.ellipsis,
                   ),
                   deleteIcon:
@@ -124,10 +125,7 @@ class ImageUploadSection extends StatelessWidget {
             ],
           ),
         ],
-
         SizedBox(height: hasAny ? AppSpacing.sm : 0),
-
-        // Upload button — always visible so user can add more
         OutlinedButton.icon(
           icon: Icon(Icons.camera_alt_rounded,
               color: isDark ? AppColors.gradientEnd : AppColors.secondary),
@@ -149,11 +147,9 @@ class ImageUploadSection extends StatelessWidget {
     );
   }
 
-  /// Extract a readable filename from a full S3 path.
   String _extractFileName(String path) {
     final parts = path.split('/');
     final name = parts.isNotEmpty ? parts.last : path;
-    // Remove timestamp prefix if present (e.g. "1738000000000_photo.jpg" → "photo.jpg")
     final underscoreIdx = name.indexOf('_');
     if (underscoreIdx > 0 && underscoreIdx < 15) {
       final prefix = name.substring(0, underscoreIdx);

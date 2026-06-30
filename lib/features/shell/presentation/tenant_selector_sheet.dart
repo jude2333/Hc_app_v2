@@ -15,6 +15,7 @@ import 'package:anderson_crm_flutter/database/dashboardDb.dart';
 import 'package:anderson_crm_flutter/features/dashboard/providers/dashboard_providers.dart';
 import 'package:anderson_crm_flutter/features/dashboard/providers/technician_dashboard_providers.dart';
 import 'package:anderson_crm_flutter/features/search/providers/search_provider.dart';
+import 'package:anderson_crm_flutter/components/assign_technicians.dart';
 
 final _debounceTimerProvider = StateProvider<DateTime?>((ref) => null);
 
@@ -150,6 +151,7 @@ class _TenantSelectorSheetState extends ConsumerState<TenantSelectorSheet> {
           ref.invalidate(techDailyProvider);
           ref.invalidate(techWeeklyProvider);
           ref.invalidate(searchProvider);
+          ref.invalidate(techniciansProvider);
 
           navigator.pop();
 

@@ -6,9 +6,6 @@ import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/config/settings.dart';
 import '../repositories/manager_work_order_repository.dart';
 
-
-
-
 @immutable
 class ManagerWOState {
   final List<WorkOrder> workOrders;
@@ -43,9 +40,6 @@ class ManagerWOState {
   }
 }
 
-
-
-
 class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
   late final ManagerWorkOrderRepository _repo;
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
@@ -69,24 +63,16 @@ class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
     state = state.copyWith(isLoading: false, isInitializing: false);
   }
 
-  
-  
-  
-  
   Future<void> syncAfterMutation() async {
     if (state.currentDate == null) return;
     debugPrint('[Manager] syncAfterMutation — waiting for CRUD drain...');
     try {
-      
       await _repo.waitForSync(timeout: const Duration(seconds: 10));
       debugPrint('[Manager] syncAfterMutation — CRUD queue drained ✅');
 
-      
-      
       await _repo.waitForCheckpointOrReconnect(
           timeout: const Duration(seconds: 3));
 
-      
       final latest = await _repo.getWorkOrdersByDate(state.currentDate!);
       state = state.copyWith(workOrders: latest, clearError: true);
     } catch (e) {
@@ -189,16 +175,9 @@ class ManagerWONotifier extends AutoDisposeNotifier<ManagerWOState> {
   }
 }
 
-
-
-
-
-
 final managerWONotifierProvider =
     AutoDisposeNotifierProvider<ManagerWONotifier, ManagerWOState>(
         ManagerWONotifier.new);
-
-
 
 final managerSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
   final repo = ref.watch(managerWorkOrderRepositoryProvider);
@@ -206,9 +185,6 @@ final managerSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
 });
 
 final managerTodayPod = StateProvider<DateTime>((_) {
-  
-  
-  
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);
 });
@@ -218,12 +194,11 @@ final managerSelectedDatePod =
 
 final managerSearchPod = StateProvider<String>((_) => '');
 
-
 final managerStatusFilterPod = StateProvider<String>((_) => 'all');
 
-final managerSortColumnPod = StateProvider<String>((_) => 'date');
+final managerSortColumnPod = StateProvider<String>((_) => 'time');
 
-final managerSortAscendingPod = StateProvider<bool>((_) => false);
+final managerSortAscendingPod = StateProvider<bool>((_) => true);
 
 final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
   final woState = ref.watch(
@@ -234,7 +209,6 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
   final sortAsc = ref.watch(managerSortAscendingPod);
   final statusFilter = ref.watch(managerStatusFilterPod);
 
-  
   List<WorkOrder> filtered = search.isEmpty
       ? List.from(woState)
       : woState.where((wo) {
@@ -242,7 +216,6 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
           return wo.searchableText.contains(term);
         }).toList();
 
-  
   if (statusFilter != 'all') {
     filtered = filtered.where((wo) {
       final s = wo.status.toLowerCase().trim();
@@ -261,12 +234,12 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
     }).toList();
   }
 
-  
   filtered.sort((a, b) {
     int cmp = 0;
     switch (sortCol) {
       case 'name':
-        cmp = a.patientName.toLowerCase().compareTo(b.patientName.toLowerCase());
+        cmp =
+            a.patientName.toLowerCase().compareTo(b.patientName.toLowerCase());
         break;
       case 'status':
         cmp = a.status.compareTo(b.status);
@@ -275,7 +248,6 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
         cmp = a.serverStatus.compareTo(b.serverStatus);
         break;
       case 'assigned_to':
-        
         final aEmpty = a.assignedTo.isEmpty;
         final bEmpty = b.assignedTo.isEmpty;
         if (aEmpty && bEmpty) {
@@ -285,7 +257,8 @@ final managerFilteredWorkOrdersPod = Provider<List<WorkOrder>>((ref) {
         } else if (bEmpty) {
           cmp = -1;
         } else {
-          cmp = a.assignedTo.toLowerCase().compareTo(b.assignedTo.toLowerCase());
+          cmp =
+              a.assignedTo.toLowerCase().compareTo(b.assignedTo.toLowerCase());
         }
         break;
       case 'time':

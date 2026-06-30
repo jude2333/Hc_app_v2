@@ -121,8 +121,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
-  /// Postgres response codes that indicate fatal (non-retryable) errors.
-  /// Matches the official PowerSync Supabase demo pattern.
   static final List<RegExp> _fatalPostgresCodes = [
     // Class 22 — Data Exception (e.g. data type mismatch, invalid JSON)
     RegExp(r'^22...$'),
@@ -136,9 +134,6 @@ class BackendConnector extends PowerSyncBackendConnector {
   Future<void> uploadData(PowerSyncDatabase database) async {
     debugPrint('[BackendConnector] uploadData()');
 
-    // Use getNextCrudTransaction() per official PowerSync pattern.
-    // Processes one transaction at a time so write checkpoints advance
-    // correctly, preventing "Could not apply checkpoint due to local data".
     final transaction = await database.getNextCrudTransaction();
 
     if (transaction == null) return;
@@ -153,34 +148,25 @@ class BackendConnector extends PowerSyncBackendConnector {
         await _processOperation(operation);
       }
 
-      // All operations successful — advance the write checkpoint.
       await transaction.complete();
-      debugPrint('[BackendConnector] Transaction completed successfully ✅');
+      debugPrint('[BackendConnector] Transaction completed successfully');
     } catch (e) {
       debugPrint('[BackendConnector] Upload error on $lastOp: $e');
 
       if (_isPermanentError(e)) {
-        // Fatal Postgres errors (data type mismatch, constraint violations)
-        // should NOT block the queue. Discard and move on.
         debugPrint(
             '[BackendConnector]  Fatal error, discarding transaction: $e');
         await transaction.complete();
       } else {
-        // Transient errors (network, 5xx, 401) — let PowerSync retry
         rethrow;
       }
     }
   }
 
-  /// Check if an error is permanent (should not be retried).
-  /// Uses Postgres error codes from the PostgREST JSON response body,
-  /// matching the official PowerSync Supabase demo pattern.
   bool _isPermanentError(dynamic error) {
     if (error is PostgRESTException) {
-      // 401 is Transient (Token Expired) -> Retry (with refresh)
       if (error.statusCode == 401) return false;
 
-      // Try to extract Postgres error code from PostgREST JSON response
       try {
         final body = jsonDecode(error.responseBody);
         final pgCode = body['code']?.toString();
@@ -233,7 +219,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
-  // Work Order Handlers
   Future<void> _handleWorkOrderUpload(CrudEntry operation) async {
     final id = operation.id;
     final data = operation.opData;
@@ -255,7 +240,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
-  // Price List Handlers
   Future<void> _handlePriceListUpload(CrudEntry operation) async {
     final id = operation.id;
     final data = operation.opData;
@@ -278,7 +262,6 @@ class BackendConnector extends PowerSyncBackendConnector {
     }
   }
 
-  // Work Order CRUD
   Future<void> _upsertWorkOrder(String id, Map<String, dynamic> data) async {
     final baseUrl = Settings.currentPostgresUrl;
     final url = '$baseUrl/hc_patient_visit_detail';
@@ -351,7 +334,7 @@ class BackendConnector extends PowerSyncBackendConnector {
     final baseUrl = Settings.currentPostgresUrl;
     final String url = '$baseUrl/hc_patient_visit_detail?doc_id=eq.$id';
 
-    // IMPORTANT: Create a COPY of the data before modifying.
+    // Create a COPY of the data before modifying.
     // Do NOT mutate operation.opData in place — PowerSync uses
     // the original opData for write checkpoint reconciliation.
     final payload = Map<String, dynamic>.from(data);
@@ -392,11 +375,8 @@ class BackendConnector extends PowerSyncBackendConnector {
             '[BackendConnector] PATCH response status: ${response.statusCode}');
 
         if (response.statusCode == 200) {
-          // Verify at least one row was updated
           final rows = jsonDecode(response.body);
           if (rows is List && rows.isEmpty) {
-            // 0 rows matched — row may have been deleted. Log and move on.
-            // Don't upsert: PATCH data is partial (missing required fields).
             debugPrint(
                 '[BackendConnector]  PATCH matched 0 rows for id=$id — row may not exist on server');
             return;
@@ -684,9 +664,6 @@ class BackendConnector extends PowerSyncBackendConnector {
         )
         .timeout(const Duration(seconds: 30));
 
-    // 200/204 = success (row deleted or already gone — both are fine).
-    // PostgREST returns 200 with empty body if the WHERE matched 0 rows,
-    // which happens when the server cron already cleaned up the row.
     if (response.statusCode == 200 || response.statusCode == 204) {
       debugPrint(
           '[BackendConnector] Temp upload deleted (or already gone): $id');

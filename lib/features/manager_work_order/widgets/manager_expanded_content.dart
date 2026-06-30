@@ -125,13 +125,15 @@ class ManagerExpandedContent extends ConsumerWidget {
   }
 
   Widget _buildTimelineButton(BuildContext context) {
-    return _ActionLinkChip(
-      label: 'Time Line',
-      color: AppColors.secondary,
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TimeLinePage(workOrder: workOrder),
+    return SelectionContainer.disabled(
+      child: _ActionLinkChip(
+        label: 'Time Line',
+        color: AppColors.secondary,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TimeLinePage(workOrder: workOrder),
+          ),
         ),
       ),
     );
@@ -147,10 +149,12 @@ class ManagerExpandedContent extends ConsumerWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _LabelChip(label: 'Prescription', color: AppColors.error),
-          _ActionLinkChip(
-            label: _getPrescriptionFileNames(path),
-            color: AppColors.secondary,
-            onTap: () => _viewFile(context, ref, path),
+          SelectionContainer.disabled(
+            child: _ActionLinkChip(
+              label: _getPrescriptionFileNames(path),
+              color: AppColors.secondary,
+              onTap: () => _viewFile(context, ref, path),
+            ),
           ),
         ],
       ),
@@ -338,10 +342,12 @@ class ManagerExpandedContent extends ConsumerWidget {
           ),
           const SizedBox(width: AppSpacing.xs),
           Builder(
-            builder: (context) => _ActionLinkChip(
-              label: 'View PDF',
-              color: AppColors.secondary,
-              onTap: () => _viewFile(context, ref, stepData),
+            builder: (context) => SelectionContainer.disabled(
+              child: _ActionLinkChip(
+                label: 'View PDF',
+                color: AppColors.secondary,
+                onTap: () => _viewFile(context, ref, stepData),
+              ),
             ),
           ),
         ],
@@ -378,10 +384,12 @@ class ManagerExpandedContent extends ConsumerWidget {
         const SizedBox(width: AppSpacing.xs),
         if (isDone)
           Builder(
-            builder: (context) => _ActionLinkChip(
-              label: _getPrescriptionFileNames(path),
-              color: AppColors.secondary,
-              onTap: () => _viewFile(context, ref, path),
+            builder: (context) => SelectionContainer.disabled(
+              child: _ActionLinkChip(
+                label: _getPrescriptionFileNames(path),
+                color: AppColors.secondary,
+                onTap: () => _viewFile(context, ref, path),
+              ),
             ),
           ),
         if (!isDone)
@@ -450,10 +458,12 @@ class ManagerExpandedContent extends ConsumerWidget {
       children: [
         _LabelChip(label: 'Lab Result', color: AppColors.primary),
         _FilledChip(label: status, color: AppColors.success),
-        _ActionLinkChip(
-          label: 'Report PDF',
-          color: AppColors.secondary,
-          onTap: () => _viewFile(context, ref, reportPath),
+        SelectionContainer.disabled(
+          child: _ActionLinkChip(
+            label: 'Report PDF',
+            color: AppColors.secondary,
+            onTap: () => _viewFile(context, ref, reportPath),
+          ),
         ),
       ],
     );

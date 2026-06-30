@@ -85,25 +85,27 @@ class _ManagerDesktopViewState extends ConsumerState<ManagerDesktopView> {
                             ],
                           ),
                         )
-                      : ListView.separated(
-                          itemCount: widget.workOrders.length,
-                          cacheExtent: 500,
-                          addAutomaticKeepAlives: false,
-                          addRepaintBoundaries: true,
-                          separatorBuilder: (ctx, i) => Divider(
-                            height: 1,
-                            color: isDark
-                                ? AppColors.darkBorder
-                                : AppColors.divider,
+                      : DesktopSelectionArea(
+                          child: ListView.separated(
+                            itemCount: widget.workOrders.length,
+                            cacheExtent: 500,
+                            addAutomaticKeepAlives: true,
+                            addRepaintBoundaries: true,
+                            separatorBuilder: (ctx, i) => Divider(
+                              height: 1,
+                              color: isDark
+                                  ? AppColors.darkBorder
+                                  : AppColors.divider,
+                            ),
+                            itemBuilder: (context, index) {
+                              final wo = widget.workOrders[index];
+                              return RepaintBoundary(
+                                key: ValueKey(wo.id),
+                                child: _ManagerExpandableRow(
+                                    workOrder: wo, index: index + 1),
+                              );
+                            },
                           ),
-                          itemBuilder: (context, index) {
-                            final wo = widget.workOrders[index];
-                            return RepaintBoundary(
-                              key: ValueKey(wo.id),
-                              child: _ManagerExpandableRow(
-                                  workOrder: wo, index: index + 1),
-                            );
-                          },
                         ),
                 ),
               ],
@@ -254,27 +256,36 @@ class _ManagerExpandableRowState extends ConsumerState<_ManagerExpandableRow>
                   _buildCell(wo.mobile, flex: 3, isPhoneNumber: true),
                   _buildCell(wo.formattedVisitDate, flex: 3),
                   _buildCell(wo.visitTime, flex: 2),
-                  Expanded(
-                    flex: 3,
-                    child: StatusChip(
-                      status: wo.status,
-                      onTap: () => _showAssignDialog(context, wo),
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                      flex: 3,
+                      child: StatusChip(
+                        status: wo.status,
+                        onTap: () => _showAssignDialog(context, wo),
+                      ),
                     ),
                   ),
-                  Expanded(
-                    flex: 3,
-                    child: ServerChip(status: wo.serverStatus),
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                      flex: 3,
+                      child: ServerChip(status: wo.serverStatus),
+                    ),
                   ),
                   _buildCell(wo.assignedTo, flex: 4),
-                  Expanded(flex: 3, child: ManagerActions(workOrder: wo)),
-                  SizedBox(
-                      width: 40,
-                      child: Icon(
-                          _isExpanded
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
-                          size: AppSizes.iconSm - 2,
-                          color: AppColors.textHint)),
+                  SelectionContainer.disabled(
+                    child:
+                        Expanded(flex: 3, child: ManagerActions(workOrder: wo)),
+                  ),
+                  SelectionContainer.disabled(
+                    child: SizedBox(
+                        width: 40,
+                        child: Icon(
+                            _isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: AppSizes.iconSm - 2,
+                            color: AppColors.textHint)),
+                  ),
                 ],
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:powersync/powersync.dart';
 
 const schema = Schema([
-  // workOrder table
   Table('hc_patient_visit_detail', [
     Column.integer('tenant_id'),
     Column.integer('hcpm_id'),
@@ -32,15 +31,12 @@ const schema = Schema([
     Column.text('last_updated_at'),
     Column.integer('sync_window'), // 1 = true (in date window), 0 = false
   ], indexes: [
-    // Performance indexes for common queries
     Index('idx_assigned_id', [IndexedColumn('assigned_id')]),
     Index('idx_manager_id', [IndexedColumn('manager_id')]),
     Index('idx_tenant_id', [IndexedColumn('tenant_id')]),
     Index('idx_status', [IndexedColumn('status')]),
     Index('idx_visit_date', [IndexedColumn('visit_date')]),
     Index('idx_visible', [IndexedColumn('visible')]),
-
-    // Composite indexes for role-based queries
     Index('idx_tech_assigned', [
       IndexedColumn('assigned_id'),
       IndexedColumn('visible'),
@@ -52,8 +48,6 @@ const schema = Schema([
       IndexedColumn('visible'),
     ]),
   ]),
-
-  // priceList table
   Table('price_list', [
     Column.text('dept_id'),
     Column.text('dept_name'),
@@ -77,7 +71,6 @@ const schema = Schema([
       IndexedColumn('invest_name'),
     ]),
   ]),
-
   Table('temp_uploads', [
     Column.text('work_order_id'),
     Column.text('file_name'),

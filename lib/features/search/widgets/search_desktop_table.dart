@@ -136,20 +136,22 @@ class SearchDesktopTable extends ConsumerWidget {
                       ],
                     ),
                   )
-                : ListView.separated(
-                    itemCount: sorted.length,
-                    separatorBuilder: (ctx, i) => Divider(
-                      height: 1,
-                      color: isDark ? AppColors.darkBorder : AppColors.divider,
-                    ),
-                    itemBuilder: (context, index) {
-                      final item = sorted[index];
-                      return RepaintBoundary(
-                        key: ValueKey(item['_id'] ?? index),
-                        child:
-                            _SearchTableRow(item: item, index: index + 1),
-                      );
-                    },
+                : DesktopSelectionArea(
+                    child: ListView.separated(
+                        itemCount: sorted.length,
+                        separatorBuilder: (ctx, i) => Divider(
+                          height: 1,
+                          color: isDark ? AppColors.darkBorder : AppColors.divider,
+                        ),
+                        itemBuilder: (context, index) {
+                          final item = sorted[index];
+                          return RepaintBoundary(
+                            key: ValueKey(item['_id'] ?? index),
+                            child:
+                                _SearchTableRow(item: item, index: index + 1),
+                          );
+                        },
+                      ),
                   ),
           ),
         ],
@@ -212,42 +214,50 @@ class _SearchTableRowState extends ConsumerState<_SearchTableRow> {
                       isPhoneNumber: true),
                   _buildCell('${item['appointment_date'] ?? ''}', flex: 3),
                   _buildCell('${item['appointment_time'] ?? ''}', flex: 2),
-                  Expanded(
-                    flex: 3,
-                    child: StatusChip(
-                        status: item['status']?.toString() ?? ''),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: ServerChip(
-                        status: item['server_status']?.toString() ?? ''),
-                  ),
-                  _buildCell('${item['assigned_to'] ?? ''}', flex: 4),
-                  Expanded(
-                    flex: 2,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.content_copy,
-                              size: AppSizes.iconSm - 2,
-                              color: AppColors.textHint),
-                          onPressed: () => _copyWorkOrder(context),
-                          tooltip: 'Copy',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                      flex: 3,
+                      child: StatusChip(
+                          status: item['status']?.toString() ?? ''),
                     ),
                   ),
-                  SizedBox(
-                    width: 40,
-                    child: Icon(
-                      _isExpanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      size: AppSizes.iconSm - 2,
-                      color: AppColors.textHint,
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                      flex: 3,
+                      child: ServerChip(
+                          status: item['server_status']?.toString() ?? ''),
+                    ),
+                  ),
+                  _buildCell('${item['assigned_to'] ?? ''}', flex: 4),
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                      flex: 2,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.content_copy,
+                                size: AppSizes.iconSm - 2,
+                                color: AppColors.textHint),
+                            onPressed: () => _copyWorkOrder(context),
+                            tooltip: 'Copy',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SelectionContainer.disabled(
+                    child: SizedBox(
+                      width: 40,
+                      child: Icon(
+                        _isExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: AppSizes.iconSm - 2,
+                        color: AppColors.textHint,
+                      ),
                     ),
                   ),
                 ],

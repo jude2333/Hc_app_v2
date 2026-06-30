@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
-import 'package:anderson_crm_flutter/components/cancel_work_order_dialog.dart';
-import 'package:anderson_crm_flutter/components/edit_work_order_dialog.dart';
-import 'package:anderson_crm_flutter/features/hc_process/screens/hc_process_page.dart';
-import 'package:anderson_crm_flutter/providers/storage_provider.dart';
-import 'add_tests_post_completion_page.dart';
+import 'package:anderson_crm_flutter/features/technician_work_order/utils/technician_actions_helper.dart';
 import '../../theme/theme.dart';
 import '../../core/widgets/common/common_widgets.dart';
 import '../providers/technician_work_order_provider.dart';
@@ -489,136 +484,23 @@ class _TechnicianMobileCardState extends ConsumerState<_TechnicianMobileCard> {
   }
 
   void _onCopy(BuildContext context) {
-    final parentMessenger = ScaffoldMessenger.of(context);
-    Navigator.of(context)
-        .push(
-      MaterialPageRoute(
-        builder: (context) => AddWorkOrderPage(copyFrom: widget.workOrder),
-        fullscreenDialog: true,
-      ),
-    )
-        .then((result) async {
-      if (result == 'refresh' && mounted) {
-        parentMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Copied Successfully'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    });
+    TechnicianActionsHelper.copyWorkOrder(context, widget.workOrder);
   }
 
-  Future<void> _onStart(BuildContext context) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            HCProcessPage(workOrderId: widget.workOrder.docId),
-      ),
-    );
-    if (mounted) {
-      _checkSugarTestOnReturn(context);
-    }
-  }
-
-  /// After HC process completes, check if Glucose Fasting was present
-  /// and prompt technician to book Glucose (PP).
-  void _checkSugarTestOnReturn(BuildContext context) {
-    final storage = ref.read(storageServiceProvider);
-    final sugarDocId = storage.getFromSession('sugar_tests').toString();
-    if (sugarDocId.isEmpty) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text('Glucose (PP) Test',
-            style: TextStyle(color: AppColors.primary)),
-        content:
-            const Text('Do you want to book Glucose(PP) for this patient?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              storage.setSession('sugar_tests', '');
-              Navigator.pop(ctx);
-            },
-            child:
-                Text('No', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              storage.setSession('sugar_tests', '');
-
-              final notifier =
-                  ref.read(technicianWONotifierProvider.notifier);
-              final wo = notifier.getWorkOrderById(sugarDocId);
-              if (wo != null && context.mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddWorkOrderPage(
-                      copyFrom: wo.copyWith(visitTime: ''),
-                    ),
-                    fullscreenDialog: true,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-            ),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    );
+  void _onStart(BuildContext context) {
+    TechnicianActionsHelper.startHCProcess(context, ref, widget.workOrder);
   }
 
   void _onAddTests(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            AddTestsPostCompletionPage(workOrder: widget.workOrder),
-        fullscreenDialog: true,
-      ),
-    );
+    TechnicianActionsHelper.addTestsPostCompletion(context, widget.workOrder);
   }
 
   void _onCancel(BuildContext context) {
-    final parentMessenger = ScaffoldMessenger.of(context);
-    showDialog(
-      context: context,
-      builder: (context) => CancelWorkOrderDialog(workOrder: widget.workOrder),
-    ).then((result) async {
-      if (result == true && mounted) {
-        parentMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Cancelled Successfully'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    });
+    TechnicianActionsHelper.cancelWorkOrder(context, widget.workOrder);
   }
 
   void _onEdit(BuildContext context) {
-    final parentMessenger = ScaffoldMessenger.of(context);
-    showDialog(
-      context: context,
-      builder: (context) => EditWorkOrderDialog(workOrder: widget.workOrder),
-    ).then((result) async {
-      if (result == true && mounted) {
-        parentMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Updated Successfully'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    });
+    TechnicianActionsHelper.editWorkOrder(context, widget.workOrder);
   }
 
   void _viewTests(dynamic testItems) {

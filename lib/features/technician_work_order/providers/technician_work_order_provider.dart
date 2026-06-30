@@ -6,9 +6,6 @@ import 'package:anderson_crm_flutter/models/work_order.dart';
 import 'package:anderson_crm_flutter/repositories/temp_upload_repository.dart';
 import '../repositories/technician_work_order_repository.dart';
 
-// ---------------------------------------------------------------------------
-// Immutable state class — enables select() for targeted rebuilds
-// ---------------------------------------------------------------------------
 @immutable
 class TechnicianWOState {
   final List<WorkOrder> workOrders;
@@ -39,9 +36,6 @@ class TechnicianWOState {
   }
 }
 
-// ---------------------------------------------------------------------------
-// AutoDispose Notifier — disposes stream on navigation away, restarts on return
-// ---------------------------------------------------------------------------
 class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
   late final TechnicianWorkOrderRepository _repo;
   StreamSubscription<List<WorkOrder>>? _ordersSubscription;
@@ -62,9 +56,6 @@ class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
   Future<void> initialize() async {
     state = state.copyWith(isLoading: true);
     await _repo.initialize();
-
-    // Clean up completed temp_uploads older than 1 day from local SQLite.
-    // Server-side cleanup handles Postgres; this prevents local DB bloat.
     try {
       final tempRepo = ref.read(tempUploadRepositoryProvider);
       final cleaned = await tempRepo.cleanupOldUploads();
@@ -86,8 +77,6 @@ class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
 
       _ordersSubscription = _repo.watchTechnicianWorkOrders(techId).listen(
         (orders) {
-          // Safety net: technician should never see unassigned work orders.
-          // If upstream bugs or sync races produce them, filter here.
           final filtered = orders
               .where((wo) => wo.status.toLowerCase() != 'unassigned')
               .toList();
@@ -104,7 +93,6 @@ class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
     }
   }
 
-  /// After a local mutation, wait for CRUD drain + checkpoint.
   Future<void> _syncAfterMutation() async {
     try {
       await _repo.waitForSync(timeout: const Duration(seconds: 10));
@@ -272,40 +260,17 @@ class TechnicianWONotifier extends AutoDisposeNotifier<TechnicianWOState> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Providers
-// ---------------------------------------------------------------------------
-
-/// Main notifier — autoDispose so the stream is cleaned up on navigation away.
 final technicianWONotifierProvider =
     AutoDisposeNotifierProvider<TechnicianWONotifier, TechnicianWOState>(
         TechnicianWONotifier.new);
-
-/// Separate sync status stream — decoupled from work orders so AppBar
-/// rebuilds independently without triggering full list rebuilds.
 final techSyncStatusProvider = StreamProvider<SyncStatus>((ref) {
   final repo = ref.watch(technicianWorkOrderRepositoryProvider);
   return repo.watchSyncStatus();
 });
-
-// ---------------------------------------------------------------------------
-// UI State Pods (autoDispose so they reset on navigation away)
-// ---------------------------------------------------------------------------
 final techSearchPod = AutoDisposeStateProvider<String>((_) => '');
 final techSortColumnPod = AutoDisposeStateProvider<String>((_) => 'priority');
 final techSortAscendingPod = AutoDisposeStateProvider<bool>((_) => true);
-
-/// Status filter: 'all', 'new', 'in_progress', 'finished'
 final techStatusFilterPod = AutoDisposeStateProvider<String>((_) => 'all');
-
-// ---------------------------------------------------------------------------
-// Status priority helper — lower number = higher priority (shows first)
-//
-//  0 = New / Assigned (not yet started)
-//  1 = In-progress    (First Step through Fifth Step)
-//  2 = Finished
-//  3 = Cancelled / NA / Unknown
-// ---------------------------------------------------------------------------
 int _statusPriority(String status) {
   final s = status.toLowerCase().trim();
   if (s == 'assigned' || s.startsWith('un')) return 0;
@@ -315,7 +280,6 @@ int _statusPriority(String status) {
   return 1; // fallback: treat unknown as in-progress
 }
 
-/// Human-readable group label for display
 String statusGroupLabel(String status) {
   switch (_statusPriority(status)) {
     case 0:
@@ -331,13 +295,6 @@ String statusGroupLabel(String status) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Derived filtered + sorted list — cached by Riverpod, recomputes only
-// when inputs (workOrders, search, sort, statusFilter) change.
-//
-// Default order: New → In-Progress → Finished → Cancelled
-// Within each group: latest appointment date+time first
-// ---------------------------------------------------------------------------
 final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
   final woState = ref.watch(
     technicianWONotifierProvider.select((s) => s.workOrders),
@@ -346,16 +303,12 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
   final sortCol = ref.watch(techSortColumnPod);
   final sortAsc = ref.watch(techSortAscendingPod);
   final statusFilter = ref.watch(techStatusFilterPod);
-
-  // 1. Search filter
   List<WorkOrder> filtered = search.isEmpty
       ? List.from(woState)
       : woState.where((wo) {
           final term = search.toLowerCase();
           return wo.searchableText.contains(term);
         }).toList();
-
-  // 2. Status filter
   if (statusFilter != 'all') {
     filtered = filtered.where((wo) {
       final priority = _statusPriority(wo.status);
@@ -371,8 +324,6 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
       }
     }).toList();
   }
-
-  // 3. Sort
   filtered.sort((a, b) {
     int cmp = 0;
     switch (sortCol) {
@@ -382,7 +333,6 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
       case 'status':
         cmp = _statusPriority(a.status).compareTo(_statusPriority(b.status));
         if (cmp == 0) {
-          // Within same priority group, sort by date+time descending (latest first)
           cmp = b.visitDate.compareTo(a.visitDate);
           if (cmp == 0) cmp = b.visitTime.compareTo(a.visitTime);
         }
@@ -393,7 +343,6 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
         break;
       case 'priority':
       default:
-        // Default: status priority first, then latest appointment first within group
         cmp = _statusPriority(a.status).compareTo(_statusPriority(b.status));
         if (cmp == 0) {
           cmp = b.visitDate.compareTo(a.visitDate);
@@ -406,4 +355,3 @@ final techFilteredWorkOrdersPod = AutoDisposeProvider<List<WorkOrder>>((ref) {
 
   return filtered;
 });
-

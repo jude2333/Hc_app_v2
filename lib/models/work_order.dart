@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
-// Pre-cached formatters (static to avoid recreating)
 final DateFormat _displayDateFormat = DateFormat('yyyy-MM-dd');
 final DateFormat _shortDateFormat = DateFormat('dd-MM-yyyy');
 final NumberFormat _currencyFormat = NumberFormat.currency(
@@ -11,9 +10,6 @@ final NumberFormat _currencyFormat = NumberFormat.currency(
   symbol: '₹',
   decimalDigits: 0,
 );
-
-// Sentinel value to distinguish "not provided" from "intentionally null"
-// in copyWith. Dart's null can't serve both purposes for nullable fields.
 const _sentinel = Object();
 
 @immutable
@@ -22,66 +18,40 @@ class WorkOrder {
   final int? tenantId;
   final int? hcpmId;
   final String docId;
-
-  // Patient Info
   final String patientName;
   final DateTime visitDate;
   final String visitTime;
   final String doctorName;
-
-  // Provider & Assignment
   final int? proId;
   final int? managerId;
   final String managerName;
   final int? assignedId;
   final String assignedTo;
-
-  // B2B Client
   final int? b2bClientId;
   final String b2bClientName;
-
-  // Marketing
   final String marketingPersonName;
   final String marketingPersonNumber;
-
-  // Status
   final String status;
   final String serverStatus;
-
-  // Financial
   final double billAmount;
   final double receivedAmount;
   final double discountAmount;
-
-  // Full Document (Lazy Loaded)
   final String? _rawDocString;
-
-  //  OPTIMIZATION 1: The Immutable Source of Truth for nested data
   final Map<String, dynamic> parsedDocMap;
-
-  // Bill & Lab
   final String billNumber;
   final String labNumber;
-
-  // Audit
   final bool visible;
   final String createdBy;
   final DateTime createdAt;
   final String lastUpdatedBy;
   final DateTime lastUpdatedAt;
-
-  // Sync Window - whether this record is within the sync date range
   final bool syncWindow;
-
-  //  PRE-CACHED FORMATTED STRINGS (computed once at construction)
   final String formattedVisitDate; // 'yyyy-MM-dd'
   final String formattedShortDate; // 'dd-MM-yyyy'
   final String formattedBillAmount; // '₹1,234'
   final String formattedReceivedAmount; // '₹1,234'
   final String formattedDiscountAmount; // '₹1,234'
   final String searchableText; // Pre-computed lowercase searchable string
-
-  // Private constructor used by factory
   WorkOrder._internal({
     required this.id,
     this.tenantId,
@@ -122,8 +92,6 @@ class WorkOrder {
     required this.formattedDiscountAmount,
     required this.searchableText,
   }) : _rawDocString = doc;
-
-  //  Factory constructor that pre-computes formatted strings
   factory WorkOrder({
     required String id,
     int? tenantId,
@@ -158,7 +126,6 @@ class WorkOrder {
     required DateTime lastUpdatedAt,
     bool syncWindow = true, // New work orders are always in sync window
   }) {
-    // Pre-compute formatted strings
     final formattedVisitDate = _displayDateFormat.format(visitDate);
     final mobile = parsedDocMap['mobile']?.toString() ?? '';
 
@@ -200,36 +167,20 @@ class WorkOrder {
       formattedBillAmount: _currencyFormat.format(billAmount),
       formattedReceivedAmount: _currencyFormat.format(receivedAmount),
       formattedDiscountAmount: _currencyFormat.format(discountAmount),
-      // Pre-compute searchable lowercase string for fast filtering
       searchableText:
-          '$patientName|$mobile|$doctorName|$assignedTo|$billNumber|$status'
+          '$patientName|$mobile|$doctorName|$assignedTo|$billNumber|$labNumber|$status|'
+                  '${parsedDocMap['address'] ?? ''}|'
+                  '${parsedDocMap['pincode'] ?? ''}|'
+                  '${parsedDocMap['email'] ?? ''}|'
+                  '${parsedDocMap['free_text'] ?? ''}|'
+                  '${parsedDocMap['alternate_mobile'] ?? ''}|'
+                  '${parsedDocMap['client_code'] ?? ''}|'
+                  '${parsedDocMap['doctor_code'] ?? ''}'
               .toLowerCase(),
     );
   }
-
-  //  COMPATIBILITY GETTER (Prevents errors in other files)
   Map<String, dynamic> get parsedDoc => parsedDocMap;
-
-  // Lazy doc getter
   String get doc => _rawDocString ?? jsonEncode(parsedDocMap);
-
-  //  OPTIMIZATION 4: Robust Equality Check
-  // @override
-  // bool operator ==(Object other) {
-  //   if (identical(this, other)) return true;
-
-  //   return other is WorkOrder &&
-  //       other.id == id &&
-  //       // Normalize time to seconds to avoid millisecond redraws
-  //       other.lastUpdatedAt.millisecondsSinceEpoch ~/ 1000 ==
-  //           lastUpdatedAt.millisecondsSinceEpoch ~/ 1000 &&
-  //       other.status == status &&
-  //       other.serverStatus == serverStatus &&
-  //       other.assignedId == assignedId &&
-  //       // Normalize doubles to avoid micro-precision diffs
-  //       (other.billAmount - billAmount).abs() < 0.01 &&
-  //       (other.receivedAmount - receivedAmount).abs() < 0.01;
-  // }
 
   @override
   int get hashCode {
@@ -243,7 +194,6 @@ class WorkOrder {
     );
   }
 
-  // Reconstructs the JSON map structure (Used for DB saving)
   Map<String, dynamic> buildDoc() {
     return {
       '_id': docId,
@@ -337,7 +287,6 @@ class WorkOrder {
     };
   }
 
-  // Helper to deep copy JSON maps
   static Map<String, dynamic> _deepCopyMap(Map<String, dynamic> source) {
     return jsonDecode(jsonEncode(source));
   }
@@ -373,8 +322,6 @@ class WorkOrder {
     DateTime? createdAt,
     String? lastUpdatedBy,
     DateTime? lastUpdatedAt,
-
-    // Nested fields
     String? age,
     String? gender,
     String? mobile,
@@ -405,12 +352,8 @@ class WorkOrder {
     String? clientCode,
     String? doctorCode,
   }) {
-    // Resolve sentinel for assignedId: _sentinel means "keep existing"
-    final int? resolvedAssignedId = identical(assignedId, _sentinel)
-        ? this.assignedId
-        : assignedId as int?;
-
-    //  OPTIMIZATION 5: Deep Copy to break references
+    final int? resolvedAssignedId =
+        identical(assignedId, _sentinel) ? this.assignedId : assignedId as int?;
     final updatedDoc = _deepCopyMap(parsedDocMap);
 
     if (patientName != null) updatedDoc['name'] = patientName;
@@ -436,7 +379,8 @@ class WorkOrder {
     if (doctorCode != null) updatedDoc['doctor_code'] = doctorCode;
     if (status != null) updatedDoc['status'] = status;
     if (serverStatus != null) updatedDoc['server_status'] = serverStatus;
-    if (!identical(assignedId, _sentinel)) updatedDoc['assigned_id'] = resolvedAssignedId;
+    if (!identical(assignedId, _sentinel))
+      updatedDoc['assigned_id'] = resolvedAssignedId;
     if (assignedTo != null) updatedDoc['assigned_to'] = assignedTo;
     if (managerId != null) updatedDoc['manager_id'] = managerId.toString();
     if (managerName != null) updatedDoc['manager_name'] = managerName;
@@ -515,7 +459,6 @@ class WorkOrder {
     );
   }
 
-  // Getters
   String get salutation {
     final name = parsedDocMap['name'] ?? '';
     return name.toString().split('.').first;
@@ -570,26 +513,17 @@ class WorkOrder {
   String get prescriptionPath => process['fifth_step'] ?? '';
   String get proformaPath => process['second_step'] ?? '';
   String get prescriptionPhoto => parsedDocMap['pres_photo'] ?? '';
-
-  // Sent status for billing send functionality
   String get sentStatus => parsedDocMap['sent_status']?.toString() ?? '';
-
-  // Amount received for send API
   String get amountReceived =>
       parsedDocMap['amount_received']?.toString() ?? '0';
   String get remarks => parsedDocMap['remarks']?.toString() ?? '';
-
-  /// Calculated total: uses doc 'total' field, or sums test_items base_cost
   double get calculatedTotal {
-    // First try the document's 'total' field
     final docTotal = parsedDocMap['total'];
     if (docTotal != null) {
       if (docTotal is num && docTotal > 0) return docTotal.toDouble();
       final parsed = double.tryParse(docTotal.toString());
       if (parsed != null && parsed > 0) return parsed;
     }
-
-    // Fallback: sum test_items base_cost
     final items = testItems;
     if (items.isNotEmpty) {
       return items.fold<double>(0, (sum, item) {
@@ -598,23 +532,15 @@ class WorkOrder {
         return sum + (double.tryParse(cost?.toString() ?? '0') ?? 0);
       });
     }
-
-    // Final fallback to billAmount field
     return billAmount;
   }
 
-  /// Formatted calculated total for display
   String get formattedCalculatedTotal =>
       _currencyFormat.format(calculatedTotal);
-
-  // Factory for DB Row
   factory WorkOrder.fromRow(Map<String, dynamic> row) {
     try {
       final parsedId = _parseString(row, 'id');
       final parsedDocString = _parseString(row, 'doc');
-
-      // Parse once here (in Isolate)
-      // Handle both: plain JSON string (text era) and double-encoded (jsonb transition)
       dynamic decoded = jsonDecode(parsedDocString);
       if (decoded is String) {
         decoded = jsonDecode(decoded);
@@ -628,8 +554,6 @@ class WorkOrder {
         tenantId: _parseNullableInt(row, 'tenant_id'),
         hcpmId: _parseNullableInt(row, 'hcpm_id'),
         docId: _parseString(row, 'doc_id'),
-        // Prefer doc 'name' (has salutation e.g. "Mr. John") over row-level
-        // patient_name (backup service strips titles via cleanUpName)
         patientName: (parsedMap['name']?.toString().isNotEmpty == true)
             ? parsedMap['name'].toString()
             : _parseString(row, 'patient_name'),
@@ -668,8 +592,6 @@ class WorkOrder {
       rethrow;
     }
   }
-
-  // Factory for Form Data
   factory WorkOrder.fromFormData({
     required String patientName,
     required String mobile,
@@ -704,7 +626,6 @@ class WorkOrder {
   }) {
     final appointmentDate = DateFormat('dd-MM-yyyy').format(visitDate);
     final docId = 'work_order:$appointmentDate:${const Uuid().v4()}';
-    // Use doc_id as the PowerSync id — matches sync rules (doc_id as id)
     final id = docId;
 
     final createdEntry = '$appointmentDate | $managerName | Work Order Created';
@@ -809,7 +730,6 @@ class WorkOrder {
   }
 
   factory WorkOrder.fromDocMap(Map<String, dynamic> docMap) {
-    // Parse appointment_date which is in dd-MM-yyyy format
     DateTime visitDate = DateTime.now();
     final dateStr = docMap['appointment_date']?.toString() ?? '';
     if (dateStr.isNotEmpty) {
@@ -817,14 +737,12 @@ class WorkOrder {
         final parts = dateStr.split('-');
         if (parts.length == 3) {
           if (parts[0].length == 4) {
-            // yyyy-MM-dd format
             visitDate = DateTime(
               int.parse(parts[0]),
               int.parse(parts[1]),
               int.parse(parts[2]),
             );
           } else {
-            // dd-MM-yyyy format
             visitDate = DateTime(
               int.parse(parts[2]),
               int.parse(parts[1]),
@@ -840,8 +758,6 @@ class WorkOrder {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final docId = docMap['_id']?.toString() ??
         'search_copy:${DateTime.now().millisecondsSinceEpoch}';
-
-    // Parse numeric fields
     int? b2bClientId;
     final b2bVal = docMap['b2b_client_id'];
     if (b2bVal != null && b2bVal != 0 && b2bVal != '') {
@@ -865,8 +781,6 @@ class WorkOrder {
     if (tenantVal != null && tenantVal != '' && tenantVal != 0) {
       tenantId = int.tryParse(tenantVal.toString());
     }
-
-    // Parse amounts
     double billAmount = 0.0;
     final totalVal = docMap['total'];
     if (totalVal != null) {
@@ -884,8 +798,6 @@ class WorkOrder {
     if (discountVal != null) {
       discountAmount = double.tryParse(discountVal.toString()) ?? 0.0;
     }
-
-    // Build a proper docMap with all required fields
     final fullDocMap = Map<String, dynamic>.from(docMap);
 
     return WorkOrder(

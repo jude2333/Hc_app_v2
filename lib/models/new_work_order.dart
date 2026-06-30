@@ -1,21 +1,15 @@
-// lib/models/new_work_order.dart
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
 class NewWorkOrder {
-  // Generated fields
   final String id;
   final String docId;
   final int sortTime;
-
-  // Required fields
   final String patientName;
   final String mobile;
   final String address;
   final String appointmentDate; // dd-MM-yyyy format
   final String appointmentTime; // HH:mm format
-
-  // Optional fields
   final String salutation;
   final String age;
   final String gender;
@@ -24,31 +18,19 @@ class NewWorkOrder {
   final String doctorName;
   final String freeText;
   final String prescriptionPath;
-
-  // Assignment
   final int managerId;
   final String managerName;
   final int tenantId;
-
-  // Technician assignment
   final int assignedId;
   final String assignedTo;
-
-  // B2B
   final int b2bClientId;
   final String b2bClientName;
-
-  // Flags
   final int vipClient; // 0 or 1
   final int urgent; // 0 or 1
   final int credit; // 0=None, 1=Credit, 2=Trial
-
-  // Settings
   final int sendSms;
   final int sendWhatsapp;
   final int sendEmail;
-
-  // Status
   final String status;
   final String serverStatus;
 
@@ -87,10 +69,6 @@ class NewWorkOrder {
   })  : id = id ?? _generateLocalId(),
         docId = _generateDocId(appointmentDate),
         sortTime = _calculateSortTime(appointmentDate, appointmentTime);
-
-  // ==========================
-  // COPYWITH METHOD
-  // ==========================
   NewWorkOrder copyWith({
     String? id,
     String? docId,
@@ -160,14 +138,11 @@ class NewWorkOrder {
   }
 
   factory NewWorkOrder.fromMap(Map<String, dynamic> map) {
-    // Parse doc JSON to get additional fields
     Map<String, dynamic> docData = {};
     if (map['doc'] != null && map['doc'] is String) {
       try {
         docData = jsonDecode(map['doc'] as String);
-      } catch (e) {
-        // If doc isn't valid JSON, continue with empty docData
-      }
+      } catch (e) {}
     }
 
     return NewWorkOrder(
@@ -213,10 +188,6 @@ class NewWorkOrder {
     );
   }
 
-  // ==========================
-  // HELPERS
-  // ==========================
-
   static String _generateDocId(String appointmentDate) {
     final parts = appointmentDate.split('-');
     final isoDate = '${parts[2]}-${parts[1]}-${parts[0]}';
@@ -247,13 +218,8 @@ class NewWorkOrder {
     }
   }
 
-  // ==========================
-  // DOCUMENT BUILDING
-  // ==========================
-
   Map<String, dynamic> buildDoc() {
     final now = DateTime.now().toIso8601String();
-// In new_work_order.dart - buildDoc() method
     final createdEntry = '$appointmentDate | $managerName | Work Order Created';
 
     return {

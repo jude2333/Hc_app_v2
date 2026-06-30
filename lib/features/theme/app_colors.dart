@@ -42,10 +42,6 @@ class AppColors {
 
   static Color stepInactive = primary.withValues(alpha: 0.1);
   static Color stepActiveGlow = primary.withValues(alpha: 0.4);
-
-  // ----------------------------------------------------
-  // Tracking & Dashboard Specific Colors
-  // ----------------------------------------------------
   static const Color trackOnline = Color(0xFF10B981); // Vibrant Emerald
   static const Color trackOffline = Color(0xFF94A3B8); // Slate 400
   static const Color trackIdle = Color(0xFFF59E0B); // Amber 500
@@ -53,28 +49,16 @@ class AppColors {
   static const Color activityDriving = Color(0xFF3B82F6); // Blue 500
   static const Color activityWalking = Color(0xFF14B8A6); // Teal 500
   static const Color activityStationary = Color(0xFFF97316); // Orange 500
-
-  // Map elements
   static const Color mapRouteLine = activityDriving;
   static const Color mapFenceFill = Color(0x1AD946EF); // Fuchsia with opacity
   static const Color mapFenceBorder = Color(0xFFD946EF);
-
-  // Glassmorphism map overlays
   static Color glassBackground = Colors.white.withValues(alpha: 0.85);
-
-  // Analytics & Export
   static const Color excelGreen = Color(0xFF217346);
   static const Color chartBlue = Color(0xFF3B82F6);
   static const Color chartPurple = Color(0xFF8B5CF6);
-
-  // Info / Release notes panels
   static const Color infoBackground = Color(0xFFE3F2FD); // blue.shade50
   static const Color infoBorder = Color(0xFFBBDEFB); // blue.shade100
   static const Color infoText = Color(0xFF1565C0); // blue.shade800
-
-  // ----------------------------------------------------
-  // Dark Mode Palette
-  // ----------------------------------------------------
   static const Color darkBackground = Color(0xFF121212);
   static const Color darkSurface = Color(0xFF1E1E1E);
   static const Color darkSurfaceAlt = Color(0xFF2C2C2C);

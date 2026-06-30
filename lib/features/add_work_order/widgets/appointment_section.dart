@@ -17,15 +17,6 @@ class AppointmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Generate dates if not provided elsewhere or handle via parent
-    // For now we assume the parent passed the dates but the widget signature
-    // was simple. Let's stick to the legacy UI which had a Dropdown.
-    // NOTE: The legacy code generated dates inside the state.
-    // We need to match that look.
-
-    // Legacy had a DropdownButtonFormField for Date and an InkWell for Time.
-    // They were in a Column.
-
     return Column(
       children: [
         DropdownButtonFormField<String>(
@@ -47,8 +38,6 @@ class AppointmentSection extends StatelessWidget {
               color: AppColors.surfaceAlt,
               border: Border.all(
                 color: time == null ? AppColors.divider : AppColors.divider,
-                // Legacy logic: _hasAttemptedValidation && _collectionTime == null ? Error : Divider
-                // We'll stick to divider for now as validation is handled in parent
                 width: 1,
               ),
               borderRadius: AppRadius.smAll,
@@ -76,8 +65,6 @@ class AppointmentSection extends StatelessWidget {
                     icon:
                         Icon(Icons.clear, size: 18, color: AppColors.textHint),
                     onPressed: () {
-                      // We need a clear callback if we want this exact behavior
-                      // For now just tap acts as select
                       onTimeTap();
                     },
                     padding: EdgeInsets.zero,

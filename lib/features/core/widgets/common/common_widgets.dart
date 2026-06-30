@@ -9,3 +9,4 @@ export 'sortable_header.dart';
 export 'search_bar.dart';
 export 'flex_cells.dart';
 export 'copyable_text.dart';
+export 'desktop_selection_area.dart';

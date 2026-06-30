@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:anderson_crm_flutter/features/users/data/user_model.dart';
 import 'package:anderson_crm_flutter/features/users/data/users_repository.dart';
 
-// Top-level function for compute
 List<User> parseUsers(List<dynamic> rawData) {
   final List<User> users = [];
 
@@ -41,8 +40,6 @@ List<User> parseUsers(List<dynamic> rawData) {
 
     dynamic roleId;
     String roleName = '';
-
-    // Handle employee_activities - it might be a JSON string or a Map
     dynamic employeeActivities = item['employee_activities'];
     if (employeeActivities != null && employeeActivities is String) {
       try {
@@ -59,7 +56,6 @@ List<User> parseUsers(List<dynamic> rawData) {
         (employeeActivities['role_list'] is List) &&
         (employeeActivities['role_list'] as List).isNotEmpty) {
       roleId = employeeActivities['role_list'];
-      // roleName will be fetched later
     } else if (item['role_master'] != null) {
       roleId = item['role_master']['role_id'];
       roleName = item['role_master']['role_name'] ?? '';
@@ -103,8 +99,6 @@ class UsersService {
 
     if (response is List) {
       List<User> users = await compute(parseUsers, response);
-
-      // Collect all unique role IDs that need name resolution (single pass)
       final Set<String> allRoleIds = {};
       for (final user in users) {
         if (user.roleName.isEmpty && user.roleId is List) {
@@ -113,8 +107,6 @@ class UsersService {
           }
         }
       }
-
-      // Single batch HTTP request instead of N sequential requests
       if (allRoleIds.isNotEmpty) {
         final roleMap = await _repository.getRoleNamesMap(allRoleIds);
 
@@ -148,17 +140,6 @@ class UsersService {
       final result = await _repository.addUser(doc);
 
       if (result['statusCode'] == 201) {
-        // Assuming result is Map from repository wrapper or we need to check how insertUser returns
-        // The original code checked result.statusCode.
-        // DatabaseService.insertUser likely returns a Response object or similar.
-        // We need to be careful here. The repository wrapper returned whatever insertUser returned.
-        // Let's assume it returns a dynamic that has statusCode.
-
-        // Actually, let's look at the original code: `final result = await _dbService.insertUser(doc);`
-        // `if (result.statusCode == 201)`
-        // So it returns a Response object (likely Dio or http).
-
-        // We need to check searchEmployee
         final searchResult = await _repository.searchEmployee(doc['mobile']);
 
         if (searchResult is List &&
@@ -204,9 +185,6 @@ class UsersService {
       List<Map<String, dynamic>>? allocatedAreas}) async {
     try {
       final result = await _repository.updateUser(empId, doc);
-      // Original: if (result.statusCode == 200 || result.statusCode == 204)
-
-      // We need to handle the dynamic return type of updateUser
       dynamic statusCode;
       try {
         statusCode = result['statusCode']; // If it's a map

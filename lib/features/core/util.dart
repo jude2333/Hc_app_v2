@@ -111,22 +111,16 @@ class Util {
     return formatDateForStorage(newDt);
   }
 
-  /// Checks if the given date string is in the past (before today)
   static bool isPassedDate(String dt) {
     if (dt.isEmpty) return false;
 
     try {
       DateTime orderDate;
-
-      // Try multiple formats
       if (dt.contains(' ')) {
-        // DateTime.toString() format: "2022-12-15 00:00:00.000"
         orderDate = DateTime.parse(dt);
       } else if (dt.contains('-') && dt.indexOf('-') == 2) {
-        // dd-MM-yyyy format
         orderDate = DateFormat('dd-MM-yyyy').parse(dt);
       } else {
-        // yyyy-MM-dd format
         orderDate = DateFormat('yyyy-MM-dd').parse(dt);
       }
 

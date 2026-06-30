@@ -1,16 +1,9 @@
 import 'dart:convert';
 
 class TechnicianProcessDoc {
-  // Process Steps
   final ProcessSteps process;
-
-  // Test Items (from price list selection)
   final List<TestItem> testItems;
-
-  // Timeline entries
   final List<String> timeLine;
-
-  // Financial fields
   final double? total;
   final double? discount;
   final bool discountIsFlat;
@@ -25,20 +18,12 @@ class TechnicianProcessDoc {
 
   final int? credit;
   final int? cghs;
-
-  // Status fields
   final String? status;
   final String? serverStatus;
-
-  // Lab/billing fields
   final String? billNumber;
   final String? labNumber;
   final String? labSamplePics;
-
-  // Settings
   final ProcessSettings settings;
-
-  // Metadata
   final String? updatedAt;
 
   TechnicianProcessDoc({
@@ -85,7 +70,8 @@ class TechnicianProcessDoc {
       discount: json['discount'] != null
           ? double.tryParse(json['discount'].toString())
           : null,
-      discountIsFlat: json['discount_is_flat'] == 1 || json['discount_is_flat'] == true,
+      discountIsFlat:
+          json['discount_is_flat'] == 1 || json['discount_is_flat'] == true,
       amountAfterDiscount: json['amount_after_discount'] != null
           ? double.tryParse(json['amount_after_discount'].toString())
           : null,
@@ -194,7 +180,6 @@ class TechnicianProcessDoc {
     );
   }
 
-  /// Add a timeline entry
   TechnicianProcessDoc addTimelineEntry(String entry) {
     return copyWith(
       timeLine: [...timeLine, entry],
@@ -202,7 +187,6 @@ class TechnicianProcessDoc {
     );
   }
 
-  /// Update process step
   TechnicianProcessDoc updateProcessStep(String stepName, String value) {
     return copyWith(
       process: process.updateStep(stepName, value),
@@ -210,7 +194,6 @@ class TechnicianProcessDoc {
     );
   }
 
-  /// Add test item
   TechnicianProcessDoc addTestItem(TestItem item) {
     return copyWith(
       testItems: [...testItems, item],
@@ -218,13 +201,11 @@ class TechnicianProcessDoc {
     );
   }
 
-  /// Calculate total from test items
   double calculateTotal() {
     return testItems.fold(0.0, (sum, item) => sum + (item.baseCost ?? 0));
   }
 }
 
-/// Process steps model
 class ProcessSteps {
   final String? firstStep;
   final String? secondStep;
@@ -289,7 +270,6 @@ class ProcessSteps {
     );
   }
 
-  /// Helper to update a specific step
   ProcessSteps updateStep(String stepName, String value) {
     switch (stepName) {
       case 'first_step':
@@ -312,7 +292,6 @@ class ProcessSteps {
   }
 }
 
-/// Test item model
 class TestItem {
   final String? deptId;
   final String? deptName;
@@ -322,11 +301,9 @@ class TestItem {
   final double? baseCost;
   final double? minCost;
   final double? cghsPrice;
-
-  // Per-test discount fields
-  final double? discountValue;    // raw input (e.g. 10 means ₹10 or 10%)
-  final bool discountIsFlat;      // true = flat ₹, false = percentage
-  final double? discountedPrice;  // computed price after discount
+  final double? discountValue; // raw input (e.g. 10 means ₹10 or 10%)
+  final bool discountIsFlat; // true = flat ₹, false = percentage
+  final double? discountedPrice; // computed price after discount
 
   TestItem({
     this.deptId,
@@ -387,7 +364,6 @@ class TestItem {
   }
 }
 
-/// Settings model
 class ProcessSettings {
   final int sendSms;
   final int sendWhatsapp;

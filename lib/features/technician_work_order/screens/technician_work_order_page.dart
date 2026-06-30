@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/models/work_order.dart';
-import 'package:anderson_crm_flutter/features/add_work_order/add_work_order_page.dart';
+import 'package:anderson_crm_flutter/features/technician_work_order/utils/technician_actions_helper.dart';
 import '../widgets/technician_daily_summary_dialog.dart';
 import 'package:anderson_crm_flutter/components/price_view_page.dart';
 
@@ -48,65 +48,12 @@ class _TechnicianWorkOrderPageState
   void _checkSugarTestPrompt(dynamic storage) {
     final sugarTestId = storage.getFromSession('sugar_tests')?.toString() ?? '';
     if (sugarTestId.isNotEmpty && mounted) {
-      _showSugarTestDialog(sugarTestId);
-    }
-  }
-
-  void _showSugarTestDialog(String docId) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text('Glucose (PP) Test',
-            style: TextStyle(color: AppColors.primary)),
-        content: Text('Do you want to book Glucose(PP) for this patient?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              ref.read(storageServiceProvider).setSession('sugar_tests', '');
-              Navigator.pop(ctx);
-            },
-            child: Text('No', style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-
-              ref.read(storageServiceProvider).setSession('sugar_tests', '');
-
-              await _handleSugarTestCopy(docId);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-            ),
-            child: Text('Yes'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleSugarTestCopy(String docId) async {
-    final notifier = ref.read(technicianWONotifierProvider.notifier);
-    final workOrder = notifier.getWorkOrderById(docId);
-    if (workOrder != null && mounted) {
-      final workOrderForCopy = workOrder.copyWith(visitTime: '');
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddWorkOrderPage(
-            copyFrom: workOrderForCopy,
-          ),
-          fullscreenDialog: true,
-        ),
-      );
+      TechnicianActionsHelper.showSugarTestDialog(context, ref, sugarTestId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Granular watches — only rebuild what changes
     final isInitializing = ref.watch(
       technicianWONotifierProvider.select((s) => s.isInitializing),
     );
@@ -119,8 +66,6 @@ class _TechnicianWorkOrderPageState
     final workOrders = ref.watch(
       technicianWONotifierProvider.select((s) => s.workOrders),
     );
-
-    // Sync status from separate StreamProvider — AppBar only
     final isConnected = ref.watch(techSyncStatusProvider).whenOrNull(
               data: (status) => status.connected,
             ) ??
@@ -155,7 +100,6 @@ class _TechnicianWorkOrderPageState
           ],
         ),
         actions: [
-          // Connection indicator
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Icon(
@@ -164,7 +108,6 @@ class _TechnicianWorkOrderPageState
               size: 18,
             ),
           ),
-          // Sync indicator
           if (isSyncing)
             const Padding(
               padding: EdgeInsets.only(right: 8),
@@ -341,7 +284,6 @@ class VirtualTechnicianTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Use the derived provider — filter+sort is cached by Riverpod
     final filtered = ref.watch(techFilteredWorkOrdersPod);
     final sortCol = ref.watch(techSortColumnPod);
     final sortAsc = ref.watch(techSortAscendingPod);
@@ -429,16 +371,18 @@ class VirtualTechnicianTable extends ConsumerWidget {
                       ? Center(
                           child: Text('No orders found',
                               style: TextStyle(color: AppColors.textHint)))
-                      : ListView.separated(
-                          itemCount: filtered.length,
-                          separatorBuilder: (ctx, i) =>
-                              Divider(height: 1, color: AppColors.divider),
-                          itemBuilder: (context, index) {
-                            return RepaintBoundary(
-                              child: _TechnicianExpandableRow(
-                                  workOrder: filtered[index]),
-                            );
-                          },
+                      : DesktopSelectionArea(
+                          child: ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (ctx, i) =>
+                                Divider(height: 1, color: AppColors.divider),
+                            itemBuilder: (context, index) {
+                              return RepaintBoundary(
+                                child: _TechnicianExpandableRow(
+                                    workOrder: filtered[index]),
+                              );
+                            },
+                          ),
                         ),
                 ),
               ],
@@ -493,19 +437,29 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
                   _buildCell(wo.mobile, flex: 3, isPhoneNumber: true),
                   _buildCell(wo.formattedVisitDate, flex: 3),
                   _buildCell(wo.visitTime, flex: 2),
-                  Expanded(flex: 3, child: StatusChip(status: wo.status)),
-                  Expanded(
-                      flex: 2,
-                      child: ServerStatusChip(status: wo.serverStatus)),
-                  Expanded(flex: 3, child: TechnicianActions(workOrder: wo)),
-                  SizedBox(
-                      width: 40,
-                      child: Icon(
-                          _isExpanded
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
-                          size: AppSizes.iconSm - 2,
-                          color: AppColors.textHint)),
+                  SelectionContainer.disabled(
+                    child:
+                        Expanded(flex: 3, child: StatusChip(status: wo.status)),
+                  ),
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                        flex: 2,
+                        child: ServerStatusChip(status: wo.serverStatus)),
+                  ),
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                        flex: 3, child: TechnicianActions(workOrder: wo)),
+                  ),
+                  SelectionContainer.disabled(
+                    child: SizedBox(
+                        width: 40,
+                        child: Icon(
+                            _isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: AppSizes.iconSm - 2,
+                            color: AppColors.textHint)),
+                  ),
                 ],
               ),
             ),
@@ -519,7 +473,8 @@ class _TechnicianExpandableRowState extends State<_TechnicianExpandableRow> {
     );
   }
 
-  Widget _buildCell(String text, {required int flex, bool isPhoneNumber = false}) {
+  Widget _buildCell(String text,
+      {required int flex, bool isPhoneNumber = false}) {
     return Expanded(
         flex: flex,
         child: Container(

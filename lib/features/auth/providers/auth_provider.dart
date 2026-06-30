@@ -247,7 +247,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void reset() {
-    state = AuthState.initial;
+    state = AuthState(
+      mobile: state.mobile,
+      rememberMobile: state.rememberMobile,
+    );
   }
 }
 

@@ -85,21 +85,18 @@ class PowerSyncService {
 
   Future<void> _debugCheckLocalDatabase() async {
     try {
-      // Check tables
       final tables = await db.getAll(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
       );
       debugPrint(
           ' [PowerSync DEBUG] Tables in local DB: ${tables.map((t) => t['name']).toList()}');
 
-      // Check record count
       final count = await db.get(
         'SELECT COUNT(*) as cnt FROM hc_patient_visit_detail',
       );
       debugPrint(
           ' [PowerSync DEBUG] Total records in hc_patient_visit_detail: ${count?['cnt'] ?? 0}');
 
-      // Check first few records
       final sample = await db.getAll(
         'SELECT id, visit_date, patient_name, status FROM hc_patient_visit_detail LIMIT 5',
       );
@@ -109,7 +106,6 @@ class PowerSyncService {
             '   - ID: ${row['id']}, Date: ${row['visit_date']}, Name: ${row['patient_name']}, Status: ${row['status']}');
       }
 
-      // Check sync status
       final status = db.currentStatus;
       debugPrint(
           ' [PowerSync DEBUG] Sync status: connected=${status.connected}, downloading=${status.downloading}, uploading=${status.uploading}');
@@ -123,8 +119,6 @@ class PowerSyncService {
       throw StateError('PowerSync not initialized. Call initialize() first.');
     }
   }
-
-  // ── Sync Recovery ────────────────────────────────────────────────
 
   DateTime? _lastSyncedAtSeen;
   DateTime? _stuckSince;
@@ -254,8 +248,6 @@ class PowerSyncService {
     }
   }
 
-  // ── Recoverable Watch ────────────────────────────────────────────
-
   /// Public resilient watch — wraps db.watch() with auto-restart on error or
   /// stream end. Use this instead of raw db.watch() in ALL repositories to
   /// prevent permanent stream death from checkpoint blocking.
@@ -275,9 +267,7 @@ class PowerSyncService {
       // Wrap with handleError to catch LegacyJavaScriptObject interop
       // cast failures (e.g. UpdateNotification?) at the stream pipe level,
       // before they reach the subscription's onError handler.
-      subscription = db
-          .watch(sql, parameters: parameters)
-          .handleError((error) {
+      subscription = db.watch(sql, parameters: parameters).handleError((error) {
         debugPrint('[PowerSync Watch] Stream pipe error (caught): $error');
       }).listen(
         (rows) {
@@ -287,8 +277,7 @@ class PowerSyncService {
           }
         },
         onError: (error) {
-          debugPrint(
-              '[PowerSync Watch] Error: $error — restarting stream...');
+          debugPrint('[PowerSync Watch] Error: $error — restarting stream...');
           subscription?.cancel();
           if (!isCancelled) {
             Future.delayed(const Duration(seconds: 1), startListening);
@@ -320,8 +309,6 @@ class PowerSyncService {
     return controller.stream;
   }
 
-  // ── Watch Methods ───────────────────────────────────────────────
-
   Stream<List<Map<String, dynamic>>> watchWorkOrdersByDate(
       DateTime selectedDate) {
     final dateStr = selectedDate.toIso8601String().split('T')[0];
@@ -349,12 +336,6 @@ class PowerSyncService {
     );
   }
 
-  // ── JSON Normalization (DISABLED) ─────────────────────────────────
-  // These were used to sort JSON keys to match Postgres jsonb ordering,
-  // preventing "Could not apply checkpoint" errors. No longer needed
-  // because Rust sync (SyncClientImplementation.rust) handles this,
-  // and _setupSyncRecovery() auto-reconnects on stuck checkpoints.
-  //
   // static String _normalizeJsonForPostgres(dynamic value) {
   //   if (value is String) {
   //     try {

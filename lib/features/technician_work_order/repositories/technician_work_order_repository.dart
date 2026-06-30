@@ -7,7 +7,6 @@ import 'package:anderson_crm_flutter/powersync/powersync_service.dart';
 import 'package:anderson_crm_flutter/services/storage_service.dart';
 import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/services/postgresService.dart';
-import 'package:anderson_crm_flutter/providers/postgres_provider.dart';
 
 List<WorkOrder> _parseWorkOrdersIsolate(List<dynamic> rows) {
   return rows.map((row) {
@@ -48,9 +47,6 @@ class TechnicianWorkOrderRepository {
   }
 
   bool get isInitializing => _isInitializing;
-
-  /// Stream of sync status changes — consumed by techSyncStatusProvider
-  /// so AppBar indicators rebuild independently from the work order list.
   Stream<SyncStatus> watchSyncStatus() {
     return _powerSync.watchStatus();
   }
@@ -81,9 +77,6 @@ class TechnicianWorkOrderRepository {
         },
       );
 
-      // Sync status is now handled by techSyncStatusProvider
-      // via watchSyncStatus() — no silent listener needed here.
-
       _isInitializing = false;
       _initCompleter?.complete();
       debugPrint(' TechnicianWorkOrderRepository.initialize() COMPLETE');
@@ -100,14 +93,12 @@ class TechnicianWorkOrderRepository {
     }
   }
 
-  /// Wait for the CRUD upload queue to fully drain.
   Future<void> waitForSync(
       {Duration timeout = const Duration(seconds: 10)}) async {
     await ensureInitialized();
     await _powerSync.waitForSync(timeout: timeout);
   }
 
-  /// Actively wait for the checkpoint to apply after CRUD drain.
   Future<void> waitForCheckpointOrReconnect(
       {Duration timeout = const Duration(seconds: 3)}) async {
     await _powerSync.waitForCheckpointOrReconnect(timeout: timeout);
@@ -174,9 +165,7 @@ class TechnicianWorkOrderRepository {
     return await _powerSync.getTechnicianDailyOrders(techId, dateStr);
   }
 
-  void dispose() {
-    // No subscriptions to clean up — sync status is handled by StreamProvider
-  }
+  void dispose() {}
 }
 
 final technicianWorkOrderRepositoryProvider =

@@ -7,7 +7,7 @@ import 'package:anderson_crm_flutter/features/core/util.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 
 final techniciansProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String?>(
+    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String?>(
   (ref, search) async {
     final dbService = ref.read(postgresServiceProvider);
     return await dbService.getTechnicians(search);
@@ -86,12 +86,7 @@ class _AssignTechnicianDialogState
     return [...matchFound, ...matchNotFound];
   }
 
-  /// Minimum gap (minutes) between two appointments for the same technician.
-  static const int _conflictBufferMinutes = 30;
-
-  /// Validates that the technician has no conflicting appointments on the
-  /// same date within the buffer window. Queries PostgreSQL directly so the
-  /// check is authoritative regardless of the manager's local view.
+  static const int _conflictBufferMinutes = 5;
   Future<bool> _validateAssignment(String techId, String techName) async {
     final workOrder = widget.workOrder;
     final appointmentDate = workOrder.visitDate;
@@ -104,11 +99,8 @@ class _AssignTechnicianDialogState
           await dbService.getTechnicianScheduleForDate(techId, dateStr);
 
       if (schedule.isEmpty) return true;
-
-      // Parse the new appointment time
       final newDateTime = _parseVisitTime(appointmentDate, appointmentTime);
       if (newDateTime == null) {
-        // Can't parse time — fall back to exact string match
         for (var wo in schedule) {
           final woTime = wo['visit_time']?.toString() ?? '';
           if (woTime == appointmentTime) {
@@ -128,7 +120,6 @@ class _AssignTechnicianDialogState
       }
 
       for (var wo in schedule) {
-        // Skip the same work order (reassignment case)
         if (wo['doc_id']?.toString() == workOrder.docId ||
             wo['id']?.toString() == workOrder.id) {
           continue;
@@ -136,8 +127,6 @@ class _AssignTechnicianDialogState
 
         final woTime = wo['visit_time']?.toString() ?? '';
         final woDate = wo['visit_date']?.toString() ?? '';
-
-        // Parse existing appointment time
         DateTime? existingDateTime;
         if (woDate.isNotEmpty) {
           final parsedDate = DateTime.tryParse(woDate);
@@ -148,7 +137,6 @@ class _AssignTechnicianDialogState
         existingDateTime ??= _parseVisitTime(appointmentDate, woTime);
 
         if (existingDateTime == null) {
-          // Can't parse — exact string match as fallback
           if (woTime == appointmentTime) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +165,7 @@ class _AssignTechnicianDialogState
                   diffMinutes == 0
                       ? '$techName already has an appointment at $woTime for $existingPatient.'
                       : '$techName has an appointment at $woTime (${diffMinutes}min gap) for $existingPatient. '
-                        'Minimum ${_conflictBufferMinutes}min gap required.',
+                          'Minimum ${_conflictBufferMinutes}min gap required.',
                 ),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 4),
@@ -191,12 +179,11 @@ class _AssignTechnicianDialogState
       return true;
     } catch (e) {
       debugPrint('Error validating technician schedule: $e');
-      // On network/DB error, allow assignment but warn
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-                'Could not verify schedule — please confirm manually.'),
+            content:
+                Text('Could not verify schedule — please confirm manually.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -205,8 +192,6 @@ class _AssignTechnicianDialogState
     }
   }
 
-  /// Parses visit_time (HH:mm, H:mm, or hh:mm a) combined with a date
-  /// into a full DateTime for accurate difference calculation.
   DateTime? _parseVisitTime(DateTime date, String timeStr) {
     if (timeStr.isEmpty) return null;
     try {
@@ -252,11 +237,8 @@ class _AssignTechnicianDialogState
         color: colorScheme.surface,
         child: Column(
           children: [
-            // ── Header ──
             _buildHeader(isMobile),
-            // ── Search bar (separate row on mobile) ──
             if (isMobile) _buildMobileSearchBar(),
-            // ── Technician List ──
             Expanded(
               child: _isSearching
                   ? const Center(child: CircularProgressIndicator())
@@ -268,8 +250,10 @@ class _AssignTechnicianDialogState
                             CircularProgressIndicator(color: AppColors.primary),
                             const SizedBox(height: 12),
                             Text('Loading technicians...',
-                                style:
-                                    TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                                style: TextStyle(
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textSecondary)),
                           ],
                         ),
                       ),
@@ -290,7 +274,9 @@ class _AssignTechnicianDialogState
                               Text('$error',
                                   style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textSecondary),
                                   textAlign: TextAlign.center),
                             ],
                           ),
@@ -309,7 +295,9 @@ class _AssignTechnicianDialogState
                                 const SizedBox(height: 12),
                                 Text('No technicians found',
                                     style: TextStyle(
-                                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary,
                                         fontWeight: FontWeight.w500)),
                               ],
                             ),
@@ -318,8 +306,11 @@ class _AssignTechnicianDialogState
 
                         return ListView.separated(
                           itemCount: sortedTechnicians.length,
-                          separatorBuilder: (_, __) =>
-                              Divider(height: 1, color: isDark ? AppColors.darkDivider : AppColors.divider),
+                          separatorBuilder: (_, __) => Divider(
+                              height: 1,
+                              color: isDark
+                                  ? AppColors.darkDivider
+                                  : AppColors.divider),
                           itemBuilder: (context, index) {
                             final tech = sortedTechnicians[index];
                             return _TechnicianListItem(
@@ -398,7 +389,6 @@ class _AssignTechnicianDialogState
               ),
             ),
           ),
-          // Desktop: search inline
           if (!isMobile) ...[
             const SizedBox(width: 12),
             Flexible(
@@ -442,11 +432,19 @@ class _AssignTechnicianDialogState
       style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: 'Search technician...',
-        hintStyle: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
-        prefixIcon: Icon(Icons.search, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+        hintStyle: TextStyle(
+            fontSize: 13,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+        prefixIcon: Icon(Icons.search,
+            size: 20,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
-                icon: Icon(Icons.clear, size: 18, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+                icon: Icon(Icons.clear,
+                    size: 18,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textHint),
                 onPressed: () {
                   _searchController.clear();
                   _onSearchChanged('');
@@ -460,11 +458,13 @@ class _AssignTechnicianDialogState
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         border: OutlineInputBorder(
           borderRadius: AppRadius.smAll,
-          borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
+          borderSide: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.smAll,
-          borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
+          borderSide: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.smAll,
@@ -503,8 +503,12 @@ class _TechnicianListItem extends StatelessWidget {
         opacity: isAssigning ? 0.5 : 1.0,
         child: InkWell(
           onTap: onTap,
-          splashColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
-          highlightColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
+          splashColor: isDark
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : AppColors.primaryLight,
+          highlightColor: isDark
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : AppColors.primaryLight,
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: isMobile ? 12 : 16,
@@ -512,7 +516,9 @@ class _TechnicianListItem extends StatelessWidget {
             ),
             decoration: matchesPincode
                 ? BoxDecoration(
-                    color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight.withValues(alpha: 0.5),
+                    color: isDark
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : AppColors.primaryLight.withValues(alpha: 0.5),
                     border: Border(
                       left: BorderSide(color: AppColors.primary, width: 3),
                     ),
@@ -527,7 +533,8 @@ class _TechnicianListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context, List<dynamic> allocatedAreas) {
+  Widget _buildDesktopLayout(
+      BuildContext context, List<dynamic> allocatedAreas) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
@@ -564,12 +571,15 @@ class _TechnicianListItem extends StatelessWidget {
           flex: 3,
           child: _buildAreaChips(context, allocatedAreas),
         ),
-        Icon(Icons.chevron_right, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+        Icon(Icons.chevron_right,
+            size: 20,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
       ],
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context, List<dynamic> allocatedAreas) {
+  Widget _buildMobileLayout(
+      BuildContext context, List<dynamic> allocatedAreas) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,7 +610,10 @@ class _TechnicianListItem extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 4),
-            Icon(Icons.chevron_right, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+            Icon(Icons.chevron_right,
+                size: 20,
+                color:
+                    isDark ? AppColors.darkTextSecondary : AppColors.textHint),
           ],
         ),
         if (allocatedAreas.isNotEmpty) ...[
@@ -618,7 +631,9 @@ class _TechnicianListItem extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return CircleAvatar(
       radius: isMobile ? 16 : 18,
-      backgroundColor: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
+      backgroundColor: isDark
+          ? AppColors.primary.withValues(alpha: 0.15)
+          : AppColors.primaryLight,
       child: Text(
         Util.getInitials(
           technician['first_name'] ?? '',
@@ -652,7 +667,8 @@ class _TechnicianListItem extends StatelessWidget {
         Text(
           technician['mobile']?.toString() ?? '',
           style: TextStyle(
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            color:
+                isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             fontSize: isMobile ? 11 : 12,
           ),
         ),
@@ -677,7 +693,9 @@ class _TechnicianListItem extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight,
+            color: isDark
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : AppColors.primaryLight,
             borderRadius: AppRadius.xsAll,
           ),
           child: Text(

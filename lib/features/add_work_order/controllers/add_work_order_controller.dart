@@ -96,14 +96,29 @@ class AddWorkOrderController extends StateNotifier<bool> {
           serverStatus = 'cancelled';
           assignedId = existingWorkOrder.assignedId;
           assignedTo = existingWorkOrder.assignedTo;
-        } else {
-          // Preserve existing workflow state — editing patient details
-          // must never reset assignment or status
+        } else if (_isInProgress(existingWorkOrder.status)) {
+          // Work is underway (status contains 'step') — preserve technician and status
           status = existingWorkOrder.status;
           serverStatus = existingWorkOrder.serverStatus;
           assignedId = existingWorkOrder.assignedId;
           assignedTo = existingWorkOrder.assignedTo;
+        } else {
+          // Pre-work states (assigned/unassigned) — reset to unassigned
+          // so the manager can reassign after editing details
+          status = 'unassigned';
+          serverStatus = 'waiting';
+          assignedId = null;
+          assignedTo = '';
         }
+        // [COMMENTED OUT] Previous logic preserved all assignment details unconditionally:
+        // } else {
+        //   // Preserve existing workflow state — editing patient details
+        //   // must never reset assignment or status
+        //   status = existingWorkOrder.status;
+        //   serverStatus = existingWorkOrder.serverStatus;
+        //   assignedId = existingWorkOrder.assignedId;
+        //   assignedTo = existingWorkOrder.assignedTo;
+        // }
 
         final updatedOrder = existingWorkOrder.copyWith(
           patientName: patientName,
@@ -144,14 +159,22 @@ class AddWorkOrderController extends StateNotifier<bool> {
         );
 
         final now = DateTime.now();
-        final log =
-            "${DateFormat('MMMM dd, hh:mm a').format(now)} | $managerName | Work Order Updated";
+        final formattedNow = DateFormat('MMMM dd, hh:mm a').format(now);
+        final log = '$formattedNow | $managerName | Work Order Updated';
         final timeline = List<dynamic>.from(existingWorkOrder.timeLine)
           ..add(log);
 
+        // Audit trail: log when technician assignment is cleared during edit
+        if (!isCancelled &&
+            existingWorkOrder.assignedTo.isNotEmpty &&
+            assignedTo.isEmpty) {
+          timeline.add(
+              '$formattedNow | $managerName | Assignment cleared (was: ${existingWorkOrder.assignedTo})');
+        }
+
         if (isCancelled && existingWorkOrder.status != 'cancelled') {
           final cancelLog =
-              "${DateFormat('MMMM dd, hh:mm a').format(now)} | $managerName | Work Order Cancelled";
+              '$formattedNow | $managerName | Work Order Cancelled';
           timeline.add(cancelLog);
         }
 
@@ -253,23 +276,29 @@ class AddWorkOrderController extends StateNotifier<bool> {
           final docMap = jsonDecode(workOrder.doc);
           docMap['time_line'] = [log];
 
-          final String finalAssignedTo = copyFrom?.assignedTo ?? '';
-          final int? finalAssignedId = copyFrom?.assignedId;
-          final String finalStatus =
-              finalAssignedTo.isNotEmpty ? 'assigned' : 'unassigned';
-          final String finalServerStatus = 'waiting';
+          // Copied work orders are always fresh — no technician, no assignment
+          const String finalStatus = 'unassigned';
+          const String finalServerStatus = 'waiting';
 
           docMap['status'] = finalStatus;
           docMap['server_status'] = finalServerStatus;
-          docMap['assigned_to'] = finalAssignedTo;
-          docMap['assigned_id'] = finalAssignedId;
+          docMap['assigned_to'] = '';
+          docMap['assigned_id'] = null;
+
+          // [COMMENTED OUT] Previous logic carried over technician from source order:
+          // final String finalAssignedTo = copyFrom?.assignedTo ?? '';
+          // final int? finalAssignedId = copyFrom?.assignedId;
+          // final String finalStatus =
+          //     finalAssignedTo.isNotEmpty ? 'assigned' : 'unassigned';
+          // docMap['assigned_to'] = finalAssignedTo;
+          // docMap['assigned_id'] = finalAssignedId;
 
           final finalOrder = workOrder.copyWith(
             doc: jsonEncode(docMap),
             status: finalStatus,
             serverStatus: finalServerStatus,
-            assignedTo: finalAssignedTo,
-            assignedId: finalAssignedId,
+            assignedTo: '',
+            assignedId: null,
           );
 
           final success = await ref
@@ -539,5 +568,9 @@ class AddWorkOrderController extends StateNotifier<bool> {
       debugPrint('Failed to upload prescription to S3: $e');
       // Don't throw - allow work order creation to continue
     }
+  }
+
+  bool _isInProgress(String status) {
+    return status.toLowerCase().trim().contains('step');
   }
 }

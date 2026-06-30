@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../features/theme/theme.dart';
 import 'work_order_form_styles.dart';
 
@@ -49,10 +50,12 @@ class PatientDetailsSection extends StatelessWidget {
           TextFormField(
             controller: nameController,
             style: TextStyle(color: colorScheme.onSurface),
-            decoration: WorkOrderFormStyles.inputDecoration(context, 'Full Name',
+            decoration: WorkOrderFormStyles.inputDecoration(
+                context, 'Full Name',
                 icon: Icons.person_outline),
             textCapitalization: TextCapitalization.words,
-            validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Name is required' : null,
           ),
         ] else ...[
           Row(
@@ -63,11 +66,13 @@ class PatientDetailsSection extends StatelessWidget {
                   dropdownColor: colorScheme.surface,
                   style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
                   value: salutation.isEmpty ? null : salutation,
-                  decoration: WorkOrderFormStyles.inputDecoration(context, 'Title'),
+                  decoration:
+                      WorkOrderFormStyles.inputDecoration(context, 'Title'),
                   items: ['Mr', 'Ms', 'Mrs', 'Child Of', 'Dr']
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
                   onChanged: onSalutationChanged,
+                  validator: (v) => v == null ? 'Required' : null,
                 ),
               ),
               SizedBox(width: AppSpacing.md),
@@ -76,8 +81,13 @@ class PatientDetailsSection extends StatelessWidget {
                 child: TextFormField(
                   controller: nameController,
                   style: TextStyle(color: colorScheme.onSurface),
-                  decoration: WorkOrderFormStyles.inputDecoration(context, 'Full Name',
+                  decoration: WorkOrderFormStyles.inputDecoration(
+                      context, 'Full Name',
                       icon: Icons.person_outline),
+                  textCapitalization: TextCapitalization.words,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Name is required'
+                      : null,
                 ),
               ),
             ],
@@ -102,7 +112,8 @@ class PatientDetailsSection extends StatelessWidget {
                 dropdownColor: colorScheme.surface,
                 style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
                 value: gender,
-                decoration: WorkOrderFormStyles.inputDecoration(context, 'Gender',
+                decoration: WorkOrderFormStyles.inputDecoration(
+                    context, 'Gender',
                     icon: Icons.people_outline),
                 items: ['Male', 'Female', 'Other']
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
@@ -117,8 +128,10 @@ class PatientDetailsSection extends StatelessWidget {
           controller: mobileController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: TextStyle(color: colorScheme.onSurface),
-          decoration: WorkOrderFormStyles.inputDecoration(context, 'Mobile Number',
+          decoration: WorkOrderFormStyles.inputDecoration(
+                  context, 'Mobile Number',
                   icon: Icons.phone_android)
               .copyWith(counterText: ""),
           validator: (v) {
@@ -128,23 +141,23 @@ class PatientDetailsSection extends StatelessWidget {
           },
         ),
         SizedBox(height: AppSpacing.md),
-        // TextFormField(
-        //   controller: emailController,
-        //   keyboardType: TextInputType.emailAddress,
-        //   decoration: WorkOrderFormStyles.inputDecoration(
-        //       'Email Address (Optional)',
-        //       icon: Icons.email_outlined),
-        // ),
         SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: alternateMobileController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: TextStyle(color: colorScheme.onSurface),
-          decoration: WorkOrderFormStyles.inputDecoration(context,
-                  'Alternate Mobile (Optional)',
+          decoration: WorkOrderFormStyles.inputDecoration(
+                  context, 'Alternate Mobile (Optional)',
                   icon: Icons.phone_callback_outlined)
               .copyWith(counterText: ""),
+          validator: (v) {
+            if (v != null && v.isNotEmpty && v.length != 10) {
+              return 'Enter valid 10-digit number';
+            }
+            return null;
+          },
         ),
       ],
     );

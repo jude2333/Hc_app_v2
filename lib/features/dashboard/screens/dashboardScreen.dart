@@ -22,7 +22,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
     // TickerProviderStateMixin (not Single) because the controller is disposed
     // and recreated when the role changes (TECHNICIAN→MANAGER = 2→4 tabs).
-    with TickerProviderStateMixin {
+    with
+        TickerProviderStateMixin {
   TabController? _tabController;
   String? _roleName;
   String? _tenantId;
@@ -305,7 +306,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         ),
         tabs: const [
           _TabItem(icon: Icons.today_rounded, label: 'Today'),
-          _TabItem(icon: Icons.view_week_rounded, label: '7-Day'),
+          _TabItem(icon: Icons.view_week_rounded, label: '5-Day'),
         ],
       ),
     );

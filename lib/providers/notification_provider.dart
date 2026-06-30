@@ -54,7 +54,6 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     super.dispose();
   }
 
-  /// Reset the provider state on logout - cancels streams without triggering reload
   void reset() {
     debugPrint(" [Notifications] Resetting notification provider...");
     _subscription?.cancel();
@@ -69,9 +68,6 @@ class LiveNotificationController extends StateNotifier<NotificationState>
 
   Future<void> _init() async {
     if (!mounted) return;
-
-    // Check if user is logged in before loading notifications
-    // This prevents 401 errors when provider is recreated after logout
     final storage = ref.read(storageServiceProvider);
     final token = storage.getFromSession("pg_admin");
     if (token == null || token.isEmpty) {
@@ -122,7 +118,8 @@ class LiveNotificationController extends StateNotifier<NotificationState>
     final dbHandler = ref.read(dbHandlerProvider);
     final notificationsDbName = dbHandler.resolveName('hc_notifications');
     if (notificationsDbName == null) {
-      debugPrint(" [Notifications] No notifications database configured for this tenant. Skipping real-time listener.");
+      debugPrint(
+          " [Notifications] No notifications database configured for this tenant. Skipping real-time listener.");
       return;
     }
     debugPrint("Notification db name >>>:$notificationsDbName");

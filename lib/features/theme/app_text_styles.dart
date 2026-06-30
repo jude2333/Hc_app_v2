@@ -71,10 +71,6 @@ class AppTextStyles {
     fontSize: 8,
     color: AppColors.error,
   );
-
-  // ----------------------------------------------------
-  // Dashboard Metrics & Layout Typographies
-  // ----------------------------------------------------
   static const TextStyle metricLarge = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.bold,

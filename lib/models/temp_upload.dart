@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:uuid/uuid.dart';
 
-/// Model for offline photo uploads stored in temp_uploads table
 class TempUpload {
   final String id;
   final String workOrderId;
@@ -31,8 +30,6 @@ class TempUpload {
     this.tenantId,
     this.createdBy,
   });
-
-  /// Create a new TempUpload for saving offline
   factory TempUpload.create({
     required String workOrderId,
     required String fileName,
@@ -54,8 +51,6 @@ class TempUpload {
       createdBy: createdBy,
     );
   }
-
-  /// Parse from PowerSync/SQLite row
   factory TempUpload.fromRow(Map<String, dynamic> row) {
     return TempUpload(
       id: row['id'] as String,
@@ -76,8 +71,6 @@ class TempUpload {
       createdBy: row['created_by'] as int?,
     );
   }
-
-  /// Convert to map for database insertion
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -95,7 +88,6 @@ class TempUpload {
     };
   }
 
-  /// Create a copy with updated fields
   TempUpload copyWith({
     String? status,
     String? errorMessage,

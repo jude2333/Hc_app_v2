@@ -7,7 +7,15 @@ import 'package:flutter/widgets.dart';
 import 'package:anderson_crm_flutter/repositories/storage_repository.dart';
 
 class PostgresDB {
-  static const List<String> validRoles = ['10', '170', '120', '240', '250', '280', '270'];
+  static const List<String> validRoles = [
+    '10',
+    '170',
+    '120',
+    '240',
+    '250',
+    '280',
+    '270'
+  ];
   final StorageRepository _storage;
   final void Function(String)? onStatusChange;
   final void Function(String)? onWorkOrderChange;
@@ -23,36 +31,7 @@ class PostgresDB {
     this.onTodayChange,
   });
 
-  // Future<void> _setup() async {
-  //   if (_token.isEmpty) {
-  //     _token = await _storage.getSessionItem("pg_admin") ?? "";
-  //   }
-
-  //   final options = BaseOptions(
-  //     baseUrl: Settings.currentPostgresUrl,
-  //     connectTimeout: const Duration(seconds: 30),
-  //     receiveTimeout: const Duration(seconds: 30),
-  //   );
-
-  //   final headers = <String, String>{
-  //     "Content-Type": "application/json",
-  //     "Prefer":
-  //         "count=estimated,resolution=merge-duplicates,return=representation",
-  //   };
-
-  //   if (_token.isNotEmpty) {
-  //     headers["Authorization"] = "Bearer $_token";
-  //   }
-
-  //   _client = Dio(options)
-  //     ..options.headers = headers
-  //     ..options.validateStatus = (status) => status != null && status < 500;
-
-  //   onStatusChange?.call('Ready');
-  // }
-
   Future<void> _setup() async {
-    // Always use saved token for authentication
     _token = await _storage.getSessionItem("pg_admin") ?? "";
 
     final options = BaseOptions(
@@ -108,8 +87,6 @@ class PostgresDB {
       "Prefer":
           "count=estimated,resolution=merge-duplicates,return=representation",
     };
-
-    // Add token for authenticated calls
     if (_token.isNotEmpty) {
       headers["Authorization"] = "Bearer $_token";
     }
@@ -171,7 +148,6 @@ class PostgresDB {
   }
 
   Future<String> login(String mobile, String password) async {
-    // Use login-specific setup (ALWAYS live URL)
     await _setupForLogin();
 
     final user = {"mobile": mobile, "password": password, "department_id": 64};
@@ -194,9 +170,6 @@ class PostgresDB {
           final calendar = DateTime.now().add(const Duration(hours: 10));
           final expTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(calendar);
           await _storage.saveSessionItem("exp_time", expTime);
-
-          // After login, re-setup with token but still use LIVE URL
-          // This ensures appLogin() goes to live server too
           await _setupForLoginWithToken();
         }
 
@@ -241,9 +214,8 @@ class PostgresDB {
           await _storage.saveSessionItem(
               "check_role_list", validRoles.join(','));
 
-          List<String> finalRole = roleListStr
-              .where((role) => validRoles.contains(role))
-              .toList();
+          List<String> finalRole =
+              roleListStr.where((role) => validRoles.contains(role)).toList();
 
           if (finalRole.contains('170') && finalRole.contains('120')) {
             finalRole.remove('120');
@@ -287,11 +259,6 @@ class PostgresDB {
         await _storage.saveSessionItem("default_region", tenant['region']);
         await _storage.saveSessionItem("default_state", tenant['state']);
         await _storage.saveSessionItem("doc_dbs", tenant['doc_dbs']);
-
-        // if (!Settings.production) {
-        //   await _storage.saveSessionItem(
-        //       "doc_dbs", "chennai99_work_orders,chennai8_hc_notifications");
-        // }
 
         await _storage.saveSessionItem("del_doc_dbs", tenant['del_doc_dbs']);
 
@@ -713,10 +680,6 @@ class PostgresDB {
       [String? search]) async {
     Future.microtask(() => onStatusChange?.call('Loading users'));
 
-    // if (_client == null) {
-    //   await _setup();
-    // }
-
     if (_client == null ||
         _client!.options.baseUrl != Settings.currentPostgresUrl) {
       await _setup();
@@ -856,8 +819,6 @@ class PostgresDB {
           "/doctor_login?select=*,client_master(client_id,client_type,client_name)");
 
       if (response.statusCode == 200 || response.statusCode == 206) {
-        // debugPrint("doctor_login: ${jsonEncode(response.data)}");
-
         onStatusChange?.call('B2B clients loaded successfully');
         return response.data;
       } else if (response.statusCode == 401) {
@@ -912,8 +873,6 @@ class PostgresDB {
     }
   }
 
-  /// Batch-fetches role names for a set of role IDs in a single HTTP request.
-  /// Returns a map of roleId → roleName for efficient lookup.
   Future<Map<String, String>> getRoleNamesMap(Set<String> roleIds) async {
     if (roleIds.isEmpty) return {};
 
@@ -953,17 +912,14 @@ class PostgresDB {
     String query;
     switch (mode) {
       case 'Mobile':
-        // Uses idx_visit_detail_mobile_json - queries mobile from JSON doc
         query =
             '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&tenant_id=eq.$tenantId&doc->>mobile=eq.$str&visible=is.true&order=visit_date.desc,visit_time.desc';
         break;
       case 'Date':
-        // Uses idx_visit_detail_date_visible - queries top-level visit_date
         query =
             '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&tenant_id=eq.$tenantId&visit_date=eq.$str&visible=is.true&order=visit_time.asc';
         break;
       case 'Name':
-        // Uses idx_visit_detail_name_trgm - trigram index on patient_name
         query =
             '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,server_status,assigned_to,bill_number,lab_number,doc&tenant_id=eq.$tenantId&patient_name=ilike.*${str.toLowerCase().trim()}*&visible=is.true&order=visit_date.desc,visit_time.desc&limit=100';
         break;
@@ -973,8 +929,6 @@ class PostgresDB {
 
     try {
       var res = await _client!.get(query);
-
-      // If we get a 401 (expired JWT), refresh the token and retry once
       if (res.statusCode == 401) {
         debugPrint('[Search] Token expired — refreshing and retrying...');
         await refreshToken();
@@ -988,8 +942,6 @@ class PostgresDB {
 
       final body = res.data;
       List<Map<String, dynamic>> processedResults = [];
-
-      // All queries now return flat results from hc_patient_visit_detail
       List<dynamic> dataList = [];
       if (body is Map && body['data'] is List) {
         dataList = body['data'] as List;
@@ -1002,7 +954,6 @@ class PostgresDB {
           final doc = item['doc'];
           final extractedData = _extractWorkOrderData(doc);
           if (extractedData.isNotEmpty) {
-            // Add top-level columns for quick access (already indexed)
             extractedData['id'] = item['id'];
             extractedData['patient_name'] =
                 item['patient_name'] ?? extractedData['name'];
@@ -1036,8 +987,6 @@ class PostgresDB {
     }
   }
 
-  /// Get a technician's active schedule for a date — used for conflict checking
-  /// before assignment. Queries PostgreSQL directly for authoritative data.
   Future<List<Map<String, dynamic>>> getTechnicianScheduleForDate(
       String techId, String dateStr) async {
     if (_client == null ||
@@ -1046,10 +995,7 @@ class PostgresDB {
     }
 
     try {
-      // Fetch active work orders (not cancelled, not finished, not unassigned)
-      // for this technician on the given date
-      final query =
-          '/hc_patient_visit_detail'
+      final query = '/hc_patient_visit_detail'
           '?select=id,doc_id,patient_name,visit_date,visit_time,status,assigned_id'
           '&assigned_id=eq.$techId'
           '&visit_date=eq.$dateStr'
@@ -1057,8 +1003,6 @@ class PostgresDB {
           '&status=not.in.(cancelled,finished,unassigned)';
 
       var res = await _client!.get(query);
-
-      // Auto-refresh on expired JWT
       if (res.statusCode == 401) {
         debugPrint('[PostgreSQL] Token expired — refreshing and retrying...');
         await refreshToken();
@@ -1084,8 +1028,6 @@ class PostgresDB {
     }
   }
 
-  /// Get all work orders for a specific date - for Tech Engagement queries
-  /// This queries PostgreSQL directly (not PowerSync) to get all work orders
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDate(
       String dateStr) async {
     if (_client == null ||
@@ -1098,8 +1040,6 @@ class PostgresDB {
           '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,assigned_id,received_amount,doc&visit_date=eq.$dateStr&visible=is.true';
 
       var res = await _client!.get(query);
-
-      // Auto-refresh on expired JWT
       if (res.statusCode == 401) {
         debugPrint('[PostgreSQL] Token expired — refreshing and retrying...');
         await refreshToken();
@@ -1125,7 +1065,6 @@ class PostgresDB {
     }
   }
 
-  /// Get all work orders for a date range - for Tech Engagement monthly queries
   Future<List<Map<String, dynamic>>> getAllWorkOrdersForDateRange(
       String startDate, String endDate) async {
     if (_client == null ||
@@ -1138,8 +1077,6 @@ class PostgresDB {
           '/hc_patient_visit_detail?select=id,patient_name,visit_date,visit_time,status,assigned_id,received_amount,doc&visit_date=gte.$startDate&visit_date=lte.$endDate&visible=is.true';
 
       var res = await _client!.get(query);
-
-      // Auto-refresh on expired JWT
       if (res.statusCode == 401) {
         debugPrint('[PostgreSQL] Token expired — refreshing and retrying...');
         await refreshToken();
@@ -1174,7 +1111,6 @@ class PostgresDB {
         if (decoded is Map<String, dynamic>) {
           workOrderData = decoded;
         } else {
-          // Handle double-encoded jsonb strings
           if (decoded is String) {
             try {
               final decoded2 = json.decode(decoded);
@@ -1288,7 +1224,6 @@ class PostgresDB {
     return "Error";
   }
 
-  /// Toggle remittance acceptance for a work order (for tech engagement)
   Future<dynamic> toggleRemittance(
       String workOrderId, bool acceptRemittance, String user) async {
     onStatusChange?.call('Updating remittance status...');
@@ -1298,7 +1233,6 @@ class PostgresDB {
     }
 
     try {
-      // First fetch the current doc
       final getResponse = await _client!
           .get("/hc_patient_visit_detail?id=eq.$workOrderId&select=id,doc");
 
@@ -1319,11 +1253,7 @@ class PostgresDB {
       } else {
         docMap = {};
       }
-
-      // Update doc fields
       docMap['accept_remittance'] = acceptRemittance;
-
-      // Add timeline entry
       final timeStamp = Util.gettime();
       final actionLog =
           acceptRemittance ? "Remittance Accepted." : "Remittance Cancelled.";
@@ -1332,8 +1262,6 @@ class PostgresDB {
       timeline.add(logEntry);
       docMap['time_line'] = timeline;
       docMap['updated_at'] = DateTime.now().toIso8601String();
-
-      // Update via PATCH
       final now = DateTime.now().toIso8601String();
       final response = await _client!.patch(
         "/hc_patient_visit_detail?id=eq.$workOrderId",

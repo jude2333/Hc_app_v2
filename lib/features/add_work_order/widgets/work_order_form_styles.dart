@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../features/theme/theme.dart';
 
-/// Shared input decoration for all Add Work Order form fields.
-/// Eliminates duplicate `_inputDecoration` methods across section widgets.
 class WorkOrderFormStyles {
   WorkOrderFormStyles._();
 

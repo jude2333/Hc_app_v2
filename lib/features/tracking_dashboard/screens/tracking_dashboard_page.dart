@@ -15,8 +15,6 @@ import '../widgets/analytics_tab.dart';
 import '../data/tracking_models.dart';
 import '../data/tracking_repository.dart';
 
-/// Main tracking dashboard page for managers.
-/// Layout: Filter bar on top, map on left, panels on right.
 class TrackingDashboardPage extends ConsumerStatefulWidget {
   const TrackingDashboardPage({super.key});
 

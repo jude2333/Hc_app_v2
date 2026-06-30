@@ -108,24 +108,26 @@ class BillingDesktopTable extends ConsumerWidget {
                     ),
                   ),
                   Expanded(
-                    child: ListView.separated(
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(height: 1, color: AppColors.divider),
-                      itemBuilder: (context, index) {
-                        final order = filtered[index];
-                        return RepaintBoundary(
-                          key: ValueKey(order.id),
-                          child: _BillingExpandableRow(
-                            key: ValueKey('row_${order.id}'),
-                            index: index + 1,
-                            order: order,
-                            onBill: onBill,
-                            onSend: onSend,
-                            showBillAction: showBillAction,
-                          ),
-                        );
-                      },
+                    child: DesktopSelectionArea(
+                      child: ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: AppColors.divider),
+                        itemBuilder: (context, index) {
+                          final order = filtered[index];
+                          return RepaintBoundary(
+                            key: ValueKey(order.id),
+                            child: _BillingExpandableRow(
+                              key: ValueKey('row_${order.id}'),
+                              index: index + 1,
+                              order: order,
+                              onBill: onBill,
+                              onSend: onSend,
+                              showBillAction: showBillAction,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -196,33 +198,41 @@ class _BillingExpandableRowState extends State<_BillingExpandableRow>
                 _buildCell(order.visitTime, flex: 1),
                 _buildCell(order.formattedCalculatedTotal, flex: 2),
                 _buildCell(order.assignedTo, flex: 2),
-                Expanded(flex: 2, child: StatusChip(status: order.status)),
-                Expanded(
-                    flex: 2, child: ServerChip(status: order.serverStatus)),
-                if (widget.showBillAction)
-                  Expanded(
-                    flex: 1,
-                    child: _canBill(order)
-                        ? IconButton(
-                            icon: Icon(Icons.receipt_long,
-                                color: Colors.blue, size: AppSizes.iconSm),
-                            tooltip: 'Bill Order',
-                            onPressed: () => widget.onBill(order),
-                          )
-                        : const SizedBox(),
-                  ),
-                Expanded(
-                  flex: 1,
-                  child: _buildSendAction(order),
+                Expanded(flex: 2, child: SelectionContainer.disabled(child: StatusChip(status: order.status))),
+                SelectionContainer.disabled(
+                  child: Expanded(
+                      flex: 2, child: ServerChip(status: order.serverStatus)),
                 ),
-                SizedBox(
-                  width: 40,
-                  child: Icon(
-                    _isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    size: AppSizes.iconSm - 2,
-                    color: AppColors.textHint,
+                if (widget.showBillAction)
+                  SelectionContainer.disabled(
+                    child: Expanded(
+                      flex: 1,
+                      child: _canBill(order)
+                          ? IconButton(
+                              icon: Icon(Icons.receipt_long,
+                                  color: Colors.blue, size: AppSizes.iconSm),
+                              tooltip: 'Bill Order',
+                              onPressed: () => widget.onBill(order),
+                            )
+                          : const SizedBox(),
+                    ),
+                  ),
+                SelectionContainer.disabled(
+                  child: Expanded(
+                    flex: 1,
+                    child: _buildSendAction(order),
+                  ),
+                ),
+                SelectionContainer.disabled(
+                  child: SizedBox(
+                    width: 40,
+                    child: Icon(
+                      _isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: AppSizes.iconSm - 2,
+                      color: AppColors.textHint,
+                    ),
                   ),
                 ),
               ],
@@ -399,10 +409,12 @@ class _FileRow extends StatelessWidget {
                 style: const TextStyle(
                     fontWeight: FontWeight.w500, color: Colors.grey)),
           ),
-          ActionLinkChip(
-            label: fileCount,
-            color: Colors.blue,
-            onTap: () => _openFile(context),
+          SelectionContainer.disabled(
+            child: ActionLinkChip(
+              label: fileCount,
+              color: Colors.blue,
+              onTap: () => _openFile(context),
+            ),
           ),
         ],
       ),

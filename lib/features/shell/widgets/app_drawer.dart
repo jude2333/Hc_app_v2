@@ -10,6 +10,7 @@ import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
 import 'package:anderson_crm_flutter/features/tracking/providers/tracking_provider.dart';
 import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/services/background_notification_service.dart';
+import 'package:anderson_crm_flutter/features/auth/providers/auth_provider.dart';
 import '../providers/shell_providers.dart';
 import '../../../config/settings.dart';
 
@@ -194,8 +195,6 @@ class AppDrawer extends ConsumerWidget {
       BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     return Column(
       children: [
-        // _buildNavTile(context, 'Change Password', Icons.lock_reset,
-        //     '/changepassword', colorScheme),
         ListTile(
           leading: const Icon(Icons.logout_rounded, color: AppColors.error),
           title: const Text('Logout',
@@ -253,37 +252,20 @@ class AppDrawer extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-
-              // Shutdown tracking (GPS + WebSocket) if active
               try {
                 ref.read(trackingProvider.notifier).shutdown();
               } catch (_) {}
-
-              // Stop background notification service
               try {
                 BackgroundNotificationService.stopService();
               } catch (_) {}
-
-              // IMPORTANT: Reset notification provider FIRST (before clearing session)
-              // This cancels streams while auth tokens are still valid
               ref.read(liveNotificationProvider.notifier).reset();
-
-              // Stop DB sync handlers
               ref.read(dbHandlerProvider).stopSync();
-
-              // Clear CouchDB cached Dio instances (before clearing session)
-              // This forces fresh instances with new auth tokens after re-login
               ref.read(couchDbClientProvider).clearCache();
-
-              // Clear session AFTER resetting providers
               ref.read(storageServiceProvider).clearSession();
-
-              // Clear last active timestamp to prevent stale check on next login
               ref
                   .read(storageServiceProvider)
                   .removeFromLocalStorage("last_active_timestamp");
-
-              // Invalidate the provider to ensure fresh state on next login
+              ref.read(authProvider.notifier).reset();
               ref.invalidate(liveNotificationProvider);
               ref.read(signedInProvider.notifier).state = false;
 

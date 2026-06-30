@@ -14,13 +14,7 @@ import 'package:anderson_crm_flutter/features/theme/theme.dart';
 import 'package:anderson_crm_flutter/features/tracking/services/location_service.dart';
 import 'package:anderson_crm_flutter/services/app_update_service.dart';
 import 'package:anderson_crm_flutter/features/core/widgets/common/update_dialog.dart';
-import 'package:anderson_crm_flutter/providers/storage_provider.dart';
 import 'package:anderson_crm_flutter/features/shell/providers/shell_providers.dart';
-import 'package:anderson_crm_flutter/providers/notification_provider.dart';
-import 'package:anderson_crm_flutter/providers/db_handler_provider.dart';
-import 'package:anderson_crm_flutter/providers/couch_db_provider.dart';
-import 'package:anderson_crm_flutter/features/session/storage_service.dart';
-import 'package:anderson_crm_flutter/services/postgresService.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -61,9 +55,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     )..repeat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        // Commented out to fix app breakage
-        // _checkSessionAndAutoLogin();
-
         final authState = ref.read(authProvider);
         _mobileController.text = authState.mobile;
         _mobileFocusNode.requestFocus();
@@ -72,22 +63,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
     });
   }
-
-  // Future<void> _checkSessionAndAutoLogin() async {
-  //   // Disabled OTP bypass to prevent app breakage.
-  //   return;
-  // }
-
-  // Future<void> _performAutoLogoutCleanup(StorageService storage) async {
-  //   try {
-  //     ref.read(liveNotificationProvider.notifier).reset();
-  //     ref.read(dbHandlerProvider).stopSync();
-  //     ref.read(couchDbClientProvider).clearCache();
-  //   } catch (_) {}
-
-  //   await storage.clearSession();
-  //   ref.read(signedInProvider.notifier).state = false;
-  // }
 
   Future<void> _checkForAppUpdate() async {
     final updateInfo = await AppUpdateService.checkForUpdate();
@@ -117,8 +92,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         _dialogShowing = true;
         _showOtpDialog(next.mobile);
       }
-
-      // Sync controller when remembered mobile loads asynchronously
       if (previous != null &&
           next.mobile != previous.mobile &&
           next.mobile != _mobileController.text) {
@@ -290,9 +263,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       _buildRoleSelector(authState, notifier),
                     _buildRememberCheckbox(authState, notifier),
                     const SizedBox(height: 22),
-                    // Sign In button commented out — security: bypasses OTP verification
-                    // _buildSignInButton(authState, notifier),
-                    // const SizedBox(height: 14),
                     _buildOtpButton(authState, notifier),
                   ],
                 ),
@@ -889,7 +859,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Navigator.of(context).pop();
         if (mounted) {
           final authState = ref.read(authProvider);
-          // Multi-role: role selector will show on login screen
           if (authState.currentStep != LoginStep.selectRole) {
             ref.read(signedInProvider.notifier).state = true;
             context.go('/dashboard');
