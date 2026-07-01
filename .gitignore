@@ -17,6 +17,7 @@ ios/.symlinks/
 
 lib/config/settings.dart
 .agent/
+config/
 
 # PowerSync web workers - regenerate with: dart run powersync:setup_web
 web/powersync_db.worker.js
